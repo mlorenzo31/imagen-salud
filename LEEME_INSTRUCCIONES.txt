@@ -1,0 +1,36 @@
+=============================================================================
+GUÍA DE PUESTA EN PRODUCCIÓN Y PLANTILLAS EXCEL - IMAGEN SALUD
+=============================================================================
+
+1. CARPETA DE PRODUCCIÓN CREADA:
+   Ruta: Desktop\imagen-salud-produccion\
+   Contiene el código fuente limpio y ordenado:
+   - backend\  -> Servidor Express API
+   - frontend\ -> Aplicación Next.js / React
+
+2. PLANTILLAS EXCEL GENERADAS:
+   Ruta: Desktop\plantillas-excel-imagen-salud\
+   (También disponibles en Desktop\imagen-salud-produccion\plantillas_y_scripts\)
+
+   a) Plantilla_1_Doctores_y_Ganancias.xlsx
+      - Hoja 'Doctores_y_Comisiones': Lista de especialistas con Cédula/RIF, Especialidad,
+        Turno, Porcentaje de Comisión/Ganancia (% que cobra el médico), Teléfono y Consultorio.
+      - Hoja 'Guia_de_Campos': Explicación detallada de cada columna y valores aceptados.
+
+   b) Plantilla_2_Estudios_y_Honorarios.xlsx
+      - Catálogo de estudios, tarifas en USD y división de ganancia entre la Clínica y el Médico.
+
+   c) Plantilla_3_Carga_Masiva_Atenciones.xlsx
+      - Plantilla para cargar histórico o lote de atenciones de pacientes directamente en el módulo
+        de Carga Masiva Inteligente del sistema (compatible con simulación Dry-Run).
+
+3. BASE DE DATOS 100% EN BLANCO:
+   - schema_produccion_limpio.sql:
+     Ejecútalo en el SQL Editor de tu proyecto Supabase nuevo para crear todas las 17 tablas
+     limpias desde cero con sus llaves foráneas y saldos de cuentas en 0.00.
+
+   - limpiar_base_datos_a_cero.sql:
+     Si decides utilizar la base de datos actual y deseas borrar todos los registros de prueba
+     (pacientes, facturas, movimientos de prueba) para dejarla 100% en blanco.
+
+=============================================================================

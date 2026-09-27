@@ -1,0 +1,68 @@
+@import "tailwindcss";
+
+:root {
+  /* Fondo Predominante Clínico Pulcro (85% - 90% Blanco Nítido) */
+  --background: #FFFFFF;
+  --background-subtle: #F8FAFC;
+  --foreground: #0F172A;
+
+  /* Paleta Oficial Isotipo Imagen Salud */
+  --clinica-aquamarine: #80DDD2;       /* RGB 128, 221, 210 Isotipo Principal */
+  --clinica-primary: #2EA89B;          /* Primario Alto Contraste Botones y Texto */
+  --clinica-primary-dark: #1D7A70;     /* Énfasis Oscuro Clínico */
+  --clinica-selection: #EBF9F7;        /* Fondo Suave de Selección y Hover Activo */
+  --clinica-blue-secondary: #9BCEDF;   /* Azul Suave Secundario */
+  --clinica-coral: #E76F3D;            /* Acento Coral Alertas Críticas y Llamado Turno */
+  --clinica-coral-soft: #FDF2EC;       /* Fondo Coral Suave de Advertencia */
+
+  /* UI Tokens */
+  --card: #FFFFFF;
+  --card-foreground: #0F172A;
+  --border: #E2E8F0;
+  --input: #E2E8F0;
+  --ring: #2EA89B;
+}
+
+body {
+  background-color: #F8FAFC;
+  color: #0F172A;
+  font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* Clases de Identidad Corporativa Imagen Salud */
+.bg-clinica-aquamarine { background-color: #80DDD2; }
+.text-clinica-aquamarine { color: #80DDD2; }
+
+.bg-clinica-primary { background-color: #2EA89B; }
+.hover\:bg-clinica-primary:hover { background-color: #1D7A70; }
+.text-clinica-primary { color: #2EA89B; }
+.border-clinica-primary { border-color: #2EA89B; }
+
+.bg-clinica-selection { background-color: #EBF9F7; }
+.text-clinica-dark { color: #1D7A70; }
+
+.bg-clinica-blue { background-color: #9BCEDF; }
+.text-clinica-blue { color: #529BB3; }
+
+.bg-clinica-coral { background-color: #E76F3D; }
+.hover\:bg-clinica-coral:hover { background-color: #CF5928; }
+.text-clinica-coral { color: #E76F3D; }
+.bg-clinica-coral-soft { background-color: #FDF2EC; }
+.border-clinica-coral { border-color: #E76F3D; }
+
+/* Scrollbars Clínicos Sutiles */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+::-webkit-scrollbar-track {
+  background: #F1F5F9;
+}
+::-webkit-scrollbar-thumb {
+  background: #CBD5E1;
+  border-radius: 9999px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #94A3B8;
+}
