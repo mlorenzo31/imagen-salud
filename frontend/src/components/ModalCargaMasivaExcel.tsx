@@ -184,7 +184,7 @@ export const ModalCargaMasivaExcel: React.FC<ModalCargaMasivaExcelProps> = ({
                 </div>
                 <div className="p-3 bg-blue-50 rounded-xl border border-blue-200 text-center">
                   <span className="text-[10px] text-blue-700 font-bold uppercase">Monto Total USD</span>
-                  <p className="text-lg font-black font-mono text-blue-700">$${simulationResult.monto_total_usd.toFixed(2)}</p>
+                  <p className="text-lg font-black font-mono text-blue-700">${simulationResult.monto_total_usd.toFixed(2)}</p>
                 </div>
               </div>
 
@@ -207,7 +207,7 @@ export const ModalCargaMasivaExcel: React.FC<ModalCargaMasivaExcelProps> = ({
                         <td className="p-2.5 font-mono font-bold text-slate-600">#{f.fila}</td>
                         <td className="p-2.5 font-bold text-slate-900">{f.paciente}</td>
                         <td className="p-2.5 text-slate-600">{f.servicio} • <span className="font-semibold">{f.medico}</span></td>
-                        <td className="p-2.5 text-right font-mono font-bold">$${f.monto_usd.toFixed(2)}</td>
+                        <td className="p-2.5 text-right font-mono font-bold">${f.monto_usd.toFixed(2)}</td>
                         <td className="p-2.5 text-center">
                           {f.valido ? (
                             <Badge className="bg-emerald-100 text-emerald-800 text-[10px]">Válido</Badge>
@@ -250,7 +250,7 @@ export const ModalCargaMasivaExcel: React.FC<ModalCargaMasivaExcelProps> = ({
               className="text-xs font-bold bg-emerald-600 hover:bg-emerald-700 text-white shadow-lg shadow-emerald-600/20"
             >
               <Save className="w-3.5 h-3.5 mr-1" />
-              <span>Persistir ${simulationResult.filas_validas} Filas Válidas en Base de Datos</span>
+              <span>Persistir {simulationResult.filas_validas} Filas Válidas en Base de Datos</span>
             </Button>
           )}
         </DialogFooter>

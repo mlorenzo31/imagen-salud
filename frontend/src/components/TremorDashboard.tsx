@@ -32,7 +32,7 @@ export const TremorDashboard: React.FC = () => {
               </Badge>
             </div>
             <div className="text-2xl font-black font-mono text-slate-900 mt-2">
-              $${ingresosUsd.toLocaleString('en-US', { minimumFractionDigits: 2 })}
+              ${ingresosUsd.toLocaleString('en-US', { minimumFractionDigits: 2 })}
             </div>
             <div className="mt-3 flex items-center text-[11px] text-emerald-600 font-bold space-x-1">
               <TrendingUp className="w-3.5 h-3.5" />

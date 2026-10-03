@@ -197,7 +197,7 @@ export const ModalCambioDivisa: React.FC<ModalCambioDivisaProps> = ({
             <div className="pt-2 border-t border-blue-200/60 flex justify-between items-center">
               <span className="text-xs font-bold text-blue-950 uppercase tracking-wide">Divisas a Acreditar:</span>
               <span className="text-xl font-black font-mono text-emerald-600">
-                $${totalUsdComprado.toFixed(2)} USD
+                ${totalUsdComprado.toFixed(2)} USD
               </span>
             </div>
           </div>

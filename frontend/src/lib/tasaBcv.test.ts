@@ -46,4 +46,18 @@ describe('obtenerTasaBcv', () => {
     const { obtenerTasaBcv } = await import('./tasaBcv');
     expect(await obtenerTasaBcv()).toBeNull();
   });
+
+  it('si un proveedor se cuelga, responde con la última tasa facturada sin hacer esperar al cajero', async () => {
+    vi.useFakeTimers();
+    try {
+      vi.stubGlobal('fetch', vi.fn(() => new Promise(() => {})));
+      vi.mocked(pool.query).mockResolvedValueOnce({ rows: [{ tasa_bcv: '36.50', fecha: '2026-10-02' }] } as never);
+      const { obtenerTasaBcv } = await import('./tasaBcv');
+      const pendiente = obtenerTasaBcv();
+      await vi.advanceTimersByTimeAsync(2600);
+      expect(await pendiente).toMatchObject({ tasa: 36.5, desactualizada: true });
+    } finally {
+      vi.useRealTimers();
+    }
+  });
 });
