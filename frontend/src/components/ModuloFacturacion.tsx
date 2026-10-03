@@ -1,46 +1,13 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
-import { 
-  UserPlus, 
-  ShoppingCart, 
-  CreditCard, 
-  CheckCircle2, 
-  AlertCircle, 
-  Plus, 
-  Trash2, 
-  Printer, 
-  Search,
-  DollarSign,
-  Smartphone,
-  Landmark,
-  Receipt,
-  UserCheck,
-  ShieldCheck,
-  Stethoscope,
-  Microscope,
-  Lock,
-  Clock,
-  Sparkles,
-  RefreshCw,
-  RotateCcw,
-  X
-} from 'lucide-react';
-import { 
-  ESTUDIOS_CLINICOS, 
-  ESPECIALISTAS_MEDICOS, 
-  PATOLOGO_OFICIAL, 
-  EstudioItem, 
-  EspecialistaItem 
-} from '@/lib/catalogos';
-import { facturaCreateSchema } from '@/lib/validations';
-import { mapearEstudioAGrupo, GrupoClinico, GRUPOS_CLINICOS } from '@/lib/gruposClinicos';
-import { normalizarCedulaRif, extraerDigitos } from '@/lib/cedulaRif';
-import { calcularEdadReal, aFormatoInputDate } from '@/lib/date';
+import { ShoppingCart, CreditCard, CheckCircle2, AlertCircle, Trash2, Search, UserCheck, Stethoscope, RefreshCw, RotateCcw, X } from 'lucide-react';import { ESTUDIOS_CLINICOS, ESPECIALISTAS_MEDICOS } from '@/lib/catalogos';import { facturaCreateSchema } from '@/lib/validations';
+import { mapearEstudioAGrupo, GrupoClinico } from '@/lib/gruposClinicos';import { normalizarCedulaRif } from '@/lib/cedulaRif';import { aFormatoInputDate, calcularEdadReal, hoyLocal } from '@/lib/date';
+import { getErrorMessage } from '@/lib/utils';
 import {
   limpiarCedulaInput,
   limpiarNombreInput,
@@ -48,6 +15,8 @@ import {
   validarFichaPaciente,
   FichaErrores
 } from '@/lib/pacienteValidation';
+import { FormasDePago } from '@/components/facturacion/FormasDePago';
+import { SeleccionEstudios } from '@/components/facturacion/SeleccionEstudios';
 
 interface ModuloFacturacionProps {
   onFacturaEmitida?: () => void;
@@ -156,7 +125,7 @@ export const ModuloFacturacion: React.FC<ModuloFacturacionProps> = ({ onFacturaE
   const [selectedDoctor, setSelectedDoctor] = useState<string>('');
   
   // Tasa BCV Oficial Automática
-  const [tasaBcv, setTasaBcv] = useState<number>(832.49);
+  const [tasaBcv, setTasaBcv] = useState<number>(0);
   const [cargandoTasaBcv, setCargandoTasaBcv] = useState<boolean>(false);
   const [fuenteTasaBcv, setFuenteTasaBcv] = useState<string>('Consultando BCV...');
   const [tasaManualEditada, setTasaManualEditada] = useState<boolean>(false);
@@ -173,7 +142,7 @@ export const ModuloFacturacion: React.FC<ModuloFacturacionProps> = ({ onFacturaE
   // Estados de Proceso
   const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
   const [erroresValidacion, setErroresValidacion] = useState<string[]>([]);
-  const [facturaEmitida, setFacturaEmitida] = useState<any>(null);
+  const [facturaEmitida, setFacturaEmitida] = useState<unknown>(null);
   // Impresión física desactivada según requerimiento corporativo
 
   // Sincronización Automática de Tasa Oficial BCV
@@ -199,8 +168,13 @@ export const ModuloFacturacion: React.FC<ModuloFacturacionProps> = ({ onFacturaE
     }
   };
 
+  // Sincronización inicial y cada 5 min (sin intervención), salvo que el cajero haya fijado la tasa a mano.
+  const tasaManualRef = useRef(false);
+  useEffect(() => { tasaManualRef.current = tasaManualEditada; }, [tasaManualEditada]);
   useEffect(() => {
     sincronizarTasaBCV(false);
+    const id = setInterval(() => { if (!tasaManualRef.current) sincronizarTasaBCV(false); }, 5 * 60 * 1000);
+    return () => clearInterval(id);
   }, []);
 
   // Autoselección según Área
@@ -460,7 +434,7 @@ export const ModuloFacturacion: React.FC<ModuloFacturacionProps> = ({ onFacturaE
     setIsSubmitting(true);
     try {
       const fullCedula = normalizarCedulaRif(`${tipoDoc}${cedula.trim()}`);
-      const fechaHoy = new Date().toISOString().split('T')[0];
+      const fechaHoy = hoyLocal();
       const horaActual = new Date().toLocaleTimeString('es-VE', { hour12: false });
 
       // Consolidar totales de honorarios y ganancia
@@ -528,9 +502,9 @@ export const ModuloFacturacion: React.FC<ModuloFacturacionProps> = ({ onFacturaE
       setPagoMovilBs('');
 
       if (onFacturaEmitida) onFacturaEmitida();
-    } catch (err: any) {
+    } catch (err) {
       console.error(err);
-      alert(`Error procesando cobro: ${err.message}`);
+      alert(`Error procesando cobro: ${getErrorMessage(err)}`);
     } finally {
       setIsSubmitting(false);
     }
@@ -620,7 +594,7 @@ export const ModuloFacturacion: React.FC<ModuloFacturacionProps> = ({ onFacturaE
                   </label>
                   <select
                     value={tipoDoc}
-                    onChange={(e) => handleTipoDocChange(e.target.value as any)}
+                    onChange={(e) => handleTipoDocChange(e.target.value as Parameters<typeof handleTipoDocChange>[0])}
                     className="w-full px-2.5 py-2 text-xs font-bold rounded-xl border border-slate-300 bg-white focus:ring-2 focus:ring-cyan-500"
                   >
                     <option value="V">V - Venezolano</option>
@@ -682,7 +656,7 @@ export const ModuloFacturacion: React.FC<ModuloFacturacionProps> = ({ onFacturaE
                     type="date"
                     value={fechaNacimiento}
                     onChange={(e) => handleFechaNacimientoChange(e.target.value)}
-                    max={new Date().toISOString().split('T')[0]}
+                    max={hoyLocal()}
                     className={`text-xs font-medium rounded-xl ${
                       erroresFicha.fecha_nacimiento ? 'border-rose-400 focus:ring-rose-400 bg-rose-50/20' : 'border-slate-300'
                     }`}
@@ -792,115 +766,7 @@ export const ModuloFacturacion: React.FC<ModuloFacturacionProps> = ({ onFacturaE
               </CardTitle>
             </CardHeader>
             <CardContent className="p-5 space-y-4">
-              <div className="grid grid-cols-1 md:grid-cols-12 gap-3">
-                
-                {/* 1. Selector de Área Médica */}
-                <div className="md:col-span-4">
-                  <label className="block text-[10px] font-black text-slate-600 uppercase mb-1">Área Médica</label>
-                  <select
-                    value={selectedArea}
-                    onChange={(e) => setSelectedArea(e.target.value)}
-                    className="w-full px-2.5 py-2 text-xs font-bold rounded-xl border border-slate-300 bg-white focus:ring-2 focus:ring-cyan-500"
-                  >
-                    <option value="ECOGRAFIA_AM">Ecografía AM (Mañana)</option>
-                    <option value="ECOGRAFIA_PM">Ecografía PM (Tarde)</option>
-                    <option value="RADIOLOGIA">Radiología General (Rayos X)</option>
-                    <option value="MAMOGRAFIA">Mamografía Digital</option>
-                    <option value="CONSULTAS">Consultas Especializadas</option>
-                    <option value="GINECOLOGIA">Ginecología & Biopsias</option>
-                  </select>
-                </div>
-
-                {/* 2. Selector de Estudio */}
-                <div className="md:col-span-8">
-                  <label className="block text-[10px] font-black text-slate-600 uppercase mb-1">
-                    Estudio o Procedimiento
-                  </label>
-                  <select
-                    value={selectedEstudioNombre}
-                    onChange={(e) => setSelectedEstudioNombre(e.target.value)}
-                    className="w-full px-2.5 py-2 text-xs font-bold rounded-xl border border-slate-300 bg-white focus:ring-2 focus:ring-cyan-500"
-                  >
-                    {estudiosActuales.map((e, idx) => {
-                      const precioBsEstudio = e.precio * tasaBcv;
-                      return (
-                        <option key={idx} value={e.nombre}>
-                          {e.nombre} — ${e.precio.toFixed(2)} (Bs. {precioBsEstudio.toLocaleString('es-VE', { minimumFractionDigits: 2, maximumFractionDigits: 2 })})
-                        </option>
-                      );
-                    })}
-                  </select>
-                </div>
-
-                {/* 3. Selector / Reglas de Médico Tratante */}
-                <div className="md:col-span-8">
-                  <label className="block text-[10px] font-black text-slate-600 uppercase mb-1">
-                    Médico Especialista Asignado
-                  </label>
-                  
-                  {/* CASO: RADIOLOGÍA Y MAMOGRAFÍA (Técnico / 100% Clínica) */}
-                  {esEstudioTecnico ? (
-                    <div className="flex items-center gap-2 p-2 rounded-xl bg-slate-100 border border-slate-200">
-                      <Lock className="w-3.5 h-3.5 text-slate-500 shrink-0" />
-                      <span className="text-xs font-bold text-slate-700">
-                        {selectedDoctor} (Personal Técnico Clínico — 100% Clínica)
-                      </span>
-                    </div>
-                  ) : esEcografia ? (
-                    /* CASO: ECOGRAFÍA (Ecografista asignado según turno AM/PM) */
-                    <div className="flex items-center gap-2 p-2 rounded-xl bg-cyan-50 border border-cyan-200">
-                      <Clock className="w-3.5 h-3.5 text-cyan-700 shrink-0" />
-                      <span className="text-xs font-bold text-cyan-900">
-                        {selectedDoctor} (Ecografista de Turno {selectedArea === 'ECOGRAFIA_AM' ? 'Matutino' : 'Vespertino'})
-                      </span>
-                    </div>
-                  ) : (
-                    /* CASO: CONSULTAS Y GINECOLOGÍA (Selección Obligatoria) */
-                    <select
-                      value={selectedDoctor}
-                      onChange={(e) => setSelectedDoctor(e.target.value)}
-                      className="w-full px-2.5 py-2 text-xs font-bold rounded-xl border border-cyan-400 bg-cyan-50/40 text-slate-900 focus:ring-2 focus:ring-cyan-500"
-                    >
-                      <option value="">-- Seleccionar Médico Especialista Obligatorio --</option>
-                      {(ESPECIALISTAS_MEDICOS[selectedArea] || []).map((doc, idx) => (
-                        <option key={idx} value={doc.nombre}>
-                          {doc.nombre} {doc.especialidad ? `(${doc.especialidad})` : ''} {doc.precio ? `— $${doc.precio.toFixed(2)} (Bs. ${(doc.precio * tasaBcv).toLocaleString('es-VE', { minimumFractionDigits: 2 })})` : ''}
-                        </option>
-                      ))}
-                    </select>
-                  )}
-                </div>
-
-                {/* Botón Agregar al Carrito */}
-                <div className="md:col-span-4 flex items-end">
-                  <Button
-                    type="button"
-                    onClick={handleAgregarEstudio}
-                    className="w-full rounded-xl bg-cyan-600 hover:bg-cyan-700 text-white font-bold text-xs flex items-center justify-center gap-1.5 h-9 shadow-md shadow-cyan-600/20"
-                  >
-                    <Plus className="w-4 h-4" />
-                    <span>Agregar al Carrito</span>
-                  </Button>
-                </div>
-
-                {/* Banner Informativo si aplica Patología */}
-                {esBiopsiaOCitologia && (
-                  <div className="md:col-span-12 p-3 rounded-xl bg-purple-50 border border-purple-200 flex items-center justify-between">
-                    <div className="flex items-center gap-2">
-                      <Microscope className="w-4 h-4 text-purple-700 shrink-0" />
-                      <div>
-                        <p className="text-xs font-black text-purple-950">Estudio con Análisis de Patología</p>
-                        <p className="text-[10px] text-purple-700">
-                          Asignado automáticamente a: <span className="font-bold">{PATOLOGO_OFICIAL.nombre}</span> ({PATOLOGO_OFICIAL.especialidad})
-                        </p>
-                      </div>
-                    </div>
-                    <Badge className="bg-purple-200 text-purple-900 font-mono text-[10px] font-bold">
-                      Patología Activa
-                    </Badge>
-                  </div>
-                )}
-              </div>
+              <SeleccionEstudios selectedArea={selectedArea} setSelectedArea={setSelectedArea} selectedEstudioNombre={selectedEstudioNombre} setSelectedEstudioNombre={setSelectedEstudioNombre} estudiosActuales={estudiosActuales} tasaBcv={tasaBcv} esEstudioTecnico={esEstudioTecnico} selectedDoctor={selectedDoctor} esEcografia={esEcografia} setSelectedDoctor={setSelectedDoctor} handleAgregarEstudio={handleAgregarEstudio} esBiopsiaOCitologia={esBiopsiaOCitologia} />
 
               
                 {/* Selector de Prioridad de Primer Llamado (Multi-Estudio) */}
@@ -1107,131 +973,7 @@ export const ModuloFacturacion: React.FC<ModuloFacturacionProps> = ({ onFacturaE
               </div>
 
               {/* Formas de Pago Simultáneas con Doble Moneda */}
-              <div className="space-y-3">
-                <p className="text-[10px] font-black text-slate-600 uppercase tracking-wider">
-                  Desglose de Pago Multimoneda Simultáneo
-                </p>
-
-                {/* 1. Efectivo Divisas ($) */}
-                <div className="p-3 rounded-xl border border-slate-200 bg-slate-50/40 space-y-1">
-                  <div className="flex justify-between items-center">
-                    <label className="text-xs font-bold text-slate-800 flex items-center gap-1.5">
-                      <DollarSign className="w-3.5 h-3.5 text-emerald-600" />
-                      <span>Efectivo Divisas ($)</span>
-                    </label>
-                    <button
-                      type="button"
-                      onClick={() => handleAutocompletar('divisas')}
-                      className="text-[10px] text-cyan-600 font-bold hover:underline"
-                    >
-                      Completar Faltante
-                    </button>
-                  </div>
-                  <div className="flex gap-2 items-center">
-                    <Input
-                      type="number"
-                      step="0.01"
-                      placeholder="0.00"
-                      value={pagoDivisas}
-                      onChange={(e) => setPagoDivisas(e.target.value)}
-                      className="text-xs font-mono font-bold rounded-xl bg-white flex-1"
-                    />
-                    <span className="text-[10px] font-mono text-emerald-700 font-bold shrink-0 bg-emerald-50 px-2 py-1 rounded-lg border border-emerald-200">
-                      ≈ Bs. {(numDivisas * tasaBcv).toLocaleString('es-VE', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-                    </span>
-                  </div>
-                </div>
-
-                {/* 2. Efectivo Bolívares (Bs) */}
-                <div className="p-3 rounded-xl border border-slate-200 bg-slate-50/40 space-y-1">
-                  <div className="flex justify-between items-center">
-                    <label className="text-xs font-bold text-slate-800 flex items-center gap-1.5">
-                      <Landmark className="w-3.5 h-3.5 text-blue-600" />
-                      <span>Efectivo Bolívares (Bs)</span>
-                    </label>
-                    <button
-                      type="button"
-                      onClick={() => handleAutocompletar('efectivoBs')}
-                      className="text-[10px] text-cyan-600 font-bold hover:underline"
-                    >
-                      Completar Faltante
-                    </button>
-                  </div>
-                  <div className="flex gap-2 items-center">
-                    <Input
-                      type="number"
-                      step="0.01"
-                      placeholder="0.00"
-                      value={pagoEfectivoBs}
-                      onChange={(e) => setPagoEfectivoBs(e.target.value)}
-                      className="text-xs font-mono font-bold rounded-xl bg-white flex-1"
-                    />
-                    <span className="text-[10px] font-mono text-blue-700 font-bold shrink-0 bg-blue-50 px-2 py-1 rounded-lg border border-blue-200">
-                      ≈ ${(numEfectivoBs / (tasaBcv > 0 ? tasaBcv : 1)).toFixed(2)} USD
-                    </span>
-                  </div>
-                </div>
-
-                {/* 3. Punto de Venta POS (Bs) */}
-                <div className="p-3 rounded-xl border border-slate-200 bg-slate-50/40 space-y-1">
-                  <div className="flex justify-between items-center">
-                    <label className="text-xs font-bold text-slate-800 flex items-center gap-1.5">
-                      <CreditCard className="w-3.5 h-3.5 text-indigo-600" />
-                      <span>Punto de Venta POS (Bs)</span>
-                    </label>
-                    <button
-                      type="button"
-                      onClick={() => handleAutocompletar('punto')}
-                      className="text-[10px] text-cyan-600 font-bold hover:underline"
-                    >
-                      Completar Faltante
-                    </button>
-                  </div>
-                  <div className="flex gap-2 items-center">
-                    <Input
-                      type="number"
-                      step="0.01"
-                      placeholder="0.00"
-                      value={pagoPuntoBs}
-                      onChange={(e) => setPagoPuntoBs(e.target.value)}
-                      className="text-xs font-mono font-bold rounded-xl bg-white flex-1"
-                    />
-                    <span className="text-[10px] font-mono text-indigo-700 font-bold shrink-0 bg-indigo-50 px-2 py-1 rounded-lg border border-indigo-200">
-                      ≈ ${(numPuntoBs / (tasaBcv > 0 ? tasaBcv : 1)).toFixed(2)} USD
-                    </span>
-                  </div>
-                </div>
-
-                {/* 4. Pago Móvil (Bs) */}
-                <div className="p-3 rounded-xl border border-slate-200 bg-slate-50/40 space-y-1">
-                  <div className="flex justify-between items-center">
-                    <label className="text-xs font-bold text-slate-800 flex items-center gap-1.5">
-                      <Smartphone className="w-3.5 h-3.5 text-cyan-600" />
-                      <span>Pago Móvil (Bs)</span>
-                    </label>
-                    <button
-                      type="button"
-                      onClick={() => handleAutocompletar('pagoMovil')}
-                      className="text-[10px] text-cyan-600 font-bold hover:underline"
-                    >
-                      Completar Faltante
-                    </button>
-                  </div>
-                  <div className="flex gap-2 items-center">
-                    <Input
-                      type="number"
-                      step="0.01"
-                      placeholder="0.00"
-                      value={pagoMovilBs}
-                      onChange={(e) => setPagoMovilBs(e.target.value)}
-                      className="text-xs font-mono font-bold rounded-xl bg-white flex-1"
-                    />
-                    <span className="text-[10px] font-mono text-cyan-700 font-bold shrink-0 bg-cyan-50 px-2 py-1 rounded-lg border border-cyan-200">
-                      ≈ ${(numPagoMovilBs / (tasaBcv > 0 ? tasaBcv : 1)).toFixed(2)} USD
-                    </span>
-                  </div>
-                </div>
-              </div>
+              <FormasDePago handleAutocompletar={handleAutocompletar} pagoDivisas={pagoDivisas} setPagoDivisas={setPagoDivisas} numDivisas={numDivisas} tasaBcv={tasaBcv} pagoEfectivoBs={pagoEfectivoBs} setPagoEfectivoBs={setPagoEfectivoBs} numEfectivoBs={numEfectivoBs} pagoPuntoBs={pagoPuntoBs} setPagoPuntoBs={setPagoPuntoBs} numPuntoBs={numPuntoBs} pagoMovilBs={pagoMovilBs} setPagoMovilBs={setPagoMovilBs} numPagoMovilBs={numPagoMovilBs} />
 
               {/* Indicador de Cuadre al Centavo Multimoneda */}
               <div className={`p-4 rounded-2xl border text-xs font-mono ${
@@ -1276,7 +1018,7 @@ export const ModuloFacturacion: React.FC<ModuloFacturacionProps> = ({ onFacturaE
               {/* Botón Principal de Cobro */}
               <Button
                 type="button"
-                disabled={!isCuadrado || isSubmitting || carrito.length === 0}
+                disabled={!isCuadrado || isSubmitting || carrito.length === 0 || !(tasaBcv > 0)}
                 onClick={handleProcesarFactura}
                 className="w-full py-3.5 rounded-xl bg-slate-900 hover:bg-slate-800 text-white font-black text-xs flex items-center justify-center gap-2 shadow-lg shadow-slate-900/20 disabled:opacity-40"
               >

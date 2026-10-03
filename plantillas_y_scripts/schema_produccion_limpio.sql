@@ -6,6 +6,26 @@
 
 CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
 
+-- Secuencias requeridas por las columnas con nextval()
+CREATE SEQUENCE IF NOT EXISTS cartera_deudores_id_seq;
+CREATE SEQUENCE IF NOT EXISTS cierres_diarios_id_seq;
+CREATE SEQUENCE IF NOT EXISTS cuentas_bancarias_id_seq;
+CREATE SEQUENCE IF NOT EXISTS egresos_operativos_id_seq;
+CREATE SEQUENCE IF NOT EXISTS facturas_caja_id_seq;
+CREATE SEQUENCE IF NOT EXISTS facturas_servicios_detalle_id_seq;
+CREATE SEQUENCE IF NOT EXISTS honorarios_medicos_pendientes_id_seq;
+CREATE SEQUENCE IF NOT EXISTS ingresos_extraordinarios_id_seq;
+CREATE SEQUENCE IF NOT EXISTS medicos_id_seq;
+CREATE SEQUENCE IF NOT EXISTS movimientos_tesoreria_id_seq;
+CREATE SEQUENCE IF NOT EXISTS operaciones_cambiarias_id_seq;
+CREATE SEQUENCE IF NOT EXISTS pacientes_id_seq;
+CREATE SEQUENCE IF NOT EXISTS pagos_honorarios_id_seq;
+CREATE SEQUENCE IF NOT EXISTS resoluciones_pacientes_cierre_id_seq;
+CREATE SEQUENCE IF NOT EXISTS transacciones_bancarias_id_seq;
+CREATE SEQUENCE IF NOT EXISTS transacciones_tarjetas_transito_id_seq;
+CREATE SEQUENCE IF NOT EXISTS usuarios_id_seq;
+
+
 
 -- Tabla: usuarios
 CREATE TABLE IF NOT EXISTS usuarios (
@@ -348,8 +368,13 @@ VALUES
 ON CONFLICT DO NOTHING;
 
 -- 2. Usuario Administrador Inicial
-INSERT INTO usuarios (user_login, nombre, rol, email)
+INSERT INTO usuarios (user_login, password_hash, nombre, rol, email)
 VALUES
-  ('admin', 'Manuel Administrador', 'admin', 'admin@imagensalud.com'),
-  ('cajero1', 'Cajero de Guardia', 'cajero', 'cajero@imagensalud.com')
+  ('admin', '!', 'Manuel Administrador', 'admin', 'admin@imagensalud.com'),
+  ('cajero1', '!', 'Cajero de Guardia', 'cajero', 'cajero@imagensalud.com')
 ON CONFLICT DO NOTHING;
+
+-- Restricciones de unicidad requeridas por la aplicación (ON CONFLICT y búsquedas por código)
+CREATE UNIQUE INDEX IF NOT EXISTS ux_pacientes_cedula ON pacientes (cedula);
+CREATE UNIQUE INDEX IF NOT EXISTS ux_cuentas_bancarias_codigo ON cuentas_bancarias (codigo);
+CREATE UNIQUE INDEX IF NOT EXISTS ux_usuarios_login ON usuarios (user_login);

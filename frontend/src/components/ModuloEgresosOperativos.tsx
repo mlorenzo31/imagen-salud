@@ -25,6 +25,7 @@ import {
 } from 'lucide-react';
 import { exportarAExcel, exportarAPDF } from '@/lib/exportUtils';
 import { CuentaBancaria } from '@/types';
+import { getErrorMessage } from '@/lib/utils';
 
 interface ModuloEgresosOperativosProps {
   currentRole: 'admin' | 'cajero';
@@ -46,6 +47,27 @@ interface RegistroFinanciero {
   referencia: string;
   fecha: string;
   beneficiario?: string;
+}
+
+/** Fila cruda devuelta por /api/tesoreria/egresos-operativos e ingresos-extraordinarios. */
+interface RegistroApi {
+  id: number;
+  cuenta_id: number;
+  cuenta_nombre?: string;
+  categoria?: string;
+  concepto_libre?: string;
+  descripcion?: string;
+  concepto?: string;
+  monto_neto?: number | string;
+  monto?: number | string;
+  moneda?: string;
+  comision_pago_movil_bs?: number | string;
+  monto_total_debitado?: number | string;
+  total_debitado?: number | string;
+  referencia?: string;
+  created_at?: string;
+  beneficiario?: string;
+  origen?: string;
 }
 
 export const ModuloEgresosOperativos: React.FC<ModuloEgresosOperativosProps> = ({
@@ -102,7 +124,7 @@ export const ModuloEgresosOperativos: React.FC<ModuloEgresosOperativosProps> = (
       if (resEgresos && resEgresos.ok) {
         const data = await resEgresos.json();
         if (Array.isArray(data)) {
-          list = [...list, ...data.map((item: any) => ({
+          list = [...list, ...data.map((item: RegistroApi) => ({
             id: item.id,
             tipo: 'EGRESO' as const,
             cuenta_id: item.cuenta_id,
@@ -123,7 +145,7 @@ export const ModuloEgresosOperativos: React.FC<ModuloEgresosOperativosProps> = (
       if (resIngresos && resIngresos.ok) {
         const data = await resIngresos.json();
         if (Array.isArray(data)) {
-          list = [...list, ...data.map((item: any) => ({
+          list = [...list, ...data.map((item: RegistroApi) => ({
             id: item.id,
             tipo: 'INGRESO_EXTRA' as const,
             cuenta_id: item.cuenta_id,
@@ -228,8 +250,8 @@ export const ModuloEgresosOperativos: React.FC<ModuloEgresosOperativosProps> = (
       setEgresoBeneficiario('');
       cargarHistorial();
       if (onEgresoRegistrado) onEgresoRegistrado();
-    } catch (err: any) {
-      setMensajeError(err.message || 'Error de conexión.');
+    } catch (err) {
+      setMensajeError(getErrorMessage(err) || 'Error de conexión.');
     } finally {
       setLoading(false);
     }
@@ -285,8 +307,8 @@ export const ModuloEgresosOperativos: React.FC<ModuloEgresosOperativosProps> = (
       setIngresoOrigen('');
       cargarHistorial();
       if (onEgresoRegistrado) onEgresoRegistrado();
-    } catch (err: any) {
-      setMensajeError(err.message || 'Error de conexión.');
+    } catch (err) {
+      setMensajeError(getErrorMessage(err) || 'Error de conexión.');
     } finally {
       setLoading(false);
     }
@@ -416,7 +438,7 @@ export const ModuloEgresosOperativos: React.FC<ModuloEgresosOperativosProps> = (
             return (
               <button
                 key={tab.id}
-                onClick={() => setTabActiva(tab.id as any)}
+                onClick={() => setTabActiva(tab.id as Parameters<typeof setTabActiva>[0])}
                 className={`flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-bold transition-all ${
                   isSelected 
                     ? `${tab.color} text-white shadow-md` 
@@ -768,7 +790,7 @@ export const ModuloEgresosOperativos: React.FC<ModuloEgresosOperativosProps> = (
             <div className="flex flex-wrap items-center gap-2 w-full md:w-auto">
               <select
                 value={filtroTipo}
-                onChange={e => setFiltroTipo(e.target.value as any)}
+                onChange={e => setFiltroTipo(e.target.value as Parameters<typeof setFiltroTipo>[0])}
                 className="text-xs py-1.5 px-3 rounded-xl bg-slate-50 border border-slate-200 font-bold text-slate-700"
               >
                 <option value="TODOS">Todos los Tipos</option>

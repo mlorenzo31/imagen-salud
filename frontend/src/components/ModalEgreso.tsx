@@ -6,6 +6,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { AlertCircle, CheckCircle2, DollarSign } from 'lucide-react';
+import { getErrorMessage } from '@/lib/utils';
 
 interface ModalEgresoProps {
   open: boolean;
@@ -83,8 +84,8 @@ export const ModalEgreso: React.FC<ModalEgresoProps> = ({
       setBeneficiario('');
       setReferencia('');
       setDescripcion('');
-    } catch (err: any) {
-      setErrorMsg(err.message || 'Error al procesar el egreso.');
+    } catch (err) {
+      setErrorMsg(getErrorMessage(err) || 'Error al procesar el egreso.');
     } finally {
       setLoading(false);
     }

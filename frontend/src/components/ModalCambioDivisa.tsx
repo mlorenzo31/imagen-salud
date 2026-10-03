@@ -1,11 +1,12 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { CuentaBancaria, registrarCambioDivisa } from '@/lib/api';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { ArrowLeftRight, AlertCircle } from 'lucide-react';
+import { getErrorMessage } from '@/lib/utils';
 
 interface ModalCambioDivisaProps {
   open: boolean;
@@ -24,7 +25,15 @@ export const ModalCambioDivisa: React.FC<ModalCambioDivisaProps> = ({
   const cuentasBs = cuentas.filter(c => c.moneda === 'BS');
   const [cuentaId, setCuentaId] = useState<number>(cuentasBs[0]?.id || 4);
   const [montoBs, setMontoBs] = useState<string>('');
-  const [tasaManual, setTasaManual] = useState<string>('807.39');
+  const [tasaManual, setTasaManual] = useState<string>('');
+  // Pre-llena la tasa con la BCV vigente (el operador solo la ajusta si el banco aplicó otra).
+  useEffect(() => {
+    if (!open) return;
+    fetch('/api/bcv')
+      .then(res => res.json())
+      .then(d => { if (d.tasa > 0) setTasaManual(prev => prev || String(d.tasa)); })
+      .catch(() => {});
+  }, [open]);
   const [comisionBs, setComisionBs] = useState<string>('0.00');
   const [referencia, setReferencia] = useState<string>('');
   const [notas, setNotas] = useState<string>('');
@@ -78,8 +87,8 @@ export const ModalCambioDivisa: React.FC<ModalCambioDivisaProps> = ({
       setComisionBs('0.00');
       setReferencia('');
       setNotas('');
-    } catch (err: any) {
-      setErrorMsg(err.message || 'Error al ejecutar cambio de divisa.');
+    } catch (err) {
+      setErrorMsg(getErrorMessage(err) || 'Error al ejecutar cambio de divisa.');
     } finally {
       setLoading(false);
     }
@@ -188,7 +197,7 @@ export const ModalCambioDivisa: React.FC<ModalCambioDivisaProps> = ({
             <div className="pt-2 border-t border-blue-200/60 flex justify-between items-center">
               <span className="text-xs font-bold text-blue-950 uppercase tracking-wide">Divisas a Acreditar:</span>
               <span className="text-xl font-black font-mono text-emerald-600">
-                $${totalUsdComprado.toFixed(2)} USD
+                ${totalUsdComprado.toFixed(2)} USD
               </span>
             </div>
           </div>

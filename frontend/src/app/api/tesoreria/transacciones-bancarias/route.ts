@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import pool from '@/lib/db';
+import { errorResponse } from '@/lib/apiHelpers';
 
 export async function GET(req: NextRequest) {
   try {
@@ -16,7 +17,7 @@ export async function GET(req: NextRequest) {
       JOIN cuentas_bancarias c ON t.cuenta_id = c.id
       WHERE 1=1
     `;
-    const params: any[] = [];
+    const params: unknown[] = [];
     if (cuenta_id) { params.push(parseInt(cuenta_id)); q += ' AND t.cuenta_id = $' + params.length; }
     if (desde) { params.push(desde); q += ' AND t.fecha >= $' + params.length; }
     if (hasta) { params.push(hasta); q += ' AND t.fecha <= $' + params.length; }
@@ -29,7 +30,7 @@ export async function GET(req: NextRequest) {
 
     const result = await pool.query(q, params);
     return NextResponse.json(result.rows);
-  } catch (err: any) {
-    return NextResponse.json({ error: err.message }, { status: 500 });
+  } catch (err) {
+    return errorResponse(err);
   }
 }

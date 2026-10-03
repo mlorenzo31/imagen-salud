@@ -1,40 +1,16 @@
 'use client';
 
 import React, { useState, useMemo } from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
+import { Card } from '@/components/ui/card';import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogFooter
-} from '@/components/ui/dialog';
-import {
-  CreditCard,
-  AlertTriangle,
-  CheckCircle2,
-  FileSpreadsheet,
-  FileText,
-  Search,
-  Plus,
-  RefreshCw,
-  TrendingDown,
-  Layers,
-  ArrowRightLeft,
-  Building2,
-  Lock,
-  Smartphone,
-  CheckCheck,
-  Calendar,
-  DollarSign,
-  Receipt,
-  Sparkles
-} from 'lucide-react';
-import { exportarAExcel, exportarAPDF } from '@/lib/exportUtils';
+import { AlertTriangle, CheckCircle2 } from 'lucide-react';import { exportarAExcel, exportarAPDF } from '@/lib/exportUtils';
 import { ConciliacionPOS, UserRole, ModoOperacion, CuentaBancaria } from '@/types';
+import { hoyLocal } from '@/lib/date';
+import { ConciliarDialog } from '@/components/conciliacion/ConciliarDialog';
+import { RegistrarPagoDialog } from '@/components/conciliacion/RegistrarPagoDialog';
+import { SeccionPagosRecibidos } from '@/components/conciliacion/SeccionPagosRecibidos';
+import { SeccionLotesPOS } from '@/components/conciliacion/SeccionLotesPOS';
+import { EncabezadoConciliacion } from '@/components/conciliacion/EncabezadoConciliacion';
 
 interface ModuloConciliacionPOSProps {
   currentRole: UserRole;
@@ -43,7 +19,7 @@ interface ModuloConciliacionPOSProps {
   onConciliacionCompletada?: () => void;
 }
 
-interface PagoRecibidoCaja {
+export interface PagoRecibidoCaja {
   id: number;
   fecha: string;
   hora: string;
@@ -200,7 +176,7 @@ export const ModuloConciliacionPOS: React.FC<ModuloConciliacionPOSProps> = ({
   // Formulario de Conciliación Bancaria de Lote
   const [cuentaConciliacion, setCuentaConciliacion] = useState('Banco de Venezuela - Cta Cte Principal');
   const [refBancaria, setRefBancaria] = useState('');
-  const [fechaAbono, setFechaAbono] = useState(new Date().toISOString().slice(0, 10));
+  const [fechaAbono, setFechaAbono] = useState(hoyLocal());
   const [montoRealAcreditado, setMontoRealAcreditado] = useState<string>('');
   const [notasConciliacion, setNotasConciliacion] = useState('');
 
@@ -208,7 +184,7 @@ export const ModuloConciliacionPOS: React.FC<ModuloConciliacionPOSProps> = ({
   const [formLote, setFormLote] = useState('');
   const [formTipo, setFormTipo] = useState<'TDD' | 'TDC'>('TDD');
   const [formBanco, setFormBanco] = useState('Banco Banesco (Punto 01 - Admisión)');
-  const [formFechaOperacion, setFormFechaOperacion] = useState(new Date().toISOString().slice(0, 10));
+  const [formFechaOperacion, setFormFechaOperacion] = useState(hoyLocal());
   const [formMontoBruto, setFormMontoBruto] = useState<number | ''>('');
   const [formComisionBs, setFormComisionBs] = useState<number | ''>('');
   const [formComisionPct, setFormComisionPct] = useState<number>(1.5);
@@ -218,7 +194,7 @@ export const ModuloConciliacionPOS: React.FC<ModuloConciliacionPOSProps> = ({
 
   // Alerta de lotes pendientes de días anteriores
   const lotesPendientesDiasPrevios = useMemo(() => {
-    const fechaHoy = new Date().toISOString().slice(0, 10);
+    const fechaHoy = hoyLocal();
     return lotes.filter(l => l.estado !== 'CONCILIADO' && l.fecha_operacion < fechaHoy);
   }, [lotes]);
 
@@ -247,7 +223,7 @@ export const ModuloConciliacionPOS: React.FC<ModuloConciliacionPOSProps> = ({
     setLoteAConciliar(lote);
     setMontoRealAcreditado(lote.monto_neto_liquidado_bs.toFixed(2));
     setRefBancaria(`ABONO-LOTE-${lote.lote_numero}`);
-    setFechaAbono(new Date().toISOString().slice(0, 10));
+    setFechaAbono(hoyLocal());
     setNotasConciliacion(`Abono validado en cuenta ${lote.banco}`);
     setOpenModalConciliar(true);
   };
@@ -300,7 +276,7 @@ export const ModuloConciliacionPOS: React.FC<ModuloConciliacionPOSProps> = ({
         return {
           ...p,
           estado: 'CONCILIADO',
-          fecha_conciliado: new Date().toISOString().slice(0, 10),
+          fecha_conciliado: hoyLocal(),
           referencia_extracto: `EXT-${Math.floor(Math.random() * 89999 + 10000)}`
         };
       }
@@ -321,7 +297,7 @@ export const ModuloConciliacionPOS: React.FC<ModuloConciliacionPOSProps> = ({
     setPagosCaja(prev => prev.map(p => ({
       ...p,
       estado: 'CONCILIADO',
-      fecha_conciliado: new Date().toISOString().slice(0, 10),
+      fecha_conciliado: hoyLocal(),
       referencia_extracto: p.referencia_extracto || `EXT-${Math.floor(Math.random() * 89999 + 10000)}`
     })));
   };
@@ -486,81 +462,7 @@ export const ModuloConciliacionPOS: React.FC<ModuloConciliacionPOSProps> = ({
       )}
 
       {/* Encabezado Corporativo y Conmutador de Pestañas */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 bg-white p-5 rounded-2xl border border-slate-200 shadow-sm">
-        <div className="flex items-center gap-3">
-          <div className="p-2.5 bg-clinica-selection rounded-xl text-clinica-primary">
-            <CreditCard className="w-6 h-6" />
-          </div>
-          <div>
-            <div className="flex items-center gap-2">
-              <h2 className="text-xl font-black text-slate-900">Conciliación Bancaria y Puntos de Venta</h2>
-              <Badge className="bg-[#1D7A70] text-white text-[10px] font-mono">
-                POS & Caja
-              </Badge>
-            </div>
-            <p className="text-xs text-slate-500 mt-0.5">
-              Control de lotes de tarjetas de débito y crédito POS, y conciliación de cobros recibidos contra extractos bancarios
-            </p>
-          </div>
-        </div>
-
-        {/* Conmutador de Pestañas: Lotes POS vs Pagos de Caja */}
-        <div className="flex items-center gap-2">
-          <div className="flex bg-slate-100 p-1 rounded-xl text-xs font-bold">
-            <button
-              onClick={() => setSubTab('lotes')}
-              className={`px-3.5 py-1.5 rounded-lg transition-all flex items-center gap-1.5 ${
-                subTab === 'lotes'
-                  ? 'bg-white text-[#1D7A70] shadow-sm font-black'
-                  : 'text-slate-500 hover:text-slate-800'
-              }`}
-            >
-              <CreditCard className="w-3.5 h-3.5" />
-              <span>Cierres de Lote POS ({lotes.length})</span>
-            </button>
-            <button
-              onClick={() => setSubTab('pagos_caja')}
-              className={`px-3.5 py-1.5 rounded-lg transition-all flex items-center gap-1.5 ${
-                subTab === 'pagos_caja'
-                  ? 'bg-white text-[#1D7A70] shadow-sm font-black'
-                  : 'text-slate-500 hover:text-slate-800'
-              }`}
-            >
-              <Receipt className="w-3.5 h-3.5" />
-              <span>Pagos Recibidos en Caja ({pagosCaja.length})</span>
-            </button>
-          </div>
-
-          <div className="flex items-center gap-1.5">
-            <Button
-              size="sm"
-              onClick={handleExportExcel}
-              className="h-8 px-2.5 rounded-xl border border-slate-200 bg-white hover:bg-emerald-50 text-slate-700 hover:text-emerald-700 text-xs font-semibold flex items-center gap-1 shadow-none"
-            >
-              <FileSpreadsheet className="w-3.5 h-3.5 text-emerald-600" />
-              <span className="hidden sm:inline">Excel</span>
-            </Button>
-            <Button
-              size="sm"
-              onClick={handleExportPDF}
-              className="h-8 px-2.5 rounded-xl border border-slate-200 bg-white hover:bg-rose-50 text-slate-700 hover:text-rose-700 text-xs font-semibold flex items-center gap-1 shadow-none"
-            >
-              <FileText className="w-3.5 h-3.5 text-rose-600" />
-              <span className="hidden sm:inline">PDF</span>
-            </Button>
-            {subTab === 'lotes' && !isReadOnly && (
-              <Button
-                size="sm"
-                onClick={() => setOpenModalRegistro(true)}
-                className="h-8 px-3 rounded-xl bg-[#1D7A70] hover:bg-[#155A52] text-white text-xs font-bold flex items-center gap-1 shadow-sm"
-              >
-                <Plus className="w-3.5 h-3.5" />
-                <span>+ Registrar Lote</span>
-              </Button>
-            )}
-          </div>
-        </div>
-      </div>
+      <EncabezadoConciliacion setSubTab={setSubTab} subTab={subTab} lotes={lotes} pagosCaja={pagosCaja} handleExportExcel={handleExportExcel} handleExportPDF={handleExportPDF} isReadOnly={isReadOnly} setOpenModalRegistro={setOpenModalRegistro} />
 
       {/* KPI Cards */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
@@ -608,543 +510,19 @@ export const ModuloConciliacionPOS: React.FC<ModuloConciliacionPOSProps> = ({
 
       {/* 1. SECCIÓN: CIERRES DE LOTE POS */}
       {subTab === 'lotes' && (
-        <div className="space-y-4">
-          {/* Barra de Filtros */}
-          <div className="flex flex-col md:flex-row items-center justify-between gap-3 bg-white p-3.5 rounded-xl border border-slate-200">
-            <div className="relative flex-1 w-full max-w-sm">
-              <Search className="w-4 h-4 absolute left-3 top-2.5 text-slate-400" />
-              <Input
-                placeholder="Buscar por lote, terminal o banco..."
-                value={searchQuery}
-                onChange={e => setSearchQuery(e.target.value)}
-                className="pl-9 h-9 text-xs rounded-xl bg-slate-50 border-slate-200"
-              />
-            </div>
-
-            <div className="flex flex-wrap items-center gap-2">
-              <div className="flex bg-slate-100 p-1 rounded-xl text-xs font-bold">
-                {(['TODOS', 'CONCILIADO', 'PENDIENTE', 'DESCUADRADO'] as const).map(est => (
-                  <button
-                    key={est}
-                    onClick={() => setFiltroEstado(est)}
-                    className={`px-3 py-1 rounded-lg transition-all ${
-                      filtroEstado === est ? 'bg-white text-[#1D7A70] shadow-sm font-black' : 'text-slate-500 hover:text-slate-900'
-                    }`}
-                  >
-                    {est === 'TODOS' ? 'Todos' : est === 'CONCILIADO' ? 'Conciliados' : est === 'PENDIENTE' ? 'Pendientes' : 'Descuadrados'}
-                  </button>
-                ))}
-              </div>
-
-              <select
-                value={filtroTipoTarjeta}
-                onChange={e => setFiltroTipoTarjeta(e.target.value)}
-                className="h-9 px-3 text-xs bg-slate-100 border-none rounded-xl font-bold text-slate-700 cursor-pointer"
-              >
-                <option value="TODAS">Todas las Tarjetas</option>
-                <option value="TDD">TDD Débito</option>
-                <option value="TDC">TDC Crédito</option>
-              </select>
-            </div>
-          </div>
-
-          {/* Tabla de Lotes POS con Botones de Acción */}
-          <div className="bg-white rounded-2xl border border-slate-200 overflow-hidden shadow-sm">
-            <div className="overflow-x-auto">
-              <table className="w-full text-xs text-left">
-                <thead className="bg-slate-50 text-slate-600 font-bold border-b border-slate-200 uppercase text-[10px] tracking-wider">
-                  <tr>
-                    <th className="p-3">N° Lote</th>
-                    <th className="p-3">Fecha</th>
-                    <th className="p-3">Tipo Tarjeta</th>
-                    <th className="p-3">Terminal / Banco</th>
-                    <th className="p-3 text-right">Bruto POS</th>
-                    <th className="p-3 text-right">Comisión Banco</th>
-                    <th className="p-3 text-right">Neto Liquidado</th>
-                    <th className="p-3 text-center">Estado</th>
-                    <th className="p-3 text-center">Acciones</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-slate-100">
-                  {lotesFiltrados.length === 0 ? (
-                    <tr>
-                      <td colSpan={9} className="p-8 text-center text-slate-400">
-                        No se encontraron lotes para el criterio de búsqueda.
-                      </td>
-                    </tr>
-                  ) : (
-                    lotesFiltrados.map((l) => (
-                      <tr key={l.id} className="hover:bg-slate-50/80 transition-colors">
-                        <td className="p-3 font-mono font-bold text-slate-900">
-                          <span className="px-2 py-0.5 bg-slate-100 rounded-lg border border-slate-200 text-[11px]">
-                            Lote #{l.lote_numero}
-                          </span>
-                        </td>
-                        <td className="p-3 text-slate-600 font-medium">{l.fecha_operacion}</td>
-                        <td className="p-3">
-                          <Badge className={
-                            l.tipo_tarjeta === 'TDD' ? 'bg-blue-100 text-blue-800' :
-                            'bg-purple-100 text-purple-800'
-                          }>
-                            {l.tipo_tarjeta}
-                          </Badge>
-                        </td>
-                        <td className="p-3 font-semibold text-slate-800">{l.banco}</td>
-                        <td className="p-3 text-right font-mono font-bold text-slate-900">
-                          Bs. {l.monto_bruto_pos_bs.toLocaleString('es-VE', { minimumFractionDigits: 2 })}
-                        </td>
-                        <td className="p-3 text-right font-mono font-bold text-rose-600">
-                          -Bs. {l.comision_bancaria_bs.toLocaleString('es-VE', { minimumFractionDigits: 2 })}
-                          <div className="text-[10px] text-slate-400 font-normal">({l.comision_porcentaje}%)</div>
-                        </td>
-                        <td className="p-3 text-right font-mono font-black text-[#1D7A70]">
-                          Bs. {l.monto_neto_liquidado_bs.toLocaleString('es-VE', { minimumFractionDigits: 2 })}
-                        </td>
-                        <td className="p-3 text-center">
-                          <Badge className={
-                            l.estado === 'CONCILIADO' ? 'bg-emerald-100 text-emerald-800' :
-                            l.estado === 'PENDIENTE' ? 'bg-rose-100 text-rose-800 font-bold' :
-                            'bg-amber-100 text-amber-800'
-                          }>
-                            {l.estado === 'CONCILIADO' ? '✓ Conciliado' : l.estado}
-                          </Badge>
-                        </td>
-                        {/* COLUMNA DE ACCIONES DE CONCILIACIÓN */}
-                        <td className="p-3 text-center">
-                          {l.estado === 'CONCILIADO' ? (
-                            <div className="flex items-center justify-center gap-1">
-                              <span className="text-emerald-700 text-[11px] font-bold flex items-center gap-1">
-                                <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" />
-                                <span>Verificado</span>
-                              </span>
-                              {!isReadOnly && (
-                                <button
-                                  type="button"
-                                  onClick={() => handleReabrirLote(l.id)}
-                                  className="text-[10px] text-slate-400 hover:text-slate-600 ml-1.5 underline"
-                                  title="Reabrir para editar"
-                                >
-                                  Editar
-                                </button>
-                              )}
-                            </div>
-                          ) : (
-                            <div className="flex items-center justify-center gap-1.5">
-                              <Button
-                                size="sm"
-                                onClick={() => handleAbrirModalConciliar(l)}
-                                className="h-7 px-3 text-xs font-bold bg-[#1D7A70] hover:bg-[#155A52] text-white rounded-xl shadow-xs flex items-center gap-1"
-                              >
-                                <CheckCircle2 className="w-3.5 h-3.5" />
-                                <span>Conciliar Abono</span>
-                              </Button>
-                              <Button
-                                variant="outline"
-                                size="sm"
-                                onClick={() => handleConciliarRapido(l)}
-                                className="h-7 px-2 text-[11px] font-medium border-slate-200 text-slate-600 hover:bg-emerald-50 hover:text-emerald-700 rounded-xl"
-                                title="Conciliar directamente si el abono bancario coincide exactamente"
-                              >
-                                Rápido
-                              </Button>
-                            </div>
-                          )}
-                        </td>
-                      </tr>
-                    ))
-                  )}
-                </tbody>
-              </table>
-            </div>
-          </div>
-        </div>
+        <SeccionLotesPOS searchQuery={searchQuery} setSearchQuery={setSearchQuery} setFiltroEstado={setFiltroEstado} filtroEstado={filtroEstado} filtroTipoTarjeta={filtroTipoTarjeta} setFiltroTipoTarjeta={setFiltroTipoTarjeta} lotesFiltrados={lotesFiltrados} isReadOnly={isReadOnly} handleReabrirLote={handleReabrirLote} handleAbrirModalConciliar={handleAbrirModalConciliar} handleConciliarRapido={handleConciliarRapido} />
       )}
 
       {/* 2. SECCIÓN: CONCILIACIÓN DE PAGOS RECIBIDOS EN CAJA (INDIVIDUAL) */}
       {subTab === 'pagos_caja' && (
-        <div className="space-y-4">
-          <div className="flex flex-col md:flex-row items-center justify-between gap-3 bg-white p-3.5 rounded-xl border border-slate-200">
-            <div className="relative flex-1 w-full max-w-sm">
-              <Search className="w-4 h-4 absolute left-3 top-2.5 text-slate-400" />
-              <Input
-                placeholder="Buscar paciente, cédula, referencia o factura..."
-                value={busquedaPagos}
-                onChange={e => setBusquedaPagos(e.target.value)}
-                className="pl-9 h-9 text-xs rounded-xl bg-slate-50 border-slate-200"
-              />
-            </div>
-
-            <div className="flex items-center gap-2">
-              <select
-                value={filtroMetodoPago}
-                onChange={e => setFiltroMetodoPago(e.target.value)}
-                className="h-9 px-3 text-xs bg-slate-100 border-none rounded-xl font-bold text-slate-700 cursor-pointer"
-              >
-                <option value="TODOS">Todos los Métodos</option>
-                <option value="PUNTO_POS">Punto POS (Tarjeta)</option>
-                <option value="PAGO_MOVIL">Pago Móvil</option>
-                <option value="TRANSFERENCIA">Transferencia</option>
-              </select>
-
-              {!isReadOnly && (
-                <Button
-                  size="sm"
-                  onClick={handleConciliarTodosLosPagos}
-                  className="h-9 px-3.5 rounded-xl bg-[#1D7A70] hover:bg-[#155A52] text-white text-xs font-bold flex items-center gap-1.5 shadow-sm"
-                >
-                  <CheckCheck className="w-4 h-4" />
-                  <span>Conciliar Todos Pendientes</span>
-                </Button>
-              )}
-            </div>
-          </div>
-
-          <div className="bg-white rounded-2xl border border-slate-200 overflow-hidden shadow-sm">
-            <div className="overflow-x-auto">
-              <table className="w-full text-xs text-left">
-                <thead className="bg-slate-50 text-slate-600 font-bold border-b border-slate-200 uppercase text-[10px] tracking-wider">
-                  <tr>
-                    <th className="p-3">Factura</th>
-                    <th className="p-3">Fecha/Hora</th>
-                    <th className="p-3">Paciente & Cédula</th>
-                    <th className="p-3">Método / Terminal</th>
-                    <th className="p-3 font-mono">Ref. Caja</th>
-                    <th className="p-3 text-right">Monto (Bs)</th>
-                    <th className="p-3 text-right">Monto ($)</th>
-                    <th className="p-3 text-center">Estado</th>
-                    <th className="p-3 text-center">Acción</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-slate-100">
-                  {pagosFiltrados.length === 0 ? (
-                    <tr>
-                      <td colSpan={9} className="p-8 text-center text-slate-400">
-                        No se encontraron pagos registrados para conciliar.
-                      </td>
-                    </tr>
-                  ) : (
-                    pagosFiltrados.map(p => (
-                      <tr key={p.id} className="hover:bg-slate-50/80 transition-colors">
-                        <td className="p-3 font-mono font-bold text-slate-900">{p.factura_id}</td>
-                        <td className="p-3 text-slate-500">{p.fecha} <span className="text-[10px]">{p.hora}</span></td>
-                        <td className="p-3">
-                          <span className="font-bold text-slate-900 block">{p.paciente}</span>
-                          <span className="font-mono text-slate-400 text-[10px]">{p.cedula}</span>
-                        </td>
-                        <td className="p-3">
-                          <Badge variant="outline" className="text-[9px] font-bold border-cyan-300 bg-cyan-50 text-cyan-900">
-                            {p.metodo === 'PUNTO_POS' ? 'Punto POS' : p.metodo === 'PAGO_MOVIL' ? 'Pago Móvil' : 'Transferencia'}
-                          </Badge>
-                          <span className="text-[10px] text-slate-500 block mt-0.5">{p.banco}</span>
-                        </td>
-                        <td className="p-3 font-mono font-bold text-slate-700">{p.referencia}</td>
-                        <td className="p-3 text-right font-mono font-bold text-slate-900">
-                          Bs. {p.monto_bs.toLocaleString('es-VE', { minimumFractionDigits: 2 })}
-                        </td>
-                        <td className="p-3 text-right font-mono font-bold text-[#1D7A70]">
-                          ${p.monto_usd.toFixed(2)}
-                        </td>
-                        <td className="p-3 text-center">
-                          <Badge className={p.estado === 'CONCILIADO' ? 'bg-emerald-100 text-emerald-800' : 'bg-rose-100 text-rose-800'}>
-                            {p.estado === 'CONCILIADO' ? '✓ Conciliado' : 'Pendiente'}
-                          </Badge>
-                        </td>
-                        <td className="p-3 text-center">
-                          {p.estado === 'CONCILIADO' ? (
-                            <span className="text-[11px] text-emerald-700 font-bold flex items-center justify-center gap-1">
-                              <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" />
-                              <span>{p.referencia_extracto || 'Verificado'}</span>
-                            </span>
-                          ) : (
-                            <Button
-                              size="sm"
-                              onClick={() => handleConciliarPagoIndividual(p.id)}
-                              className="h-7 px-2.5 text-xs font-bold bg-[#1D7A70] hover:bg-[#155A52] text-white rounded-xl shadow-xs"
-                            >
-                              ✓ Conciliar
-                            </Button>
-                          )}
-                        </td>
-                      </tr>
-                    ))
-                  )}
-                </tbody>
-              </table>
-            </div>
-          </div>
-        </div>
+        <SeccionPagosRecibidos busquedaPagos={busquedaPagos} setBusquedaPagos={setBusquedaPagos} filtroMetodoPago={filtroMetodoPago} setFiltroMetodoPago={setFiltroMetodoPago} isReadOnly={isReadOnly} handleConciliarTodosLosPagos={handleConciliarTodosLosPagos} pagosFiltrados={pagosFiltrados} handleConciliarPagoIndividual={handleConciliarPagoIndividual} />
       )}
 
       {/* MODAL 1: REGISTRAR NUEVO CIERRE DE LOTE */}
-      <Dialog open={openModalRegistro} onOpenChange={setOpenModalRegistro}>
-        <DialogContent className="sm:max-w-lg rounded-3xl p-6 bg-white shadow-2xl">
-          <DialogHeader>
-            <DialogTitle className="text-lg font-black text-slate-900 flex items-center gap-2">
-              <div className="p-2 bg-clinica-selection rounded-xl text-clinica-primary">
-                <CreditCard className="w-5 h-5" />
-              </div>
-              <span>Registrar Cierre de Lote POS</span>
-            </DialogTitle>
-            <p className="text-xs text-slate-500 mt-1">
-              Captura del reporte de cierre de terminal emitido al final del turno
-            </p>
-          </DialogHeader>
-
-          <form onSubmit={handleSubmitNuevoLote} className="space-y-4 py-2">
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-              <div className="space-y-1.5">
-                <label className="text-xs font-bold text-slate-700">N° de Lote (Comprobante Terminal)</label>
-                <Input
-                  placeholder="Ej. 000415"
-                  value={formLote}
-                  onChange={(e) => setFormLote(e.target.value)}
-                  required
-                  className="text-xs rounded-xl h-10 font-mono"
-                />
-              </div>
-
-              <div className="space-y-1.5">
-                <label className="text-xs font-bold text-slate-700">Tipo de Tarjeta</label>
-                <select
-                  value={formTipo}
-                  onChange={(e) => handleTipoChange(e.target.value as any)}
-                  className="w-full h-10 px-3 text-xs bg-slate-50 border border-slate-200 rounded-xl font-bold text-slate-800"
-                >
-                  <option value="TDD">TDD (Tarjeta Débito - 1.5%)</option>
-                  <option value="TDC">TDC (Tarjeta Crédito - 3.0%)</option>
-                </select>
-              </div>
-            </div>
-
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-              <div className="space-y-1.5">
-                <label className="text-xs font-bold text-slate-700">Terminal / Punto de Venta</label>
-                <select
-                  value={formBanco}
-                  onChange={(e) => setFormBanco(e.target.value)}
-                  className="w-full h-10 px-3 text-xs bg-slate-50 border border-slate-200 rounded-xl font-medium text-slate-800"
-                >
-                  <option value="Banco Banesco (Punto 01 - Admisión)">Banco Banesco (Punto 01 - Admisión)</option>
-                  <option value="Banco Mercantil (Punto 02 - Triaje)">Banco Mercantil (Punto 02 - Triaje)</option>
-                  <option value="Banco de Venezuela (Punto 03 - Caja)">Banco de Venezuela (Punto 03 - Caja)</option>
-                  <option value="Bancamiga (Punto Inalámbrico)">Bancamiga (Punto Inalámbrico)</option>
-                </select>
-              </div>
-
-              <div className="space-y-1.5">
-                <label className="text-xs font-bold text-slate-700">Fecha de Cierre Lote</label>
-                <Input
-                  type="date"
-                  value={formFechaOperacion}
-                  onChange={(e) => setFormFechaOperacion(e.target.value)}
-                  required
-                  className="text-xs rounded-xl h-10"
-                />
-              </div>
-            </div>
-
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-              <div className="space-y-1.5">
-                <label className="text-xs font-bold text-slate-700">Monto Bruto Total del Lote (Bs)</label>
-                <Input
-                  type="number"
-                  step="0.01"
-                  placeholder="0.00"
-                  value={formMontoBruto}
-                  onChange={(e) => handleBrutoChange(e.target.value)}
-                  required
-                  className="text-xs rounded-xl h-10 font-mono font-bold"
-                />
-              </div>
-
-              <div className="space-y-1.5">
-                <label className="text-xs font-bold text-slate-700">
-                  Comisión Bancaria Debitada (Bs)
-                  <span className="text-[10px] text-slate-400 ml-1">({formComisionPct}%)</span>
-                </label>
-                <Input
-                  type="number"
-                  step="0.01"
-                  placeholder="0.00"
-                  value={formComisionBs}
-                  onChange={(e) => setFormComisionBs(parseFloat(e.target.value) || '')}
-                  required
-                  className="text-xs rounded-xl h-10 font-mono text-rose-600 font-bold"
-                />
-              </div>
-            </div>
-
-            {/* Cálculo Resumen de Neto */}
-            {typeof formMontoBruto === 'number' && typeof formComisionBs === 'number' && (
-              <div className="p-3.5 bg-slate-50 rounded-2xl border border-slate-200/80 space-y-1">
-                <div className="flex justify-between text-xs font-bold text-slate-700">
-                  <span>Neto Esperado en Cuenta:</span>
-                  <span className="font-mono text-[#1D7A70]">
-                    Bs. {(formMontoBruto - formComisionBs).toLocaleString('es-VE', { minimumFractionDigits: 2 })}
-                  </span>
-                </div>
-              </div>
-            )}
-
-            <div className="space-y-1.5">
-              <label className="text-xs font-bold text-slate-700">Notas u Observaciones de Auditoría</label>
-              <Input
-                placeholder="Ej. Cierre nocturno turno sábado..."
-                value={formNotas}
-                onChange={(e) => setFormNotas(e.target.value)}
-                className="text-xs rounded-xl h-10"
-              />
-            </div>
-
-            <DialogFooter className="pt-2">
-              <Button
-                type="button"
-                variant="outline"
-                onClick={() => setOpenModalRegistro(false)}
-                className="rounded-xl text-xs h-10"
-              >
-                Cancelar
-              </Button>
-              <Button
-                type="submit"
-                className="rounded-xl bg-[#1D7A70] hover:bg-[#155A52] text-white font-bold text-xs h-10 shadow-sm"
-              >
-                Guardar Cierre de Lote
-              </Button>
-            </DialogFooter>
-          </form>
-        </DialogContent>
-      </Dialog>
+      <RegistrarPagoDialog openModalRegistro={openModalRegistro} setOpenModalRegistro={setOpenModalRegistro} handleSubmitNuevoLote={handleSubmitNuevoLote} formLote={formLote} setFormLote={setFormLote} formTipo={formTipo} handleTipoChange={handleTipoChange} formBanco={formBanco} setFormBanco={setFormBanco} formFechaOperacion={formFechaOperacion} setFormFechaOperacion={setFormFechaOperacion} formMontoBruto={formMontoBruto} handleBrutoChange={handleBrutoChange} formComisionPct={formComisionPct} formComisionBs={formComisionBs} setFormComisionBs={setFormComisionBs} formNotas={formNotas} setFormNotas={setFormNotas} />
 
       {/* MODAL 2: CONCILIAR ABONO BANCARIO DEL LOTE (AUDITORÍA) */}
-      <Dialog open={openModalConciliar} onOpenChange={setOpenModalConciliar}>
-        <DialogContent className="sm:max-w-md rounded-3xl p-6 bg-white shadow-2xl">
-          <DialogHeader>
-            <DialogTitle className="text-base font-black text-slate-900 flex items-center gap-2">
-              <div className="p-2 bg-emerald-50 text-emerald-700 rounded-xl border border-emerald-200">
-                <CheckCircle2 className="w-5 h-5" />
-              </div>
-              <span>Conciliar Lote en Extracto Bancario</span>
-            </DialogTitle>
-            <p className="text-xs text-slate-500 mt-1">
-              Validar y confirmar acreditación del Lote #{loteAConciliar?.lote_numero} ({loteAConciliar?.banco})
-            </p>
-          </DialogHeader>
-
-          {loteAConciliar && (
-            <div className="space-y-4 py-2 text-xs">
-              {/* Resumen del Lote */}
-              <div className="p-3.5 rounded-2xl bg-slate-50 border border-slate-200/80 space-y-2">
-                <div className="flex justify-between">
-                  <span className="text-slate-500">Monto Bruto Facturado en POS:</span>
-                  <span className="font-mono font-bold text-slate-900">
-                    Bs. {loteAConciliar.monto_bruto_pos_bs.toLocaleString('es-VE', { minimumFractionDigits: 2 })}
-                  </span>
-                </div>
-                <div className="flex justify-between text-rose-600">
-                  <span>Comisión Bancaria Retenida ({loteAConciliar.comision_porcentaje}%):</span>
-                  <span className="font-mono font-bold">
-                    -Bs. {loteAConciliar.comision_bancaria_bs.toLocaleString('es-VE', { minimumFractionDigits: 2 })}
-                  </span>
-                </div>
-                <div className="flex justify-between border-t border-slate-200 pt-2 font-black text-sm text-[#1D7A70]">
-                  <span>Neto Liquidado Esperado:</span>
-                  <span className="font-mono">
-                    Bs. {loteAConciliar.monto_neto_liquidado_bs.toLocaleString('es-VE', { minimumFractionDigits: 2 })}
-                  </span>
-                </div>
-              </div>
-
-              {/* Formulario de Confirmación en Extracto */}
-              <div className="space-y-3">
-                <div className="space-y-1">
-                  <label className="text-[11px] font-bold text-slate-700">Cuenta Bancaria Receptora</label>
-                  <select
-                    value={cuentaConciliacion}
-                    onChange={e => setCuentaConciliacion(e.target.value)}
-                    className="w-full h-9 px-3 text-xs bg-slate-50 border border-slate-200 rounded-xl font-medium text-slate-800"
-                  >
-                    {cuentas && cuentas.length > 0 ? (
-                      cuentas.filter(c => c.moneda === 'BS').map(c => (
-                        <option key={c.id} value={c.nombre}>{c.nombre} ({c.codigo})</option>
-                      ))
-                    ) : (
-                      <>
-                        <option value="Banco de Venezuela - Corriente">Banco de Venezuela - Cta Cte Principal</option>
-                        <option value="Banco Banesco - Corriente">Banco Banesco - Recaudación POS</option>
-                        <option value="Banco Mercantil - Corriente">Banco Mercantil - Operaciones</option>
-                      </>
-                    )}
-                  </select>
-                </div>
-
-                <div className="grid grid-cols-2 gap-2">
-                  <div className="space-y-1">
-                    <label className="text-[11px] font-bold text-slate-700">N° Referencia Extracto</label>
-                    <Input
-                      placeholder="Ej. REF-892341"
-                      value={refBancaria}
-                      onChange={e => setRefBancaria(e.target.value)}
-                      className="text-xs rounded-xl h-9 font-mono"
-                    />
-                  </div>
-                  <div className="space-y-1">
-                    <label className="text-[11px] font-bold text-slate-700">Fecha de Abono en Cuenta</label>
-                    <Input
-                      type="date"
-                      value={fechaAbono}
-                      onChange={e => setFechaAbono(e.target.value)}
-                      className="text-xs rounded-xl h-9"
-                    />
-                  </div>
-                </div>
-
-                <div className="space-y-1">
-                  <label className="text-[11px] font-bold text-slate-700">Monto Real Acreditado en Cuenta (Bs)</label>
-                  <Input
-                    type="number"
-                    step="0.01"
-                    value={montoRealAcreditado}
-                    onChange={e => setMontoRealAcreditado(e.target.value)}
-                    className="text-xs rounded-xl h-9 font-mono font-black text-[#1D7A70]"
-                  />
-                  {parseFloat(montoRealAcreditado) - loteAConciliar.monto_neto_liquidado_bs !== 0 && (
-                    <p className="text-[10px] font-bold text-amber-600 mt-1">
-                      Diferencia de cuadre: Bs. {(parseFloat(montoRealAcreditado) - loteAConciliar.monto_neto_liquidado_bs).toFixed(2)}
-                    </p>
-                  )}
-                </div>
-
-                <div className="space-y-1">
-                  <label className="text-[11px] font-bold text-slate-700">Notas de Auditoría</label>
-                  <Input
-                    placeholder="Ej. Abono verificado contra extracto online"
-                    value={notasConciliacion}
-                    onChange={e => setNotasConciliacion(e.target.value)}
-                    className="text-xs rounded-xl h-9"
-                  />
-                </div>
-              </div>
-
-              <div className="flex gap-2 pt-2 border-t border-slate-100">
-                <Button
-                  variant="outline"
-                  onClick={() => setOpenModalConciliar(false)}
-                  className="flex-1 rounded-xl text-xs h-9"
-                >
-                  Cancelar
-                </Button>
-                <Button
-                  onClick={handleConfirmarConciliacion}
-                  className="flex-1 rounded-xl bg-[#1D7A70] hover:bg-[#155A52] text-white text-xs font-bold h-9 shadow-sm"
-                >
-                  Confirmar y Conciliar
-                </Button>
-              </div>
-            </div>
-          )}
-        </DialogContent>
-      </Dialog>
+      <ConciliarDialog openModalConciliar={openModalConciliar} setOpenModalConciliar={setOpenModalConciliar} loteAConciliar={loteAConciliar} cuentaConciliacion={cuentaConciliacion} setCuentaConciliacion={setCuentaConciliacion} cuentas={cuentas} refBancaria={refBancaria} setRefBancaria={setRefBancaria} fechaAbono={fechaAbono} setFechaAbono={setFechaAbono} montoRealAcreditado={montoRealAcreditado} setMontoRealAcreditado={setMontoRealAcreditado} notasConciliacion={notasConciliacion} setNotasConciliacion={setNotasConciliacion} handleConfirmarConciliacion={handleConfirmarConciliacion} />
     </div>
   );
 };

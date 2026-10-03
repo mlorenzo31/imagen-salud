@@ -86,14 +86,14 @@ export default function PantallaTVSalaEspera() {
   // Polling de Facturas y Turnos desde la base de datos
   const cargarTurnos = async () => {
     try {
-      const res = await fetch('/api/facturas');
+      const res = await fetch('/api/facturas?abiertas=1');
       if (res.ok) {
-        const data: any[] = await res.json();
+        const data: TurnoItem[] = await res.json();
         // Filtrar turnos activos no anulados y mapear a Grupo Clínico estricto
         const mapeados: TurnoItem[] = data
-          .filter((t: any) => t.estado !== 'ANULADA' && t.estado !== 'ANULADA_SALA')
-          .map((t: any) => {
-            const grupo = t.grupo_clinico || mapearEstudioAGrupo(t.estudio, t.servicios);
+          .filter((t) => t.estado !== 'ANULADA' && t.estado !== 'ANULADA_SALA')
+          .map((t): TurnoItem => {
+            const grupo = t.grupo_clinico || mapearEstudioAGrupo(t.estudio);
             return {
               ...t,
               grupo_clinico: grupo,

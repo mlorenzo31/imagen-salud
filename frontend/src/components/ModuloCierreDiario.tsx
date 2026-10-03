@@ -21,8 +21,9 @@ import {
   Send,
   MessageCircle
 } from 'lucide-react';
-import { UserRole } from '@/types';
+import { UserRole, PacientePendiente, ResumenCierre } from '@/types';
 import { BloqueoCierrePendiente } from './BloqueoCierrePendiente';
+import { hoyLocal } from '@/lib/date';
 
 interface ModuloCierreDiarioProps {
   currentRole: UserRole;
@@ -30,20 +31,20 @@ interface ModuloCierreDiarioProps {
 
 export const ModuloCierreDiario: React.FC<ModuloCierreDiarioProps> = ({ currentRole }) => {
   const isAdmin = currentRole === 'admin';
-  const [fechaCierre, setFechaCierre] = useState(() => new Date().toISOString().split('T')[0]);
+  const [fechaCierre, setFechaCierre] = useState(() => hoyLocal());
   const [estadoDiario, setEstadoDiario] = useState<{
     puedeCerrar: boolean;
-    pacientesPendientes: any[];
-    pacientesWhatsAppPendientes?: any[];
+    pacientesPendientes: PacientePendiente[];
+    pacientesWhatsAppPendientes?: PacientePendiente[];
     totalWhatsAppPendientes?: number;
     cierreExistente?: boolean;
-    cierreData?: any;
-    resumen: any;
+    cierreData?: ResumenCierre;
+    resumen: ResumenCierre;
   } | null>(null);
   const [loading, setLoading] = useState(true);
   const [ejecutandoCierre, setEjecutandoCierre] = useState(false);
   const [mostrarCertificado, setMostrarCertificado] = useState(false);
-  const [cierreRealizado, setCierreRealizado] = useState<any>(null);
+  const [cierreRealizado, setCierreRealizado] = useState<ResumenCierre | null>(null);
   const [mostrarModalBloqueo, setMostrarModalBloqueo] = useState(false);
 
   // Arqueo físico input para cuadre

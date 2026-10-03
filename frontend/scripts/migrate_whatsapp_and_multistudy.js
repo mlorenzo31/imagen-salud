@@ -1,6 +1,7 @@
-﻿const { Pool } = require('pg');
+if (!process.env.DATABASE_URL) { console.error('Define DATABASE_URL'); process.exit(1); }
+const { Pool } = require('pg');
 const pool = new Pool({
-  connectionString: 'postgresql://postgres.zjboatbvefmtuvnabowf:JJ6qoD8kU0ucagpS@aws-0-us-west-2.pooler.supabase.com:5432/postgres',
+  connectionString: process.env.DATABASE_URL,
   ssl: { rejectUnauthorized: false }
 });
 

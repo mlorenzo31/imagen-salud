@@ -1,49 +1,21 @@
 'use client';
 
 import React, { useState, useEffect, useMemo } from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
+import { Card, CardContent } from '@/components/ui/card';import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { 
-  Receipt, 
-  Search, 
-  Filter, 
-  Printer, 
-  Ban, 
-  CheckCircle2, 
-  Clock, 
-  AlertTriangle, 
-  DollarSign, 
-  Calendar,
-  Eye,
-  RefreshCw,
-  Building2,
-  Phone,
-  User,
-  Landmark,
-  CreditCard,
-  Smartphone,
-  Layers,
-  ChevronDown,
-  ChevronRight,
-  X,
-  SlidersHorizontal,
-  FolderTree,
-  CalendarDays,
-  Sparkles,
-  Stethoscope,
-  FileSpreadsheet,
-  FileText
-} from 'lucide-react';
-import { FacturaCaja, UserRole } from '@/types';
+import { Receipt, Filter, CheckCircle2, Clock, RefreshCw, Layers, FileSpreadsheet, FileText } from 'lucide-react';import { FacturaCaja, UserRole } from '@/types';
 import { exportarAExcel, exportarAPDF } from '@/lib/exportUtils';
+import { hoyLocal, sumarDias } from '@/lib/date';
+import { esAnulada } from '@/lib/estados';
+import { TicketTermico } from '@/components/cajadiaria/TicketTermico';
+import { TablaFacturasCaja } from '@/components/cajadiaria/TablaFacturasCaja';
+import { BarraBusquedaCaja } from '@/components/cajadiaria/BarraBusquedaCaja';
 
 interface ModuloCajaDiariaProps {
   currentRole: UserRole;
 }
 
-type GrupoClinicoFiltro = 'NINGUNO' | 'MEDICO' | 'AREA' | 'ESTADO' | 'METODO_PAGO' | 'FECHA';
+export type GrupoClinicoFiltro = 'NINGUNO' | 'MEDICO' | 'AREA' | 'ESTADO' | 'METODO_PAGO' | 'FECHA';
 
 export const ModuloCajaDiaria: React.FC<ModuloCajaDiariaProps> = ({ currentRole }) => {
   const [facturas, setFacturas] = useState<FacturaCaja[]>([]);
@@ -53,7 +25,7 @@ export const ModuloCajaDiaria: React.FC<ModuloCajaDiariaProps> = ({ currentRole 
   const [anulandoId, setAnulandoId] = useState<number | null>(null);
 
   // Tasa Oficial BCV
-  const [tasaBcv, setTasaBcv] = useState<number>(832.49);
+  const [tasaBcv, setTasaBcv] = useState<number>(0);
 
   // === MOTOR DE BÚSQUEDA Y SEGMENTACIÓN: BUSCADOR, FILTROS Y AGRUPACIONES ===
   const [busquedaTexto, setBusquedaTexto] = useState<string>('');
@@ -103,8 +75,8 @@ export const ModuloCajaDiaria: React.FC<ModuloCajaDiariaProps> = ({ currentRole 
   }, []);
 
   // Helper de fechas para filtros
-  const hoyStr = new Date().toISOString().split('T')[0];
-  const fechaUnaSemanaAtras = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
+  const hoyStr = hoyLocal();
+  const fechaUnaSemanaAtras = sumarDias(hoyLocal(), -7);
   const mesActualStr = hoyStr.slice(0, 7);
 
   // Filtrado estilo Clinico
@@ -165,9 +137,9 @@ export const ModuloCajaDiaria: React.FC<ModuloCajaDiariaProps> = ({ currentRole 
         else if (est.includes('BIOPSIA') || est.includes('CITOLOGÍA')) clave = 'Ginecología & Patología';
         else clave = 'Otros Procedimientos';
       } else if (agruparPor === 'ESTADO') {
-        clave = f.estado === 'ANULADA' ? 'Anuladas' :
-                f.etapa_actual === '2' || f.estado === 'FINALIZADO' ? 'Finalizadas / Atendidas' :
-                f.etapa_actual === '1' || f.estado === 'ATENCION' ? 'En Atención' : 'En Espera';
+        clave = esAnulada(f.estado) ? 'Anuladas' :
+                String(f.etapa_actual) === '2' || f.estado === 'FINALIZADO' ? 'Finalizadas / Atendidas' :
+                String(f.etapa_actual) === '1' || f.estado === 'ATENCION' ? 'En Atención' : 'En Espera';
       } else if (agruparPor === 'METODO_PAGO') {
         if (Number(f.pago_divisas || 0) > 0 && (Number(f.pago_punto || 0) + Number(f.pago_movil || 0) + Number(f.pago_efectivo_bs || 0)) > 0) {
           clave = 'Pago Mixto (Divisas + Bolívares)';
@@ -191,7 +163,7 @@ export const ModuloCajaDiaria: React.FC<ModuloCajaDiariaProps> = ({ currentRole 
     });
 
     return Object.entries(mapGrupos).map(([nombreGrupo, items]) => {
-      const subtotalUSD = items.filter(x => x.estado !== 'ANULADA').reduce((sum, x) => sum + Number(x.precio_usd || 0), 0);
+      const subtotalUSD = items.filter(x => !esAnulada(x.estado)).reduce((sum, x) => sum + Number(x.precio_usd || 0), 0);
       const subtotalBs = subtotalUSD * tasaBcv;
       return {
         nombreGrupo,
@@ -216,7 +188,7 @@ export const ModuloCajaDiaria: React.FC<ModuloCajaDiariaProps> = ({ currentRole 
   };
 
   // Métricas Multimoneda
-  const facturasActivas = facturasFiltradas.filter(f => f.estado !== 'ANULADA');
+  const facturasActivas = facturasFiltradas.filter(f => !esAnulada(f.estado));
   const totalFacturas = facturasFiltradas.length;
   const totalCobradoUSD = facturasActivas.reduce((sum, f) => sum + Number(f.precio_usd || 0), 0);
   const totalCobradoBs = totalCobradoUSD * tasaBcv;
@@ -233,7 +205,7 @@ export const ModuloCajaDiaria: React.FC<ModuloCajaDiariaProps> = ({ currentRole 
   const totalPagoMovilBs = facturasActivas.reduce((sum, f) => sum + Number(f.pago_movil || 0), 0);
   const totalPagoMovilEquivUSD = tasaBcv > 0 ? totalPagoMovilBs / tasaBcv : 0;
 
-  const totalAnuladas = facturasFiltradas.filter(f => f.estado === 'ANULADA').length;
+  const totalAnuladas = facturasFiltradas.filter(f => esAnulada(f.estado)).length;
 
   // Anular factura
   const handleAnular = async (id: number) => {
@@ -243,7 +215,7 @@ export const ModuloCajaDiaria: React.FC<ModuloCajaDiariaProps> = ({ currentRole 
       const res = await fetch(`/api/facturas/${id}/estado`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ estado: 'ANULADA', etapa_actual: 'FINALIZADO' })
+        body: JSON.stringify({ estado: 'ANULADA', etapa_actual: 2 })
       });
       if (res.ok) {
         alert('Factura anulada con éxito.');
@@ -271,7 +243,7 @@ export const ModuloCajaDiaria: React.FC<ModuloCajaDiariaProps> = ({ currentRole 
     }
 
     const filas = facturasFiltradas.map(f => {
-      const isAnulada = f.estado === 'ANULADA';
+      const isAnulada = esAnulada(f.estado);
       const precioUSD = Number(f.precio_usd || 0);
       const tasa = Number(f.tasa_bcv || tasaBcv);
       const totalBS = precioUSD * tasa;
@@ -292,7 +264,7 @@ export const ModuloCajaDiaria: React.FC<ModuloCajaDiariaProps> = ({ currentRole 
         'Punto POS Bs': Number(f.pago_punto || 0),
         'Pago Móvil Bs': Number(f.pago_movil || 0),
         'Estado': isAnulada ? 'ANULADA' : f.estado,
-        'Etapa': f.etapa_actual === '2' ? 'FINALIZADO' : f.etapa_actual === '1' ? 'ATENCIÓN' : 'ESPERA',
+        'Etapa': String(f.etapa_actual) === '2' ? 'FINALIZADO' : String(f.etapa_actual) === '1' ? 'ATENCIÓN' : 'ESPERA',
         'Grupo Clinico': agruparPor !== 'NINGUNO' ? agruparPor : 'General'
       };
     });
@@ -309,12 +281,12 @@ export const ModuloCajaDiaria: React.FC<ModuloCajaDiariaProps> = ({ currentRole 
     }
 
     const totalUSD = facturasFiltradas
-      .filter(f => f.estado !== 'ANULADA')
+      .filter(f => !esAnulada(f.estado))
       .reduce((acc, f) => acc + Number(f.precio_usd || 0), 0);
     const totalBS = totalUSD * tasaBcv;
 
     const filas = facturasFiltradas.map(f => {
-      const isAnulada = f.estado === 'ANULADA';
+      const isAnulada = esAnulada(f.estado);
       const precioUSD = Number(f.precio_usd || 0);
       const tasa = Number(f.tasa_bcv || tasaBcv);
       const totalBsRec = precioUSD * tasa;
@@ -328,7 +300,7 @@ export const ModuloCajaDiaria: React.FC<ModuloCajaDiariaProps> = ({ currentRole 
         (f.medico || 'N/A').slice(0, 16),
         `$${precioUSD.toFixed(2)}`,
         `Bs. ${totalBsRec.toLocaleString('es-VE', { minimumFractionDigits: 0, maximumFractionDigits: 0 })}`,
-        isAnulada ? 'ANULADA' : f.etapa_actual === '2' ? 'LISTO' : 'PROCESO'
+        isAnulada ? 'ANULADA' : String(f.etapa_actual) === '2' ? 'LISTO' : 'PROCESO'
       ];
     });
 
@@ -477,90 +449,7 @@ export const ModuloCajaDiaria: React.FC<ModuloCajaDiariaProps> = ({ currentRole 
         <CardContent className="p-4 space-y-3">
           
           {/* Barra Unificada de Búsqueda con Chips Clinico */}
-          <div className="relative flex flex-wrap items-center gap-2 p-2 rounded-xl bg-slate-50 border-2 border-slate-300 focus-within:border-cyan-500 focus-within:bg-white transition-all">
-            <Search className="w-5 h-5 text-slate-400 shrink-0 ml-1" />
-
-            {/* Chips de Filtros Activos (Etiquetas de Filtrado) */}
-            {filtroPeriodo !== 'TODOS' && (
-              <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-cyan-100 text-cyan-900 text-xs font-bold border border-cyan-300">
-                <CalendarDays className="w-3 h-3" />
-                <span>{filtroPeriodo === 'HOY' ? 'Hoy' : filtroPeriodo === 'SEMANA' ? 'Últimos 7 Días' : 'Mes Actual'}</span>
-                <button onClick={() => setFiltroPeriodo('TODOS')} className="hover:text-cyan-700">
-                  <X className="w-3 h-3" />
-                </button>
-              </span>
-            )}
-
-            {filtroEstados.map(st => (
-              <span key={st} className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-blue-100 text-blue-900 text-xs font-bold border border-blue-300">
-                <span>Estado: {st}</span>
-                <button onClick={() => toggleFiltroEstado(st)} className="hover:text-blue-700">
-                  <X className="w-3 h-3" />
-                </button>
-              </span>
-            ))}
-
-            {filtroSoloDivisas && (
-              <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-emerald-100 text-emerald-900 text-xs font-bold border border-emerald-300">
-                <span>Divisas ($)</span>
-                <button onClick={() => setFiltroSoloDivisas(false)} className="hover:text-emerald-700">
-                  <X className="w-3 h-3" />
-                </button>
-              </span>
-            )}
-
-            {filtroSoloBs && (
-              <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-purple-100 text-purple-900 text-xs font-bold border border-purple-300">
-                <span>Bolívares (Bs)</span>
-                <button onClick={() => setFiltroSoloBs(false)} className="hover:text-purple-700">
-                  <X className="w-3 h-3" />
-                </button>
-              </span>
-            )}
-
-            {filtroMontoMayor50 && (
-              <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-amber-100 text-amber-900 text-xs font-bold border border-amber-300">
-                <span>Monto &gt; $50</span>
-                <button onClick={() => setFiltroMontoMayor50(false)} className="hover:text-amber-700">
-                  <X className="w-3 h-3" />
-                </button>
-              </span>
-            )}
-
-            {agruparPor !== 'NINGUNO' && (
-              <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-slate-900 text-white text-xs font-bold">
-                <FolderTree className="w-3 h-3 text-cyan-400" />
-                <span>Agrupado por: {agruparPor}</span>
-                <button onClick={() => setAgruparPor('NINGUNO')} className="hover:text-slate-300">
-                  <X className="w-3 h-3" />
-                </button>
-              </span>
-            )}
-
-            {/* Input de Búsqueda Libre */}
-            <input
-              type="text"
-              placeholder={agruparPor !== 'NINGUNO' ? "Buscar dentro de los grupos..." : "Buscar por paciente, cédula, turno, médico o estudio..."}
-              value={busquedaTexto}
-              onChange={(e) => setBusquedaTexto(e.target.value)}
-              className="flex-1 min-w-[200px] bg-transparent border-0 text-xs font-semibold text-slate-800 placeholder-slate-400 focus:outline-none"
-            />
-
-            {/* Botón Desplegable Clinico (Filtros & Agrupaciones) */}
-            <button
-              type="button"
-              onClick={() => setMenuFiltrosAbierto(!menuFiltrosAbierto)}
-              className={`px-3 py-1.5 rounded-lg text-xs font-bold flex items-center gap-1.5 transition-all ${
-                menuFiltrosAbierto || agruparPor !== 'NINGUNO' || filtroEstados.length > 0
-                  ? 'bg-slate-900 text-white shadow-sm'
-                  : 'bg-slate-200 text-slate-700 hover:bg-slate-300'
-              }`}
-            >
-              <SlidersHorizontal className="w-3.5 h-3.5" />
-              <span>Filtros & Agrupaciones</span>
-              <ChevronDown className={`w-3 h-3 transition-transform ${menuFiltrosAbierto ? 'rotate-180' : ''}`} />
-            </button>
-          </div>
+          <BarraBusquedaCaja filtroPeriodo={filtroPeriodo} setFiltroPeriodo={setFiltroPeriodo} filtroEstados={filtroEstados} toggleFiltroEstado={toggleFiltroEstado} filtroSoloDivisas={filtroSoloDivisas} setFiltroSoloDivisas={setFiltroSoloDivisas} filtroSoloBs={filtroSoloBs} setFiltroSoloBs={setFiltroSoloBs} filtroMontoMayor50={filtroMontoMayor50} setFiltroMontoMayor50={setFiltroMontoMayor50} agruparPor={agruparPor} setAgruparPor={setAgruparPor} busquedaTexto={busquedaTexto} setBusquedaTexto={setBusquedaTexto} setMenuFiltrosAbierto={setMenuFiltrosAbierto} menuFiltrosAbierto={menuFiltrosAbierto} />
 
           {/* Menú Desplegable Estilo Clinico con Secciones Separadas */}
           {menuFiltrosAbierto && (
@@ -581,7 +470,7 @@ export const ModuloCajaDiaria: React.FC<ModuloCajaDiariaProps> = ({ currentRole 
                   ].map(p => (
                     <button
                       key={p.id}
-                      onClick={() => setFiltroPeriodo(p.id as any)}
+                      onClick={() => setFiltroPeriodo(p.id as Parameters<typeof setFiltroPeriodo>[0])}
                       className={`w-full text-left px-2.5 py-1.5 rounded-lg text-xs font-semibold flex items-center justify-between transition-colors ${
                         filtroPeriodo === p.id 
                           ? 'bg-cyan-600 text-white font-bold' 
@@ -710,350 +599,11 @@ export const ModuloCajaDiaria: React.FC<ModuloCajaDiariaProps> = ({ currentRole 
       </Card>
 
       {/* === VISTA DE TABLA CON SOPORTE DE AGRUPACIÓN (TREE/GROUP VIEW) === */}
-      <Card className="bg-white border-slate-200 shadow-sm overflow-hidden">
-        <CardHeader className="py-3 px-5 border-b border-slate-100 flex flex-row items-center justify-between">
-          <CardTitle className="text-xs font-bold text-slate-700 flex items-center gap-2">
-            <span>Resultados: {facturasFiltradas.length} comprobantes</span>
-            {agruparPor !== 'NINGUNO' && (
-              <Badge className="bg-indigo-100 text-indigo-900 border border-indigo-300 text-[10px]">
-                {grupos?.length || 0} Grupos Formados
-              </Badge>
-            )}
-          </CardTitle>
-          <p className="text-[11px] text-slate-400">Total en vista: ${totalCobradoUSD.toFixed(2)} (Bs. {totalCobradoBs.toLocaleString('es-VE', { minimumFractionDigits: 2, maximumFractionDigits: 2 })})</p>
-        </CardHeader>
-
-        <div className="overflow-x-auto">
-          {/* CASO 1: VISTA AGRUPADA (GROUP BY) */}
-          {grupos ? (
-            <div className="divide-y divide-slate-200">
-              {grupos.length === 0 ? (
-                <div className="py-10 text-center text-slate-400 text-xs">
-                  No hay comprobantes que coincidan con los filtros y agrupaciones activas
-                </div>
-              ) : (
-                grupos.map(grp => {
-                  const isColapsado = gruposColapsados[grp.nombreGrupo] || false;
-                  return (
-                    <div key={grp.nombreGrupo} className="border-b border-slate-200 last:border-0">
-                      {/* Cabecera del Grupo Clínico */}
-                      <div 
-                        onClick={() => toggleColapsarGrupo(grp.nombreGrupo)}
-                        className="bg-slate-100/90 hover:bg-slate-200/80 cursor-pointer p-3.5 flex items-center justify-between transition-colors select-none"
-                      >
-                        <div className="flex items-center gap-3">
-                          {isColapsado ? (
-                            <ChevronRight className="w-4 h-4 text-slate-600" />
-                          ) : (
-                            <ChevronDown className="w-4 h-4 text-slate-600" />
-                          )}
-                          <span className="font-black text-xs text-slate-900 flex items-center gap-2">
-                            <span>{grp.nombreGrupo}</span>
-                            <Badge variant="outline" className="bg-white text-slate-700 font-mono text-[10px]">
-                              {grp.totalItems} registros
-                            </Badge>
-                          </span>
-                        </div>
-                        <div className="text-right font-mono">
-                          <span className="text-xs font-black text-slate-900">${grp.subtotalUSD.toFixed(2)}</span>
-                          <span className="text-[10px] text-slate-500 font-bold ml-2">
-                            (Bs. {grp.subtotalBs.toLocaleString('es-VE', { minimumFractionDigits: 2, maximumFractionDigits: 2 })})
-                          </span>
-                        </div>
-                      </div>
-
-                      {/* Filas del Grupo */}
-                      {!isColapsado && (
-                        <div className="pl-4 bg-white divide-y divide-slate-100">
-                          {grp.items.map(f => {
-                            const isAnulada = f.estado === 'ANULADA';
-                            const tasaFactura = Number(f.tasa_bcv || tasaBcv);
-                            const totalBsFactura = Number(f.precio_usd || 0) * tasaFactura;
-                            return (
-                              <div key={f.id} className={`p-3 flex items-center justify-between hover:bg-slate-50/80 transition-colors text-xs ${isAnulada ? 'opacity-50 line-through bg-slate-50/50' : ''}`}>
-                                <div className="flex items-center gap-3">
-                                  <span className="font-mono font-black text-slate-800 text-xs w-12">
-                                    #{f.turno_num ? String(f.turno_num).padStart(3, '0') : f.id}
-                                  </span>
-                                  <div>
-                                    <p className="font-bold text-slate-900">{f.nombre_paciente}</p>
-                                    <p className="text-[11px] text-slate-500">{f.estudio} • <span className="font-medium text-cyan-700">{f.medico || 'De Guardia'}</span></p>
-                                  </div>
-                                </div>
-                                <div className="flex items-center gap-4">
-                                  <div className="text-right font-mono">
-                                    <p className="font-black text-slate-900">${Number(f.precio_usd || 0).toFixed(2)}</p>
-                                    <p className="text-[10px] text-slate-500 font-bold">Bs. {totalBsFactura.toLocaleString('es-VE', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</p>
-                                  </div>
-                                  <Badge className={
-                                    isAnulada ? 'bg-rose-600' :
-                                    f.etapa_actual === '2' || f.estado === 'FINALIZADO' ? 'bg-emerald-600' :
-                                    f.etapa_actual === '1' || f.estado === 'ATENCION' ? 'bg-amber-500' : 'bg-blue-600'
-                                  }>
-                                    {isAnulada ? 'ANULADA' : f.etapa_actual === '2' || f.estado === 'FINALIZADO' ? 'LISTO' : f.etapa_actual === '1' || f.estado === 'ATENCION' ? 'ATENCIÓN' : 'ESPERA'}
-                                  </Badge>
-                                  <div className="flex items-center gap-1">
-                                    <button
-                                      onClick={() => verTicket(f)}
-                                      className="p-1 rounded-lg text-slate-500 hover:text-cyan-700 hover:bg-cyan-50"
-                                      title="Ver Comprobante"
-                                    >
-                                      <Eye className="w-4 h-4" />
-                                    </button>
-                                    {!isAnulada && (
-                                      <button
-                                        disabled={anulandoId === f.id}
-                                        onClick={() => handleAnular(f.id)}
-                                        className="p-1 rounded-lg text-slate-400 hover:text-rose-600 hover:bg-rose-50"
-                                        title="Anular"
-                                      >
-                                        <Ban className="w-4 h-4" />
-                                      </button>
-                                    )}
-                                  </div>
-                                </div>
-                              </div>
-                            );
-                          })}
-                        </div>
-                      )}
-                    </div>
-                  );
-                })
-              )}
-            </div>
-          ) : (
-            /* CASO 2: VISTA DE TABLA PLANA */
-            <table className="w-full text-left text-xs border-collapse">
-              <thead>
-                <tr className="bg-slate-50/80 border-b border-slate-200 text-slate-500 text-[10px] font-black uppercase tracking-wider">
-                  <th className="py-2.5 px-3">Folio/Turno</th>
-                  <th className="py-2.5 px-3">Hora</th>
-                  <th className="py-2.5 px-3">Paciente</th>
-                  <th className="py-2.5 px-3">Estudio / Médico</th>
-                  <th className="py-2.5 px-3 text-right">Total Facturado</th>
-                  <th className="py-2.5 px-3">Desglose de Pago Multimoneda</th>
-                  <th className="py-2.5 px-3 text-center">Estado</th>
-                  <th className="py-2.5 px-3 text-right">Acciones</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-slate-100">
-                {facturasFiltradas.length === 0 ? (
-                  <tr>
-                    <td colSpan={8} className="py-8 text-center text-slate-400 text-xs font-medium">
-                      No se encontraron comprobantes para los filtros seleccionados
-                    </td>
-                  </tr>
-                ) : (
-                  facturasFiltradas.map((f) => {
-                    const isAnulada = f.estado === 'ANULADA';
-                    const tasaFactura = Number(f.tasa_bcv || tasaBcv);
-                    const totalBsFactura = Number(f.precio_usd || 0) * tasaFactura;
-
-                    return (
-                      <tr 
-                        key={f.id} 
-                        className={`hover:bg-slate-50/60 transition-colors ${isAnulada ? 'opacity-50 bg-slate-50/40 line-through' : ''}`}
-                      >
-                        <td className="py-2.5 px-3 font-mono font-black text-slate-900">
-                          #{f.turno_num ? String(f.turno_num).padStart(3, '0') : f.id}
-                        </td>
-                        <td className="py-2.5 px-3 text-slate-500 font-mono text-[11px]">
-                          {f.hora ? f.hora.slice(0, 5) : '--:--'}
-                        </td>
-                        <td className="py-2.5 px-3">
-                          <p className="font-bold text-slate-900 leading-tight">{f.nombre_paciente}</p>
-                          <p className="text-[10px] text-slate-400 font-mono">{f.cedula_paciente}</p>
-                        </td>
-                        <td className="py-2.5 px-3">
-                          <p className="font-semibold text-slate-800 line-clamp-1">{f.estudio}</p>
-                          <p className="text-[10px] text-cyan-700 font-medium">{f.medico || 'Médico de Guardia'}</p>
-                        </td>
-                        <td className="py-2.5 px-3 text-right font-mono">
-                          <p className="font-black text-slate-900 text-sm">
-                            ${Number(f.precio_usd || 0).toFixed(2)}
-                          </p>
-                          <p className="text-[10px] text-slate-500 font-bold">
-                            Bs. {totalBsFactura.toLocaleString('es-VE', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-                          </p>
-                        </td>
-                        <td className="py-2.5 px-3">
-                          <div className="flex flex-wrap gap-1">
-                            {Number(f.pago_divisas || 0) > 0 && (
-                              <span className="px-1.5 py-0.5 rounded bg-emerald-100 text-emerald-900 text-[10px] font-mono font-bold">
-                                ${Number(f.pago_divisas).toFixed(2)} (Bs. {(Number(f.pago_divisas) * tasaFactura).toFixed(2)})
-                              </span>
-                            )}
-                            {Number(f.pago_efectivo_bs || 0) > 0 && (
-                              <span className="px-1.5 py-0.5 rounded bg-blue-100 text-blue-900 text-[10px] font-mono font-bold">
-                                Bs.{Number(f.pago_efectivo_bs).toFixed(2)}
-                              </span>
-                            )}
-                            {Number(f.pago_punto || 0) > 0 && (
-                              <span className="px-1.5 py-0.5 rounded bg-indigo-100 text-indigo-900 text-[10px] font-mono font-bold">
-                                Punto: Bs.{Number(f.pago_punto).toFixed(2)}
-                              </span>
-                            )}
-                            {Number(f.pago_movil || 0) > 0 && (
-                              <span className="px-1.5 py-0.5 rounded bg-cyan-100 text-cyan-900 text-[10px] font-mono font-bold">
-                                PM: Bs.{Number(f.pago_movil).toFixed(2)}
-                              </span>
-                            )}
-                          </div>
-                        </td>
-                        <td className="py-2.5 px-3 text-center">
-                          {isAnulada ? (
-                            <Badge variant="destructive" className="text-[10px] font-bold">
-                              ANULADA
-                            </Badge>
-                          ) : f.etapa_actual === '2' || f.estado === 'FINALIZADO' ? (
-                            <Badge className="bg-emerald-600 hover:bg-emerald-700 text-[10px] font-bold">
-                              FINALIZADO
-                            </Badge>
-                          ) : f.etapa_actual === '1' || f.estado === 'ATENCION' ? (
-                            <Badge className="bg-amber-500 hover:bg-amber-600 text-[10px] font-bold">
-                              EN ATENCIÓN
-                            </Badge>
-                          ) : (
-                            <Badge className="bg-blue-600 hover:bg-blue-700 text-[10px] font-bold">
-                              EN ESPERA
-                            </Badge>
-                          )}
-                        </td>
-                        <td className="py-2.5 px-3 text-right">
-                          <div className="flex items-center justify-end gap-1.5">
-                            <button
-                              onClick={() => verTicket(f)}
-                              className="p-1.5 rounded-lg text-slate-500 hover:text-cyan-700 hover:bg-cyan-50 transition-colors"
-                              title="Ver Comprobante Térmico"
-                            >
-                              <Eye className="w-4 h-4" />
-                            </button>
-                            {!isAnulada && (
-                              <button
-                                disabled={anulandoId === f.id}
-                                onClick={() => handleAnular(f.id)}
-                                className="p-1.5 rounded-lg text-slate-400 hover:text-rose-600 hover:bg-rose-50 transition-colors"
-                                title="Anular Factura"
-                              >
-                                <Ban className="w-4 h-4" />
-                              </button>
-                            )}
-                          </div>
-                        </td>
-                      </tr>
-                    );
-                  })
-                )}
-              </tbody>
-            </table>
-          )}
-        </div>
-      </Card>
+      <TablaFacturasCaja facturasFiltradas={facturasFiltradas} agruparPor={agruparPor} grupos={grupos} totalCobradoUSD={totalCobradoUSD} totalCobradoBs={totalCobradoBs} gruposColapsados={gruposColapsados} toggleColapsarGrupo={toggleColapsarGrupo} tasaBcv={tasaBcv} verTicket={verTicket} anulandoId={anulandoId} handleAnular={handleAnular} />
 
       {/* Modal de Ticket Térmico Imprimible */}
       {mostrarModalTicket && facturaSeleccionada && (
-        <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4">
-          <div className="bg-white rounded-2xl shadow-2xl max-w-sm w-full p-6 border border-slate-200">
-            {/* Ticket Térmico Design */}
-            <div id="ticket-termico" className="bg-slate-50 p-4 rounded-xl border border-dashed border-slate-300 font-mono text-xs text-slate-800">
-              <div className="text-center border-b border-dashed border-slate-300 pb-3 mb-3">
-                <h3 className="font-black text-sm tracking-wider text-slate-900">IMAGEN SALUD C.A.</h3>
-                <p className="text-[10px] text-slate-500">RIF: J-50123456-7</p>
-                <p className="text-[10px] text-slate-500">Av. Principal, Edif. Clínico, Piso 1</p>
-                <div className="mt-2 py-1 bg-slate-900 text-white rounded text-center">
-                  <p className="font-black text-sm">TURNO #{facturaSeleccionada.turno_num ? String(facturaSeleccionada.turno_num).padStart(3, '0') : facturaSeleccionada.id}</p>
-                </div>
-              </div>
-
-              <div className="space-y-1 text-[11px] border-b border-dashed border-slate-300 pb-2 mb-2">
-                <p><span className="text-slate-400">Folio:</span> #{facturaSeleccionada.id}</p>
-                <p><span className="text-slate-400">Fecha/Hora:</span> {facturaSeleccionada.fecha} {facturaSeleccionada.hora}</p>
-                <p><span className="text-slate-400">Paciente:</span> {facturaSeleccionada.nombre_paciente}</p>
-                <p><span className="text-slate-400">Cédula:</span> {facturaSeleccionada.cedula_paciente}</p>
-                <p><span className="text-slate-400">Médico:</span> {facturaSeleccionada.medico || 'De Guardia'}</p>
-              </div>
-
-              <div className="border-b border-dashed border-slate-300 pb-2 mb-2">
-                <p className="text-[10px] font-bold text-slate-400 uppercase mb-1">Servicios:</p>
-                <p className="font-bold text-slate-900">{facturaSeleccionada.estudio}</p>
-              </div>
-
-              <div className="space-y-1 text-[11px] border-b border-dashed border-slate-300 pb-2 mb-2">
-                <div className="flex justify-between font-bold text-sm text-slate-900 pt-1">
-                  <span>TOTAL FACTURADO:</span>
-                  <span>${Number(facturaSeleccionada.precio_usd || 0).toFixed(2)}</span>
-                </div>
-                <div className="flex justify-between text-xs font-bold text-cyan-800">
-                  <span>EQUIVALENTE EN BS:</span>
-                  <span>Bs. {(Number(facturaSeleccionada.precio_usd || 0) * Number(facturaSeleccionada.tasa_bcv || tasaBcv)).toLocaleString('es-VE', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
-                </div>
-                <div className="flex justify-between text-[10px] text-slate-500">
-                  <span>Tasa Oficial BCV:</span>
-                  <span>Bs. {Number(facturaSeleccionada.tasa_bcv || tasaBcv).toFixed(2)}</span>
-                </div>
-              </div>
-
-              <div className="space-y-1 text-[10px] text-slate-600">
-                <p className="font-bold text-slate-700">Formas de Pago Aplicadas:</p>
-                {Number(facturaSeleccionada.pago_divisas || 0) > 0 && (
-                  <div className="flex justify-between">
-                    <span>Efectivo Divisas ($):</span>
-                    <span className="font-bold">${Number(facturaSeleccionada.pago_divisas).toFixed(2)}</span>
-                  </div>
-                )}
-                {Number(facturaSeleccionada.pago_efectivo_bs || 0) > 0 && (
-                  <div className="flex justify-between">
-                    <span>Efectivo Bolívares:</span>
-                    <span className="font-bold">Bs. {Number(facturaSeleccionada.pago_efectivo_bs).toFixed(2)}</span>
-                  </div>
-                )}
-                {Number(facturaSeleccionada.pago_punto || 0) > 0 && (
-                  <div className="flex justify-between">
-                    <span>Punto de Venta:</span>
-                    <span className="font-bold">Bs. {Number(facturaSeleccionada.pago_punto).toFixed(2)}</span>
-                  </div>
-                )}
-                {Number(facturaSeleccionada.pago_movil || 0) > 0 && (
-                  <div className="flex justify-between">
-                    <span>Pago Móvil:</span>
-                    <span className="font-bold">Bs. {Number(facturaSeleccionada.pago_movil).toFixed(2)}</span>
-                  </div>
-                )}
-              </div>
-
-              <div className="text-center text-[10px] text-slate-400 mt-4 pt-3 border-t border-dashed border-slate-300">
-                <p>¡Gracias por su confianza!</p>
-                <p>Favor esperar su llamado en sala por pantalla.</p>
-              </div>
-            </div>
-
-            <div className="flex gap-2 mt-4">
-              <Button 
-                variant="outline" 
-                onClick={() => setMostrarModalTicket(false)} 
-                className="flex-1 rounded-xl text-xs"
-              >
-                Cerrar
-              </Button>
-              <Button 
-                onClick={() => {
-                  const texto = 'IMAGEN SALUD - COMPROBANTE DIGITAL\n' +
-                    'Turno #' + (facturaSeleccionada.turno_num || facturaSeleccionada.id) + '\n' +
-                    'Paciente: ' + facturaSeleccionada.nombre_paciente + '\n' +
-                    'Estudio: ' + facturaSeleccionada.estudio + '\n' +
-                    'Total: $' + Number(facturaSeleccionada.precio_usd || 0).toFixed(2);
-                  navigator.clipboard.writeText(texto);
-                  alert('Comprobante copiado al portapapeles. Impresión en papel desactivada.');
-                }} 
-                className="flex-1 rounded-xl bg-slate-800 hover:bg-slate-700 text-white text-xs flex items-center justify-center gap-1.5"
-              >
-                <Receipt className="w-3.5 h-3.5" />
-                <span>Copiar Digital</span>
-              </Button>
-            </div>
-          </div>
-        </div>
+        <TicketTermico facturaSeleccionada={facturaSeleccionada} tasaBcv={tasaBcv} setMostrarModalTicket={setMostrarModalTicket} />
       )}
     </div>
   );

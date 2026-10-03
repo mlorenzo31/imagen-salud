@@ -1,69 +1,31 @@
 import { NextRequest, NextResponse } from 'next/server';
-import pool from '@/lib/db';
+import { ApiError, errorResponse, fechaHoraLocal, sesionUsuario, withTransaction } from '@/lib/apiHelpers';
+import { consolidarCierre, evaluarDia } from '@/lib/cierre';
 
 export async function POST(req: NextRequest) {
   try {
-    const body = await req.json();
-    const fecha = body.fecha || body.fecha_cierre || new Date().toISOString().split('T')[0];
-    const usuario = body.usuario_responsable || body.usuario || 'Administrador';
-    const observaciones = body.observaciones || 'Cierre auditado conforme';
+    const body = (await req.json().catch(() => ({}))) as Record<string, unknown>;
+    const fechaIn = String(body.fecha || body.fecha_cierre || '');
+    const fecha = /^\d{4}-\d{2}-\d{2}$/.test(fechaIn) ? fechaIn : fechaHoraLocal().fecha;
+    const usuario = sesionUsuario(req);
+    const observaciones = typeof body.observaciones === 'string' && body.observaciones ? body.observaciones : 'Cierre auditado conforme';
 
-    const client = await pool.connect();
-    try {
-      await client.query('BEGIN');
-
-      // Verificar que no queden pendientes
-      const pendRes = await client.query(`
-        SELECT COUNT(*) as cant FROM facturas_caja 
-        WHERE estado IN ('ESPERA', 'ATENCION') AND fecha = $1
-      `, [fecha]);
-
-      if (parseInt(pendRes.rows[0].cant) > 0) {
-        throw new Error('Aún existen pacientes pendientes de resolución para esta fecha (' + pendRes.rows[0].cant + ' pendientes).');
-      }
-
-      // Obtener totales del día
-      const totalesRes = await client.query(`
-        SELECT 
-          COALESCE(SUM(precio_usd), 0) as total_usd,
-          COALESCE(SUM(pago_divisas), 0) as total_divisas_usd,
-          COALESCE(SUM(pago_efectivo_bs), 0) as total_efectivo_bs,
-          COALESCE(SUM(pago_punto), 0) as total_punto_bs,
-          COALESCE(SUM(pago_movil), 0) as total_pago_movil_bs
-        FROM facturas_caja
-        WHERE fecha = $1 AND estado != 'ANULADA'
-      `, [fecha]);
-
-      const t = totalesRes.rows[0] || {};
-
-      const insertRes = await client.query(`
-        INSERT INTO cierres_diarios (fecha_cierre, observaciones, usuario, consolidado)
-        VALUES ($1, $2, $3, true)
-        ON CONFLICT (fecha_cierre) DO UPDATE SET 
-          consolidado = true, 
-          observaciones = EXCLUDED.observaciones,
-          usuario = EXCLUDED.usuario,
-          actualizado_en = CURRENT_TIMESTAMP
-        RETURNING *
-      `, [fecha, observaciones, usuario]);
-
-      await client.query('COMMIT');
-      return NextResponse.json({ 
-        mensaje: 'Cierre diario consolidado exitosamente.', 
-        fecha_cierre: fecha,
-        cierre: {
-          ...insertRes.rows[0],
-          ...t,
-          usuario_responsable: usuario
-        }
-      });
-    } catch (err: any) {
-      await client.query('ROLLBACK');
-      return NextResponse.json({ error: err.message }, { status: 400 });
-    } finally {
-      client.release();
+    // No se cierra con pacientes en espera/atención ni con resultados pendientes de envío.
+    const dia = await evaluarDia(fecha);
+    if (dia.pacientesPendientes.length > 0) {
+      throw new ApiError(400, `Aún existen pacientes pendientes de resolución para esta fecha (${dia.pacientesPendientes.length} pendientes).`);
     }
-  } catch (err: any) {
-    return NextResponse.json({ error: err.message }, { status: 500 });
+    if (dia.pacientesWhatsAppPendientes.length > 0) {
+      throw new ApiError(400, `Hay ${dia.pacientesWhatsAppPendientes.length} resultado(s) pendientes de envío por WhatsApp para esta fecha.`);
+    }
+
+    const out = await withTransaction((client) => consolidarCierre(client, fecha, usuario, observaciones));
+    return NextResponse.json({
+      mensaje: 'Cierre diario consolidado exitosamente.',
+      fecha_cierre: fecha,
+      cierre: { ...out.fila, ...out.tot, usuario_responsable: usuario },
+    });
+  } catch (err) {
+    return errorResponse(err);
   }
 }

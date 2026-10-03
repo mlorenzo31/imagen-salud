@@ -1,0 +1,38 @@
+# Dependencias y builds
+node_modules/
+.next/
+dist/
+build/
+out/
+coverage/
+.venv/
+__pycache__/
+*.tsbuildinfo
+package-lock.json
+pnpm-lock.yaml
+yarn.lock
+
+# Logs y temporales
+*.log
+.cache/
+.turbo/
+
+# Datos y binarios
+*.dump
+*.sql.bak
+*.sqlite
+*.db
+*.xlsx
+*.xls
+*.csv
+*.pdf
+*.zip
+*.png
+*.jpg
+*.jpeg
+*.ico
+*.woff*
+
+# Secretos (nunca leer)
+.env
+.env.*

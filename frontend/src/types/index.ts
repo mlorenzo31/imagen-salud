@@ -36,6 +36,7 @@ export interface TransaccionBancaria {
   hora: string;
   usuario: string;
   creado_en?: string;
+  cuenta_nombre?: string;
 }
 
 export interface EgresoOperativo {
@@ -170,7 +171,7 @@ export interface EstadoCierreDiario {
   pacientesPendientes: PacientePendiente[];
   pacientesWhatsAppPendientes?: PacientePendiente[];
   totalWhatsAppPendientes?: number;
-  resumen?: any;
+  resumen?: ResumenCierre;
 }
 
 export interface ExcelFilaSimulada {
@@ -211,7 +212,7 @@ export interface FacturaCaja {
   pago_efectivo_bs?: number;
   pago_divisas?: number;
   estado: string;
-  servicios?: any;
+  servicios?: ServicioFactura[];
   total_honorarios?: number;
   total_ganancia?: number;
   turno_num?: number;
@@ -290,5 +291,23 @@ export interface DataPoint {
   porcentaje?: number;
   categoria?: string;
   fecha?: string;
-  [key: string]: any;
+  [key: string]: string | number | boolean | null | undefined;
 }
+
+/** Servicio individual dentro de una factura (JSONB en facturas_caja.servicios). */
+export interface ServicioFactura {
+  id?: string | number;
+  estudio?: string;
+  nombre?: string;
+  medico?: string;
+  area?: string;
+  sala?: string;
+  estado?: string;
+  orden?: number;
+  precioUSD?: number;
+  honorariosMedico?: number;
+  gananciaClinica?: number;
+}
+
+/** Totales del día devueltos por /api/cierres/verificar-estado-diario y ejecutar-cierre. */
+export type ResumenCierre = Record<string, string | number | null | undefined>;

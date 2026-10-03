@@ -1,61 +1,23 @@
 'use client';
 
 import React, { useState, useEffect, useMemo, useRef } from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
-import { Input } from '@/components/ui/input';
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogFooter
-} from '@/components/ui/dialog';
-import { 
-  Tv, 
-  Volume2, 
-  ArrowRight, 
-  CheckCircle2, 
-  Clock, 
-  Play, 
-  UserCheck, 
-  ExternalLink, 
-  RefreshCw, 
-  Filter, 
-  Bell, 
-  Stethoscope, 
-  AlertTriangle, 
-  XCircle, 
-  Undo2, 
-  Wallet, 
-  ShieldAlert, 
-  Layers, 
-  Sparkles, 
-  Lock, 
-  Check, 
-  Send, 
-  FileText, 
-  Paperclip, 
-  UploadCloud, 
-  FileCheck2, 
-  ListOrdered, 
-  Star, 
-  MessageCircle, 
-  Phone 
-} from 'lucide-react';
 import { ejecutarLlamadoCompleto } from '@/lib/audioLlamado';
-import { UserRole, ModoOperacion, ReembolsoPendiente } from '@/types';
+import { UserRole, ModoOperacion, ReembolsoPendiente, ServicioFactura } from '@/types';
 import { 
   GrupoClinico, 
   GRUPOS_CLINICOS, 
   mapearEstudioAGrupo, 
   inferirBoxConsultorio 
 } from '@/lib/gruposClinicos';
-import { calcularEdadReal } from '@/lib/date';
-import { normalizarCedulaRif } from '@/lib/cedulaRif';
+import { hoyLocal } from '@/lib/date';import { getErrorMessage } from '@/lib/utils';
+import { AnularPacienteDialog } from '@/components/kanban/AnularPacienteDialog';
+import { WhatsAppMasivoDialog } from '@/components/kanban/WhatsAppMasivoDialog';
+import { MultiEstudioDialog } from '@/components/kanban/MultiEstudioDialog';
+import { TableroKanban } from '@/components/kanban/TableroKanban';
+import { BandejaReembolsos } from '@/components/kanban/BandejaReembolsos';
+import { EncabezadoSalaEspera } from '@/components/kanban/EncabezadoSalaEspera';
 
-interface PacienteTurno {
+export interface PacienteTurno {
   id: number;
   turno_num: number;
   nombre_paciente: string;
@@ -76,7 +38,7 @@ interface PacienteTurno {
   prioridad?: 'ALTA' | 'NORMAL' | 'BAJA';
   retorno_sala?: boolean;
   sala_anterior?: string;
-  servicios?: any;
+  servicios?: ServicioFactura[];
   estudio_principal_id?: string;
   adjunto_nombre?: string;
   adjunto_url?: string;
@@ -91,6 +53,11 @@ interface ModuloKanbanSalaEsperaProps {
 }
 
 export const getCleanCedula = (ced?: string) => (ced || '').replace(/\D/g, '');
+
+type FacturaApi = Omit<PacienteTurno, 'estado' | 'grupo_clinico' | 'box_asignado'> & {
+  estado: string;
+  grupo_clinico?: PacienteTurno['grupo_clinico'];
+};
 
 export const ModuloKanbanSalaEspera: React.FC<ModuloKanbanSalaEsperaProps> = ({
   currentRole = 'admin',
@@ -158,15 +125,16 @@ export const ModuloKanbanSalaEspera: React.FC<ModuloKanbanSalaEsperaProps> = ({
   const cargarPacientes = async () => {
     setLoading(true);
     try {
-      const res = await fetch('/api/facturas');
+      const res = await fetch('/api/facturas?abiertas=1');
       if (res.ok) {
-        const data = await res.json();
+        const data: FacturaApi[] = await res.json();
         const parseados: PacienteTurno[] = data
-          .filter((f: any) => f.estado !== 'ANULADA' && f.estado !== 'ANULADA_SALA')
-          .map((f: any) => {
-            const grupo = f.grupo_clinico || mapearEstudioAGrupo(f.estudio, f.servicios);
+          .filter((f) => f.estado !== 'ANULADA' && f.estado !== 'ANULADA_SALA')
+          .map((f): PacienteTurno => {
+            const grupo = f.grupo_clinico || mapearEstudioAGrupo(f.estudio);
             return {
               ...f,
+              estado: f.estado as PacienteTurno['estado'],
               grupo_clinico: grupo,
               box_asignado: inferirBoxConsultorio(grupo, f.estudio, f.medico),
               whatsapp_enviado: Boolean(f.whatsapp_enviado),
@@ -212,7 +180,7 @@ export const ModuloKanbanSalaEspera: React.FC<ModuloKanbanSalaEsperaProps> = ({
   // 3. Extraer lista de sub-estudios para gestión multi-estudio
   const extraerSubEstudios = (p: PacienteTurno): Array<{ id: string; nombre: string; area?: string; medico?: string }> => {
     if (Array.isArray(p.servicios) && p.servicios.length > 1) {
-      return p.servicios.map((s: any, idx: number) => ({
+      return p.servicios.map((s, idx) => ({
         id: String(s.id || idx),
         nombre: s.estudio || s.nombre || ('Estudio #' + (idx + 1)),
         area: s.area || '',
@@ -575,7 +543,7 @@ export const ModuloKanbanSalaEspera: React.FC<ModuloKanbanSalaEsperaProps> = ({
         metodo_origen: 'Bancos / Por Determinar',
         cuenta_id: 4,
         motivo_anulacion: motivoAnulacion.trim(),
-        fecha: new Date().toISOString().slice(0, 10),
+        fecha: hoyLocal(),
         hora: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
         estado: 'PENDIENTE_BANCO',
         usuario_autoriza: 'Director Médico (Admin)'
@@ -586,8 +554,8 @@ export const ModuloKanbanSalaEspera: React.FC<ModuloKanbanSalaEsperaProps> = ({
       setPacienteAAnular(null);
       setMotivoAnulacion('');
       alert('Atención anulada en sala. Turno liberado de TV y fondos trasladados a reversiones bancarias pendientes.');
-    } catch (err: any) {
-      alert('Error anulando atención: ' + err.message);
+    } catch (err) {
+      alert('Error anulando atención: ' + getErrorMessage(err));
     } finally {
       setSubmittingAnulacion(false);
     }
@@ -627,173 +595,11 @@ export const ModuloKanbanSalaEspera: React.FC<ModuloKanbanSalaEsperaProps> = ({
       />
 
       {/* Encabezado Pulcro y Moderno */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 bg-white p-5 rounded-2xl border border-slate-200 shadow-sm">
-        <div>
-          <div className="flex items-center gap-3">
-            <div className="p-2.5 bg-clinica-selection rounded-xl text-clinica-primary">
-              <Tv className="w-6 h-6" />
-            </div>
-            <div>
-              <div className="flex items-center gap-2">
-                <h2 className="text-xl font-black text-slate-900">Sala de Espera y Turnero Clínico</h2>
-                <Badge className="bg-clinica-primary text-white text-[10px] font-mono">
-                  Full HD / 4K
-                </Badge>
-              </div>
-              <p className="text-xs text-slate-500 mt-0.5">
-                Segmentación por grupos clínicos (A, B, C), multi-estudio priorizado y despacho de WhatsApp individual y masivo
-              </p>
-            </div>
-          </div>
-        </div>
-
-        <div className="flex flex-wrap items-center gap-2">
-          {/* Botón de Envío Masivo de WhatsApp para Cierre Diario */}
-          <Button
-            size="sm"
-            onClick={() => setModalMasivoWhatsApp(true)}
-            className={'rounded-xl text-xs font-bold flex items-center gap-1.5 h-9 ' + (
-              pacientesPendientesWhatsApp.length > 0 
-                ? 'bg-emerald-600 hover:bg-emerald-700 text-white shadow-md shadow-emerald-600/20 animate-pulse'
-                : 'bg-slate-100 hover:bg-slate-200 text-slate-700'
-            )}
-            title="Despacho masivo secuencial de todos los resultados culminados del día"
-          >
-            <Send className="w-3.5 h-3.5" />
-            <span>Despacho Masivo WhatsApp</span>
-            <Badge className={'ml-1 text-[10px] font-mono ' + (
-              pacientesPendientesWhatsApp.length > 0 ? 'bg-white text-emerald-800' : 'bg-slate-200 text-slate-600'
-            )}>
-              {pacientesPendientesWhatsApp.length} pendientes
-            </Badge>
-          </Button>
-
-          <div className="flex bg-slate-100 p-1 rounded-xl text-xs font-bold">
-            <button
-              onClick={() => setTabActiva('turnos')}
-              className={'px-3 py-1.5 rounded-lg transition-all ' + (
-                tabActiva === 'turnos' ? 'bg-white text-slate-900 shadow-sm' : 'text-slate-500 hover:text-slate-900'
-              )}
-            >
-              Control de Turnos
-            </button>
-            <button
-              onClick={() => setTabActiva('reembolsos')}
-              className={'px-3 py-1.5 rounded-lg transition-all flex items-center gap-1.5 ' + (
-                tabActiva === 'reembolsos' ? 'bg-white text-clinica-coral shadow-sm' : 'text-slate-500 hover:text-slate-900'
-              )}
-            >
-              <span>Reversiones en Espera</span>
-              {reembolsos.length > 0 && (
-                <span className="w-4 h-4 rounded-full bg-clinica-coral text-white text-[10px] inline-flex items-center justify-center font-bold">
-                  {reembolsos.length}
-                </span>
-              )}
-            </button>
-          </div>
-
-          <Button 
-            variant="outline" 
-            size="sm" 
-            onClick={cargarPacientes} 
-            disabled={loading}
-            className="rounded-xl text-xs flex items-center gap-1.5 h-9"
-          >
-            <RefreshCw className={'w-3.5 h-3.5 ' + (loading ? 'animate-spin' : '')} />
-            <span>Actualizar</span>
-          </Button>
-
-          <Button 
-            size="sm"
-            onClick={() => window.open('/tv', '_blank')}
-            className="bg-slate-900 hover:bg-slate-800 text-white rounded-xl text-xs flex items-center gap-1.5 h-9 shadow-sm"
-          >
-            <ExternalLink className="w-3.5 h-3.5" />
-            <span>Abrir Pantalla TV</span>
-          </Button>
-        </div>
-      </div>
+      <EncabezadoSalaEspera setModalMasivoWhatsApp={setModalMasivoWhatsApp} pacientesPendientesWhatsApp={pacientesPendientesWhatsApp} setTabActiva={setTabActiva} tabActiva={tabActiva} reembolsos={reembolsos} cargarPacientes={cargarPacientes} loading={loading} />
 
       {tabActiva === 'reembolsos' ? (
         /* BANDEJA DE REVERSIONES / REEMBOLSOS PENDIENTES */
-        <Card className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm space-y-4">
-          <div className="flex items-center justify-between border-b border-slate-100 pb-3">
-            <div>
-              <h3 className="text-base font-black text-slate-900 flex items-center gap-2">
-                <Undo2 className="w-5 h-5 text-clinica-coral" />
-                <span>Bandeja de Reversiones Bancarias Pendientes (Anulaciones en Sala)</span>
-              </h3>
-              <p className="text-xs text-slate-500 mt-0.5">
-                Atenciones canceladas por el Administrador cuyos fondos deben ser devueltos mediante transferencia o caja
-              </p>
-            </div>
-            <Badge className="bg-clinica-coral-soft text-clinica-coral border border-clinica-coral/30 text-xs font-mono font-bold">
-              {reembolsos.length} Reversiones Activas
-            </Badge>
-          </div>
-
-          <div className="overflow-x-auto">
-            <table className="w-full text-left text-xs">
-              <thead className="bg-slate-50 border-b border-slate-200 text-slate-500 uppercase text-[10px] font-black">
-                <tr>
-                  <th className="p-3">Turno / Paciente</th>
-                  <th className="p-3">Cédula</th>
-                  <th className="p-3">Estudio Anulado</th>
-                  <th className="p-3">Motivo de Anulación</th>
-                  <th className="p-3 text-right">Monto a Revertir</th>
-                  <th className="p-3 text-center">Estado</th>
-                  <th className="p-3 text-center">Acción</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-slate-100">
-                {reembolsos.length === 0 ? (
-                  <tr>
-                    <td colSpan={7} className="p-8 text-center text-slate-400">
-                      No hay reversiones pendientes en este momento.
-                    </td>
-                  </tr>
-                ) : (
-                  reembolsos.map(r => (
-                    <tr key={r.id} className="hover:bg-slate-50/80">
-                      <td className="p-3">
-                        <span className="font-mono font-black text-clinica-coral mr-2">{r.turno_num}</span>
-                        <span className="font-bold text-slate-900">{r.paciente_nombre}</span>
-                      </td>
-                      <td className="p-3 font-mono text-slate-600">{r.cedula}</td>
-                      <td className="p-3 text-slate-800 font-medium">{r.servicio}</td>
-                      <td className="p-3 text-slate-600 max-w-xs">{r.motivo_anulacion}</td>
-                      <td className="p-3 text-right font-mono font-black text-rose-600 text-sm">
-                        Bs. {r.monto_bs.toLocaleString('es-VE', { minimumFractionDigits: 2 })}
-                        <div className="text-[10px] text-slate-400">${r.monto_usd.toFixed(2)} USD</div>
-                      </td>
-                      <td className="p-3 text-center">
-                        <Badge className="bg-amber-100 text-amber-800 text-[10px] font-bold">
-                          Pendiente Reversión
-                        </Badge>
-                      </td>
-                      <td className="p-3 text-center">
-                        {isAdmin && !isReadOnly && (
-                          <Button
-                            size="sm"
-                            onClick={() => {
-                              if (confirm('¿Confirmar que la reversión de Bs. ' + r.monto_bs + ' a ' + r.paciente_nombre + ' fue transferida y ejecutada en banco?')) {
-                                setReembolsos(prev => prev.filter(x => x.id !== r.id));
-                                alert('Reversión confirmada y conciliada en bancos.');
-                              }
-                            }}
-                            className="bg-emerald-600 hover:bg-emerald-700 text-white text-[11px] font-bold rounded-xl h-7 px-2.5"
-                          >
-                            Confirmar Reversión
-                          </Button>
-                        )}
-                      </td>
-                    </tr>
-                  ))
-                )}
-              </tbody>
-            </table>
-          </div>
-        </Card>
+        <BandejaReembolsos reembolsos={reembolsos} isAdmin={isAdmin} isReadOnly={isReadOnly} setReembolsos={setReembolsos} />
       ) : (
         <>
           {/* Barra de Filtros por Grupo Clínico */}
@@ -847,634 +653,19 @@ export const ModuloKanbanSalaEspera: React.FC<ModuloKanbanSalaEsperaProps> = ({
           </div>
 
           {/* TABLERO KANBAN */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-
-            {/* 1. EN ESPERA */}
-            <div className="space-y-3">
-              <div className="flex items-center justify-between bg-amber-500/10 p-3 rounded-2xl border border-amber-500/20">
-                <div className="flex items-center gap-2">
-                  <Clock className="w-4 h-4 text-amber-600" />
-                  <h3 className="text-xs font-black uppercase tracking-wider text-amber-900">1. En Espera</h3>
-                </div>
-                <Badge className="bg-amber-600 text-white text-xs font-mono">{pacientesEspera.length}</Badge>
-              </div>
-
-              <div className="space-y-3 min-h-[420px]">
-                {pacientesEspera.length === 0 ? (
-                  <div className="p-8 text-center border-2 border-dashed border-slate-200 rounded-2xl bg-white text-slate-400 text-xs">
-                    No hay pacientes en espera
-                  </div>
-                ) : (
-                  pacientesEspera.map((p) => {
-                    const conflicto = verificarConflictoConcurrencia(p);
-                    const hermanosMismoGrupo = obtenerHermanosMismoGrupo(p);
-                    const tieneVariosMismoGrupo = hermanosMismoGrupo.length > 1;
-                    const subEstudios = extraerSubEstudios(p);
-                    const tieneMultiEstudio = subEstudios.length > 1;
-
-                    return (
-                      <Card 
-                        key={p.id} 
-                        className={'rounded-2xl border transition-all shadow-sm bg-white p-4 space-y-3 ' + (
-                          conflicto 
-                            ? 'border-rose-300 bg-rose-50/30 opacity-75' 
-                            : p.retorno_sala 
-                              ? 'border-clinica-coral/60 bg-clinica-coral-soft/50 ring-2 ring-clinica-coral/20' 
-                              : 'border-slate-200 hover:border-slate-300'
-                        )}
-                      >
-                        <div className="flex items-start justify-between gap-2">
-                          <div className="flex items-center gap-2">
-                            <span className={'font-mono text-xs font-black px-2.5 py-1 rounded-xl text-white ' + (
-                              p.retorno_sala ? 'bg-clinica-coral animate-pulse' : 'bg-slate-900'
-                            )}>
-                              {p.grupo_clinico}-{String(p.turno_num).padStart(2, '0')}
-                            </span>
-                            <div>
-                              <h4 className="font-bold text-slate-900 text-sm leading-snug">{p.nombre_paciente}</h4>
-                              <div className="flex flex-wrap items-center gap-1.5 text-[11px] text-slate-500 font-medium">
-                                <span className="font-mono text-slate-700 font-bold">{normalizarCedulaRif(p.cedula_paciente) || 'S/C'}</span>
-                                {p.telefono_paciente && (
-                                  <>
-                                    <span>•</span>
-                                    <span>{p.telefono_paciente}</span>
-                                  </>
-                                )}
-                                {(p.fecha_nacimiento_paciente || p.edad_paciente) && (
-                                  <>
-                                    <span>•</span>
-                                    <span className="font-bold text-teal-700">
-                                      {p.fecha_nacimiento_paciente 
-                                        ? `${calcularEdadReal(p.fecha_nacimiento_paciente)} años` 
-                                        : `${p.edad_paciente} años`}
-                                    </span>
-                                  </>
-                                )}
-                              </div>
-                            </div>
-                          </div>
-                          
-                          <div className="flex flex-col items-end gap-1">
-                            <Badge className={'text-[10px] font-bold ' + (
-                              p.grupo_clinico === 'A' ? 'bg-clinica-selection text-clinica-dark border border-clinica-aquamarine/40' :
-                              p.grupo_clinico === 'B' ? 'bg-blue-100 text-blue-800' :
-                              'bg-purple-100 text-purple-800'
-                            )}>
-                              Grupo {p.grupo_clinico}
-                            </Badge>
-                            {p.retorno_sala && (
-                              <Badge className="bg-clinica-coral text-white text-[9px] font-bold">
-                                Retorno Prioritario
-                              </Badge>
-                            )}
-                          </div>
-                        </div>
-
-                        {/* Detalle del estudio y box */}
-                        <div className="p-2.5 bg-slate-50 rounded-xl space-y-1 text-xs">
-                          <div className="flex items-center justify-between">
-                            <p className="text-slate-800 font-semibold">{p.estudio}</p>
-                            {tieneMultiEstudio && (
-                              <button
-                                onClick={() => handleAbrirPrioridadEstudio(p)}
-                                className="text-[10px] font-bold text-clinica-primary hover:underline flex items-center gap-1"
-                                title="Definir estudio principal y orden de llamado"
-                              >
-                                <ListOrdered className="w-3 h-3" />
-                                <span>Multi-Estudio ({subEstudios.length})</span>
-                              </button>
-                            )}
-                          </div>
-                          <div className="flex items-center justify-between text-[11px] text-slate-500">
-                            <span>{p.box_asignado}</span>
-                            <span>{p.medico || 'De Guardia'}</span>
-                          </div>
-                        </div>
-
-                        {/* Alerta de Concurrencia si está en otro consultorio */}
-                        {conflicto && (
-                          <div className="p-2 bg-rose-50 border border-rose-200 rounded-xl text-[11px] text-rose-800 font-medium flex items-center gap-1.5">
-                            <AlertTriangle className="w-3.5 h-3.5 text-rose-600 shrink-0" />
-                            <span>En atención en {conflicto.box_asignado} (Grupo {conflicto.grupo_clinico})</span>
-                          </div>
-                        )}
-
-                        {/* Botones de Acción */}
-                        <div className="flex items-center gap-2 pt-1">
-                          <Button
-                            size="sm"
-                            disabled={isReadOnly || Boolean(conflicto) || llamandoId === p.id}
-                            onClick={() => handleLlamarPaciente(p, tieneVariosMismoGrupo)}
-                            className={'flex-1 text-white text-xs font-bold rounded-xl h-8 flex items-center justify-center gap-1.5 shadow-sm ' + (
-                              conflicto
-                                ? 'bg-slate-300 cursor-not-allowed text-slate-500'
-                                : p.retorno_sala 
-                                  ? 'bg-clinica-coral hover:bg-clinica-coral'
-                                  : 'bg-clinica-primary hover:bg-clinica-primary-dark'
-                            )}
-                          >
-                            <Volume2 className="w-3.5 h-3.5" />
-                            <span>
-                              {llamandoId === p.id 
-                                ? 'Llamando...' 
-                                : tieneVariosMismoGrupo 
-                                  ? 'Llamado Unificado' 
-                                  : 'Llamar a Box'}
-                            </span>
-                          </Button>
-
-                          {/* Anulación en Sala de Espera (Solo Administrador) */}
-                          {isAdmin && !isReadOnly && (
-                            <Button
-                              size="sm"
-                              variant="ghost"
-                              onClick={() => setPacienteAAnular(p)}
-                              className="text-slate-400 hover:text-clinica-coral hover:bg-clinica-coral-soft rounded-xl h-8 px-2"
-                              title="Anular atención en sala y enviar fondos a reversión"
-                            >
-                              <XCircle className="w-4 h-4" />
-                            </Button>
-                          )}
-                        </div>
-                      </Card>
-                    );
-                  })
-                )}
-              </div>
-            </div>
-
-            {/* 2. EN ATENCIÓN */}
-            <div className="space-y-3">
-              <div className="flex items-center justify-between bg-blue-500/10 p-3 rounded-2xl border border-blue-500/20">
-                <div className="flex items-center gap-2">
-                  <Play className="w-4 h-4 text-blue-600" />
-                  <h3 className="text-xs font-black uppercase tracking-wider text-blue-900">2. En Atención</h3>
-                </div>
-                <Badge className="bg-blue-600 text-white text-xs font-mono">{pacientesAtencion.length}</Badge>
-              </div>
-
-              <div className="space-y-3 min-h-[420px]">
-                {pacientesAtencion.length === 0 ? (
-                  <div className="p-8 text-center border-2 border-dashed border-slate-200 rounded-2xl bg-white text-slate-400 text-xs">
-                    No hay pacientes en curso
-                  </div>
-                ) : (
-                  pacientesAtencion.map((p) => {
-                    const hermanosMismoGrupo = obtenerHermanosMismoGrupo(p);
-                    const tieneVariosMismoGrupo = hermanosMismoGrupo.length > 1;
-
-                    return (
-                      <Card key={p.id} className="rounded-2xl border-2 border-blue-400/40 shadow-md bg-white p-4 space-y-3">
-                        <div className="flex items-start justify-between gap-2">
-                          <div className="flex items-center gap-2">
-                            <span className="font-mono text-base font-black px-2.5 py-1 bg-blue-600 text-white rounded-xl animate-pulse">
-                              {p.grupo_clinico}-{String(p.turno_num).padStart(2, '0')}
-                            </span>
-                            <div>
-                              <h4 className="font-bold text-slate-900 text-sm leading-snug">{p.nombre_paciente}</h4>
-                              <div className="flex flex-wrap items-center gap-1 text-[11px] text-slate-500">
-                                <span className="font-mono font-bold text-slate-700">{normalizarCedulaRif(p.cedula_paciente) || 'S/C'}</span>
-                                {(p.fecha_nacimiento_paciente || p.edad_paciente) && (
-                                  <>
-                                    <span>•</span>
-                                    <span className="font-bold text-teal-700">
-                                      {p.fecha_nacimiento_paciente 
-                                        ? `${calcularEdadReal(p.fecha_nacimiento_paciente)} años` 
-                                        : `${p.edad_paciente} años`}
-                                    </span>
-                                  </>
-                                )}
-                              </div>
-                            </div>
-                          </div>
-                          <Badge className="bg-blue-100 text-blue-800 text-[10px] font-bold">
-                            Grupo {p.grupo_clinico}
-                          </Badge>
-                        </div>
-
-                        <div className="p-2.5 bg-blue-50/50 rounded-xl space-y-1 text-xs">
-                          <p className="text-slate-800 font-semibold">{p.estudio}</p>
-                          <p className="text-slate-500 text-[11px]">{p.box_asignado}</p>
-                        </div>
-
-                        <div className="flex items-center gap-2 pt-1">
-                          <Button
-                            size="sm"
-                            disabled={isReadOnly}
-                            onClick={() => handleFinalizarAtencion(p, tieneVariosMismoGrupo)}
-                            className="flex-1 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold rounded-xl h-8 flex items-center justify-center gap-1.5 shadow-sm"
-                          >
-                            <CheckCircle2 className="w-3.5 h-3.5" />
-                            <span>Culminar Estudio</span>
-                          </Button>
-                          <Button
-                            size="sm"
-                            variant="outline"
-                            disabled={isReadOnly}
-                            onClick={() => handleLlamarPaciente(p, false)}
-                            className="text-slate-600 text-xs rounded-xl h-8 px-2.5 font-bold"
-                            title="Re-llamar por altavoz"
-                          >
-                            <Volume2 className="w-3.5 h-3.5" />
-                          </Button>
-                        </div>
-                      </Card>
-                    );
-                  })
-                )}
-              </div>
-            </div>
-
-            {/* 3. FINALIZADOS / CULMINADOS */}
-            <div className="space-y-3">
-              <div className="flex items-center justify-between bg-emerald-500/10 p-3 rounded-2xl border border-emerald-500/20">
-                <div className="flex items-center gap-2">
-                  <CheckCircle2 className="w-4 h-4 text-emerald-600" />
-                  <h3 className="text-xs font-black uppercase tracking-wider text-emerald-900">3. Culminados (Resultados)</h3>
-                </div>
-                <Badge className="bg-emerald-600 text-white text-xs font-mono">{pacientesFinalizados.length}</Badge>
-              </div>
-
-              <div className="space-y-3 min-h-[420px]">
-                {pacientesFinalizados.length === 0 ? (
-                  <div className="p-8 text-center border-2 border-dashed border-slate-200 rounded-2xl bg-white text-slate-400 text-xs">
-                    Aún no hay pacientes culminados hoy
-                  </div>
-                ) : (
-                  pacientesFinalizados.slice(0, 20).map((p) => {
-                    const tieneAdjunto = Boolean(p.adjunto_nombre);
-                    const whatsappEnviado = Boolean(p.whatsapp_enviado);
-
-                    return (
-                      <Card key={p.id} className="rounded-2xl border border-slate-200 shadow-sm bg-white p-3.5 space-y-2.5">
-                        <div className="flex items-start justify-between gap-1">
-                          <div className="flex items-center gap-2">
-                            <span className="font-mono text-xs font-bold px-2 py-0.5 bg-slate-100 text-slate-700 rounded-lg">
-                              {p.grupo_clinico}-{String(p.turno_num).padStart(2, '0')}
-                            </span>
-                            <div>
-                              <h4 className="font-bold text-slate-900 text-xs">{p.nombre_paciente}</h4>
-                              <div className="flex flex-wrap items-center gap-1 text-[10px] text-slate-500">
-                                <span className="font-mono font-bold text-slate-600">{normalizarCedulaRif(p.cedula_paciente) || 'S/C'}</span>
-                                {p.telefono_paciente && (
-                                  <>
-                                    <span>•</span>
-                                    <span>{p.telefono_paciente}</span>
-                                  </>
-                                )}
-                                {(p.fecha_nacimiento_paciente || p.edad_paciente) && (
-                                  <>
-                                    <span>•</span>
-                                    <span className="font-bold text-teal-700">
-                                      {p.fecha_nacimiento_paciente 
-                                        ? `${calcularEdadReal(p.fecha_nacimiento_paciente)} años` 
-                                        : `${p.edad_paciente} años`}
-                                    </span>
-                                  </>
-                                )}
-                              </div>
-                            </div>
-                          </div>
-                          
-                          {/* Estado de WhatsApp */}
-                          {whatsappEnviado ? (
-                            <Badge className="bg-emerald-100 text-emerald-800 text-[9px] font-bold border border-emerald-200 flex items-center gap-1">
-                              <Check className="w-2.5 h-2.5" />
-                              <span>Enviado</span>
-                            </Badge>
-                          ) : tieneAdjunto ? (
-                            <Badge className="bg-amber-100 text-amber-800 text-[9px] font-bold border border-amber-200 flex items-center gap-1">
-                              <Clock className="w-2.5 h-2.5" />
-                              <span>Pendiente WA</span>
-                            </Badge>
-                          ) : (
-                            <Badge className="bg-rose-50 text-rose-700 text-[9px] font-bold border border-rose-200 flex items-center gap-1">
-                              <AlertTriangle className="w-2.5 h-2.5 text-rose-600" />
-                              <span>Sin Adjunto</span>
-                            </Badge>
-                          )}
-                        </div>
-
-                        <p className="text-[11px] text-slate-600 font-medium truncate">{p.estudio}</p>
-
-                        {/* Sección de Documento Adjunto (Informe/PDF/Imagen) */}
-                        <div className={'p-2 rounded-xl text-xs flex items-center justify-between gap-2 border transition-all ' + (
-                          tieneAdjunto 
-                            ? 'bg-emerald-50/40 border-emerald-200/70' 
-                            : 'bg-amber-50/40 border-amber-200/70'
-                        )}>
-                          <div className="flex items-center gap-1.5 truncate">
-                            <Paperclip className={'w-3.5 h-3.5 shrink-0 ' + (tieneAdjunto ? 'text-emerald-600' : 'text-amber-500')} />
-                            <span className={'text-[11px] truncate font-mono ' + (tieneAdjunto ? 'text-slate-800 font-medium' : 'text-amber-800 font-semibold')}>
-                              {p.adjunto_nombre || '⚠️ Sin informe adjunto'}
-                            </span>
-                          </div>
-
-                          <Button
-                            size="sm"
-                            variant="ghost"
-                            onClick={() => handleTriggerAdjunto(p.id)}
-                            className="h-6 px-2 text-[10px] font-bold text-clinica-primary hover:bg-clinica-selection rounded-lg shrink-0"
-                            title="Subir o cambiar informe médico digital (PDF o imagen)"
-                          >
-                            <UploadCloud className="w-3 h-3 mr-1" />
-                            <span>{p.adjunto_nombre ? 'Cambiar' : 'Adjuntar'}</span>
-                          </Button>
-                        </div>
-
-                        {/* Botón de Envío Individual Urgente por WhatsApp: DESHABILITADO SI NO HAY ADJUNTO */}
-                        <div className="pt-1">
-                          <Button
-                            size="sm"
-                            disabled={!tieneAdjunto}
-                            onClick={() => handleEnviarWhatsAppIndividual(p)}
-                            className={'w-full text-xs font-bold rounded-xl h-8 flex items-center justify-center gap-1.5 transition-all ' + (
-                              !tieneAdjunto
-                                ? 'bg-slate-100 text-slate-400 border border-slate-200/80 cursor-not-allowed hover:bg-slate-100 shadow-none'
-                                : whatsappEnviado
-                                  ? 'bg-slate-100 text-slate-700 hover:bg-slate-200 border border-slate-200'
-                                  : 'bg-emerald-600 hover:bg-emerald-700 text-white shadow-sm shadow-emerald-600/20 active:scale-[0.98]'
-                            )}
-                            title={
-                              !tieneAdjunto 
-                                ? "Debe adjuntar las imágenes o el informe médico para habilitar el envío por WhatsApp" 
-                                : whatsappEnviado 
-                                  ? "Re-enviar notificación y resultados por WhatsApp" 
-                                  : "Envío urgente e inmediato de resultados por WhatsApp"
-                            }
-                          >
-                            {!tieneAdjunto ? (
-                              <>
-                                <Lock className="w-3.5 h-3.5 text-slate-400" />
-                                <span>Adjunte Imagen para Enviar WA</span>
-                              </>
-                            ) : (
-                              <>
-                                <MessageCircle className="w-3.5 h-3.5" />
-                                <span>{whatsappEnviado ? 'Re-enviar WhatsApp' : 'Enviar WhatsApp Urgente'}</span>
-                              </>
-                            )}
-                          </Button>
-                        </div>
-                      </Card>
-                    );
-                  })
-                )}
-              </div>
-            </div>
-
-          </div>
+          <TableroKanban pacientesEspera={pacientesEspera} verificarConflictoConcurrencia={verificarConflictoConcurrencia} obtenerHermanosMismoGrupo={obtenerHermanosMismoGrupo} extraerSubEstudios={extraerSubEstudios} handleAbrirPrioridadEstudio={handleAbrirPrioridadEstudio} isReadOnly={isReadOnly} llamandoId={llamandoId} handleLlamarPaciente={handleLlamarPaciente} isAdmin={isAdmin} setPacienteAAnular={setPacienteAAnular} pacientesAtencion={pacientesAtencion} handleFinalizarAtencion={handleFinalizarAtencion} pacientesFinalizados={pacientesFinalizados} handleTriggerAdjunto={handleTriggerAdjunto} handleEnviarWhatsAppIndividual={handleEnviarWhatsAppIndividual} />
         </>
       )}
 
       {/* Modal Multi-Estudio: Selección de Estudio Principal / Primer Llamado */}
-      <Dialog 
-        open={modalMultiEstudio.visible} 
-        onOpenChange={(open) => !open && setModalMultiEstudio(prev => ({ ...prev, visible: false }))}
-      >
-        <DialogContent className="sm:max-w-md rounded-3xl bg-white p-6 shadow-2xl border border-slate-200">
-          <DialogHeader>
-            <DialogTitle className="flex items-center gap-2 text-slate-900 font-black text-base">
-              <div className="p-2 bg-clinica-selection rounded-xl text-clinica-primary">
-                <ListOrdered className="w-5 h-5" />
-              </div>
-              <span>Selección de Estudio Principal / Primer Llamado</span>
-            </DialogTitle>
-            <p className="text-xs text-slate-500 mt-1">
-              El paciente <strong className="text-slate-800">{modalMultiEstudio.paciente?.nombre_paciente}</strong> tiene varios estudios asignados. Seleccione cuál se realizará primero.
-            </p>
-          </DialogHeader>
-
-          <div className="py-3 space-y-2">
-            {modalMultiEstudio.estudiosDisponibles.map((item) => {
-              const esSeleccionado = modalMultiEstudio.estudioSeleccionado === item.id;
-              const grupoEst = mapearEstudioAGrupo(item.nombre);
-
-              return (
-                <div
-                  key={item.id}
-                  onClick={() => setModalMultiEstudio(prev => ({ ...prev, estudioSeleccionado: item.id }))}
-                  className={'p-3.5 rounded-2xl border cursor-pointer transition-all flex items-center justify-between ' + (
-                    esSeleccionado 
-                      ? 'border-clinica-primary bg-clinica-selection/60 shadow-sm ring-1 ring-clinica-primary' 
-                      : 'border-slate-200 hover:bg-slate-50'
-                  )}
-                >
-                  <div className="space-y-0.5">
-                    <div className="flex items-center gap-2">
-                      <span className="font-bold text-slate-900 text-xs">{item.nombre}</span>
-                      <Badge className="bg-slate-100 text-slate-700 text-[10px]">
-                        Grupo {grupoEst}
-                      </Badge>
-                    </div>
-                    {item.medico && (
-                      <p className="text-[11px] text-slate-500">Especialista: {item.medico}</p>
-                    )}
-                  </div>
-
-                  <div className="shrink-0 pl-2">
-                    {esSeleccionado ? (
-                      <div className="p-1 rounded-full bg-clinica-primary text-white">
-                        <Check className="w-3.5 h-3.5" />
-                      </div>
-                    ) : (
-                      <div className="w-4 h-4 rounded-full border-2 border-slate-300" />
-                    )}
-                  </div>
-                </div>
-              );
-            })}
-          </div>
-
-          <DialogFooter className="gap-2 pt-2 border-t border-slate-100">
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => setModalMultiEstudio(prev => ({ ...prev, visible: false }))}
-              className="rounded-xl text-xs"
-            >
-              Cancelar
-            </Button>
-            <Button
-              size="sm"
-              onClick={handleConfirmarEstudioPrincipal}
-              className="bg-clinica-primary hover:bg-clinica-primary-dark text-white rounded-xl text-xs font-bold"
-            >
-              Confirmar Primer Llamado
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+      <MultiEstudioDialog modalMultiEstudio={modalMultiEstudio} setModalMultiEstudio={setModalMultiEstudio} handleConfirmarEstudioPrincipal={handleConfirmarEstudioPrincipal} />
 
       {/* Modal Despacho Masivo de WhatsApp para Cierre Diario */}
-      <Dialog 
-        open={modalMasivoWhatsApp} 
-        onOpenChange={(open) => !procesandoMasivo && setModalMasivoWhatsApp(open)}
-      >
-        <DialogContent className="sm:max-w-lg rounded-3xl bg-white p-6 shadow-2xl border-2 border-emerald-500/30">
-          <DialogHeader>
-            <DialogTitle className="flex items-center gap-2 text-emerald-800 font-black text-lg">
-              <div className="p-2 bg-emerald-100 rounded-xl text-emerald-700">
-                <Send className="w-6 h-6" />
-              </div>
-              <span>Despacho Masivo de WhatsApp (Cierre Diario)</span>
-            </DialogTitle>
-            <p className="text-xs text-slate-500 mt-1">
-              Envío secuencial de resultados médicos acumulados en el día. Este proceso garantiza que no queden atenciones pendientes antes de consolidar el arqueo contable.
-            </p>
-          </DialogHeader>
-
-          <div className="py-3 space-y-4">
-            <div className="flex items-center justify-between p-3 rounded-2xl bg-emerald-50 border border-emerald-200">
-              <span className="text-xs font-bold text-emerald-900">Resultados Listos para Despacho (Con Imágenes):</span>
-              <Badge className="bg-emerald-600 text-white font-mono text-sm px-2.5">
-                {pacientesPendientesWhatsApp.length}
-              </Badge>
-            </div>
-
-            {pacientesFinalizadosSinAdjunto.length > 0 && (
-              <div className="p-3 rounded-2xl bg-amber-50 border border-amber-200 text-xs flex items-start gap-2.5 text-amber-900">
-                <AlertTriangle className="w-4 h-4 text-amber-600 shrink-0 mt-0.5" />
-                <div>
-                  <p className="font-bold">
-                    {pacientesFinalizadosSinAdjunto.length} estudio(s) culminado(s) sin imágenes adjuntas
-                  </p>
-                  <p className="text-[11px] text-amber-700 mt-0.5">
-                    Por protocolo médico, el envío de WhatsApp permanece inactivo para estos pacientes hasta que sus imágenes o informe sean cargados al sistema.
-                  </p>
-                </div>
-              </div>
-            )}
-
-            {procesandoMasivo && (
-              <div className="space-y-2 p-3 bg-slate-50 rounded-2xl border border-slate-200">
-                <div className="flex justify-between text-xs font-bold text-slate-700">
-                  <span>Enviando WhatsApp ({progresoMasivo.actual} de {progresoMasivo.total})...</span>
-                  <span className="text-emerald-600 font-mono">
-                    {Math.round((progresoMasivo.actual / progresoMasivo.total) * 100)}%
-                  </span>
-                </div>
-                <div className="w-full h-2.5 bg-slate-200 rounded-full overflow-hidden">
-                  <div 
-                    className="h-full bg-emerald-600 transition-all duration-300"
-                    style={{ width: ((progresoMasivo.actual / progresoMasivo.total) * 100) + '%' }}
-                  />
-                </div>
-                <p className="text-[11px] text-slate-500 truncate">
-                  Paciente: <strong className="text-slate-800">{progresoMasivo.nombreActual}</strong>
-                </p>
-              </div>
-            )}
-
-            <div className="max-h-56 overflow-y-auto space-y-2 pr-1">
-              {pacientesPendientesWhatsApp.length === 0 ? (
-                <div className="p-6 text-center text-slate-400 text-xs">
-                  ✅ Todos los resultados culminados ya han sido despachados por WhatsApp.
-                </div>
-              ) : (
-                pacientesPendientesWhatsApp.map(p => (
-                  <div key={p.id} className="p-2.5 rounded-xl border border-slate-200 bg-slate-50/50 flex items-center justify-between text-xs">
-                    <div>
-                      <p className="font-bold text-slate-800">{p.nombre_paciente}</p>
-                      <p className="text-[10px] text-slate-500">{p.estudio} • {p.adjunto_nombre || 'Sin adjunto'}</p>
-                    </div>
-                    <Badge variant="outline" className="text-[10px] text-amber-700 border-amber-300">
-                      Pendiente
-                    </Badge>
-                  </div>
-                ))
-              )}
-            </div>
-          </div>
-
-          <DialogFooter className="gap-2 pt-2 border-t border-slate-100">
-            <Button
-              variant="outline"
-              disabled={procesandoMasivo}
-              onClick={() => setModalMasivoWhatsApp(false)}
-              className="rounded-xl text-xs"
-            >
-              Cerrar
-            </Button>
-            <Button
-              disabled={procesandoMasivo || pacientesPendientesWhatsApp.length === 0}
-              onClick={handleEjecutarDespachoMasivo}
-              className="bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-bold flex items-center gap-1.5 shadow-md shadow-emerald-600/20"
-            >
-              <Send className="w-3.5 h-3.5" />
-              <span>{procesandoMasivo ? 'Procesando Envío...' : ('Disparar ' + pacientesPendientesWhatsApp.length + ' Enlaces WhatsApp')}</span>
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+      <WhatsAppMasivoDialog modalMasivoWhatsApp={modalMasivoWhatsApp} procesandoMasivo={procesandoMasivo} setModalMasivoWhatsApp={setModalMasivoWhatsApp} pacientesPendientesWhatsApp={pacientesPendientesWhatsApp} pacientesFinalizadosSinAdjunto={pacientesFinalizadosSinAdjunto} progresoMasivo={progresoMasivo} handleEjecutarDespachoMasivo={handleEjecutarDespachoMasivo} />
 
       {/* Modal Anulación de Atención en Sala (Admin Only) */}
       {pacienteAAnular && (
-        <Dialog open={true} onOpenChange={() => setPacienteAAnular(null)}>
-          <DialogContent className="sm:max-w-md rounded-3xl bg-white p-6 shadow-2xl border-2 border-clinica-coral/40">
-            <DialogHeader>
-              <DialogTitle className="flex items-center gap-2 text-clinica-coral font-black text-base">
-                <AlertTriangle className="w-5 h-5 text-clinica-coral" />
-                <span>Anulación de Atención en Sala de Espera</span>
-              </DialogTitle>
-              <p className="text-xs text-slate-500 mt-1">
-                Esta acción cancelará el turno del paciente <strong className="text-slate-800">{pacienteAAnular.nombre_paciente}</strong>, lo retirará del turnero de TV y transferirá el importe cobrado a la bandeja de reversiones bancarias pendientes.
-              </p>
-            </DialogHeader>
-
-            <div className="space-y-3 py-2">
-              <div className="p-3 bg-slate-50 rounded-2xl space-y-1 text-xs border border-slate-100">
-                <div className="flex justify-between">
-                  <span className="text-slate-500">Paciente:</span>
-                  <span className="font-bold text-slate-900">{pacienteAAnular.nombre_paciente}</span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-slate-500">Cédula:</span>
-                  <span className="font-mono text-slate-700">{pacienteAAnular.cedula_paciente}</span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-slate-500">Estudio:</span>
-                  <span className="font-medium text-slate-800">{pacienteAAnular.estudio}</span>
-                </div>
-                <div className="flex justify-between border-t border-slate-200 pt-1 mt-1 font-bold text-slate-900">
-                  <span>Monto a Revertir:</span>
-                  <span className="text-rose-600 font-mono">${pacienteAAnular.precio_usd} USD</span>
-                </div>
-              </div>
-
-              <div>
-                <label className="text-xs font-bold text-slate-700 block mb-1">
-                  Motivo de Anulación (Obligatorio para auditoría contable):
-                </label>
-                <textarea
-                  value={motivoAnulacion}
-                  onChange={(e) => setMotivoAnulacion(e.target.value)}
-                  placeholder="Ej: Paciente no pudo esperar por cita médica externa..."
-                  className="w-full h-20 p-2.5 text-xs rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-clinica-primary bg-slate-50"
-                />
-              </div>
-            </div>
-
-            <DialogFooter className="gap-2 pt-2 border-t border-slate-100">
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => setPacienteAAnular(null)}
-                className="rounded-xl text-xs"
-              >
-                Volver
-              </Button>
-              <Button
-                size="sm"
-                disabled={submittingAnulacion || !motivoAnulacion.trim()}
-                onClick={handleConfirmarAnulacion}
-                className="bg-rose-600 hover:bg-rose-700 text-white rounded-xl text-xs font-bold"
-              >
-                {submittingAnulacion ? 'Anulando...' : 'Confirmar Anulación y Reversión'}
-              </Button>
-            </DialogFooter>
-          </DialogContent>
-        </Dialog>
+        <AnularPacienteDialog setPacienteAAnular={setPacienteAAnular} pacienteAAnular={pacienteAAnular} motivoAnulacion={motivoAnulacion} setMotivoAnulacion={setMotivoAnulacion} submittingAnulacion={submittingAnulacion} handleConfirmarAnulacion={handleConfirmarAnulacion} />
       )}
 
     </div>

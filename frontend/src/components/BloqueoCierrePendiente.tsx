@@ -7,6 +7,7 @@ import { Button } from '@/components/ui/button';
 import { ShieldAlert, AlertTriangle, CheckCircle2, XCircle, Undo2, Stethoscope, Clock, Send, MessageCircle, Check } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { PacientePendiente } from '@/types';
+import { getErrorMessage } from '@/lib/utils';
 
 interface BloqueoCierrePendienteProps {
   open: boolean;
@@ -46,8 +47,8 @@ export const BloqueoCierrePendiente: React.FC<BloqueoCierrePendienteProps> = ({
         onCierreCompletado();
         onOpenChange(false);
       }
-    } catch (err: any) {
-      alert('Error al procesar el saneamiento: ' + err.message);
+    } catch (err) {
+      alert('Error al procesar el saneamiento: ' + getErrorMessage(err));
     } finally {
       setLoadingId(null);
     }
@@ -84,8 +85,8 @@ export const BloqueoCierrePendiente: React.FC<BloqueoCierrePendienteProps> = ({
         onCierreCompletado();
         onOpenChange(false);
       }
-    } catch (err: any) {
-      alert('Error despachando WhatsApp: ' + err.message);
+    } catch (err) {
+      alert('Error despachando WhatsApp: ' + getErrorMessage(err));
     } finally {
       setLoadingId(null);
     }
@@ -111,8 +112,8 @@ export const BloqueoCierrePendiente: React.FC<BloqueoCierrePendienteProps> = ({
         onOpenChange(false);
       }
       alert('✅ Todos los resultados pendientes fueron marcados como enviados por WhatsApp. Cierre diario desbloqueado.');
-    } catch (err: any) {
-      alert('Error en despacho masivo: ' + err.message);
+    } catch (err) {
+      alert('Error en despacho masivo: ' + getErrorMessage(err));
     } finally {
       setDespachandoMasivo(false);
     }

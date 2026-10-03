@@ -34,45 +34,27 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({ onLoginSuccess }) => {
   const [error, setError] = useState<string | null>(null);
   const [cargando, setCargando] = useState<boolean>(false);
 
-  const handleLogin = (e: React.FormEvent) => {
+  const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setError(null);
     setCargando(true);
-
-    setTimeout(() => {
-      // 1. Rol Director / Administrador
-      if (rolSeleccionado === 'admin') {
-        if (pin === '1234' || pin === 'admin123' || pin === 'admin') {
-          const sessionData = { role: 'admin', nombre: 'Dr. Director Médico', modo: modoSeleccionado, time: Date.now() };
-          try { localStorage.setItem('imagen_salud_session', JSON.stringify(sessionData)); } catch (e) {}
-          onLoginSuccess('admin', 'Dr. Director Médico', modoSeleccionado);
-        } else {
-          setError('PIN de Administrador incorrecto. (PIN de acceso: 1234)');
-          setCargando(false);
-        }
+    try {
+      const res = await fetch('/api/auth/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ rol: rolSeleccionado, pin, modo: modoSeleccionado })
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        setError(data.error || 'No se pudo iniciar sesión.');
         return;
       }
-
-      // 2. Rol Asistente Administrativo
-      if (rolSeleccionado === 'asistente') {
-        if (pin === '4321' || pin === 'asistente' || pin === '1234' || pin === '') {
-          const sessionData = { role: 'asistente', nombre: 'Lcda. Asistente Administrativo', modo: modoSeleccionado, time: Date.now() };
-          try { localStorage.setItem('imagen_salud_session', JSON.stringify(sessionData)); } catch (e) {}
-          onLoginSuccess('asistente', 'Lcda. Asistente Administrativo', modoSeleccionado);
-        } else {
-          setError('PIN de Asistente Administrativo incorrecto. (PIN de acceso: 4321)');
-          setCargando(false);
-        }
-        return;
-      }
-
-      // 3. Rol Cajero / Admisión
-      if (rolSeleccionado === 'cajero') {
-        const sessionData = { role: 'cajero', nombre: 'Cajero(a) de Turno', modo: modoSeleccionado, time: Date.now() };
-        try { localStorage.setItem('imagen_salud_session', JSON.stringify(sessionData)); } catch (e) {}
-        onLoginSuccess('cajero', 'Cajero(a) de Turno', modoSeleccionado);
-      }
-    }, 350);
+      onLoginSuccess(data.role as UserRole, data.nombre as string, data.modo as ModoOperacion);
+    } catch {
+      setError('Error de conexión con el servidor.');
+    } finally {
+      setCargando(false);
+    }
   };
 
   return (
@@ -207,19 +189,16 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({ onLoginSuccess }) => {
               </div>
 
               {/* 3. PIN de Seguridad */}
-              {rolSeleccionado !== 'cajero' ? (
+              {(
                 <div className="space-y-1.5">
                   <label className="text-xs font-bold text-slate-700 flex items-center justify-between">
                     <span>PIN / Contraseña de Seguridad</span>
-                    <span className="text-[10px] text-slate-400 font-mono">
-                      {rolSeleccionado === 'admin' ? 'Por defecto: 1234' : 'Por defecto: 4321'}
-                    </span>
                   </label>
                   <div className="relative">
                     <KeyRound className="w-4 h-4 absolute left-3 top-3 text-slate-400" />
                     <Input
                       type={mostrarPin ? 'text' : 'password'}
-                      placeholder={rolSeleccionado === 'admin' ? 'Ingrese PIN de Administrador...' : 'Ingrese PIN de Asistente...'}
+                      placeholder="Ingrese su PIN..."
                       value={pin}
                       onChange={(e) => setPin(e.target.value)}
                       required
@@ -233,11 +212,6 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({ onLoginSuccess }) => {
                       {mostrarPin ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                     </button>
                   </div>
-                </div>
-              ) : (
-                <div className="p-3 bg-slate-50 rounded-2xl border border-slate-200 text-xs text-slate-600 flex items-center gap-2">
-                  <UserCheck className="w-4 h-4 text-clinica-primary shrink-0" />
-                  <span>Acceso simplificado de turno para taquilla y admisión de pacientes.</span>
                 </div>
               )}
             </CardContent>

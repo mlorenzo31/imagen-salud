@@ -6,6 +6,7 @@ import { TreasuryCards } from '@/components/TreasuryCards';
 import { ModalEgreso } from '@/components/ModalEgreso';
 import { ModalCambioDivisa } from '@/components/ModalCambioDivisa';
 import { BloqueoCierrePendiente } from '@/components/BloqueoCierrePendiente';
+import { CierreObligatorio } from '@/components/CierreObligatorio';
 import { TablaHonorarios } from '@/components/TablaHonorarios';
 import { DashboardFinanciero } from '@/components/DashboardFinanciero';
 import { TremorDashboard } from '@/components/TremorDashboard';
@@ -49,6 +50,7 @@ import {
 } from 'lucide-react';
 import { exportarAExcel, exportarAPDF } from '@/lib/exportUtils';
 import { CuentaBancaria, TransaccionBancaria, HonorarioMedico, PacientePendiente, UserRole, ModoOperacion } from '@/types';
+import { hoyLocal } from '@/lib/date';
 
 export default function Home() {
   const [isAuthenticated, setIsAuthenticated] = useState<boolean>(false);
@@ -61,7 +63,7 @@ export default function Home() {
   const [cuentas, setCuentas] = useState<CuentaBancaria[]>([]);
   const [transacciones, setTransacciones] = useState<TransaccionBancaria[]>([]);
   const [honorarios, setHonorarios] = useState<HonorarioMedico[]>([]);
-  const [tasaBcv, setTasaBcv] = useState<number>(832.49);
+  const [tasaBcv, setTasaBcv] = useState<number>(0);
   const [loading, setLoading] = useState(true);
 
   // Modales
@@ -74,32 +76,30 @@ export default function Home() {
 
   // Recuperar sesión y tasa BCV
   useEffect(() => {
-    try {
-      const sessionStr = localStorage.getItem('imagen_salud_session');
-      if (sessionStr) {
-        const session = JSON.parse(sessionStr);
+    fetch('/api/auth/session')
+      .then(res => (res.ok ? res.json() : null))
+      .then(session => {
         if (session && session.role) {
           setRole(session.role);
           setNombreUsuario(session.nombre || 'Usuario Clínico');
           if (session.modo) setModoOperacion(session.modo);
           setIsAuthenticated(true);
         }
-      }
-    } catch (e) {
-      console.warn('Error recuperando sesión:', e);
-    }
+      })
+      .catch(() => {});
 
     // Tasa BCV
-    fetch('/api/bcv')
+    const refrescarTasa = () => fetch('/api/bcv')
       .then(res => res.json())
-      .then(d => { if (d.tasa) setTasaBcv(d.tasa); })
+      .then(d => { if (d.tasa > 0) setTasaBcv(d.tasa); })
       .catch(() => {});
+    refrescarTasa();
+    const idTasa = setInterval(refrescarTasa, 5 * 60 * 1000);
+    return () => clearInterval(idTasa);
   }, []);
 
   const handleLogout = () => {
-    try {
-      localStorage.removeItem('imagen_salud_session');
-    } catch (e) {}
+    fetch('/api/auth/logout', { method: 'POST' }).catch(() => {});
     setIsAuthenticated(false);
     setActiveSection('facturacion');
   };
@@ -136,79 +136,18 @@ export default function Home() {
         setTransacciones(dataTx);
       }
 
-      // 3. Auditoría de Cierre
-      const resCierre = await fetch('/api/cierres/verificar-estado-diario');
+      // 3. Auditoría de cierre: solo cuentan días anteriores (los pacientes de hoy son operación normal)
+      const resCierre = await fetch('/api/cierres/estado-jornada');
       if (resCierre.ok) {
         const dataCierre = await resCierre.json();
-        if (!dataCierre.puedeCerrar && dataCierre.pacientesPendientes?.length > 0) {
-          setPacientesPendientes(dataCierre.pacientesPendientes);
-          setFechaPendiente(dataCierre.fecha_evaluada || new Date().toISOString().split('T')[0]);
-        }
+        const pendientes: PacientePendiente[] = dataCierre.pacientesPendientes ?? [];
+        setPacientesPendientes(dataCierre.requiereCierre ? pendientes : []);
+        setFechaPendiente(dataCierre.fecha || hoyLocal());
       }
 
-      // 4. Honorarios de Médicos con Trazabilidad
-      setHonorarios([
-        {
-          id: 1,
-          medico: 'Dra. María González',
-          especialidad: 'Radiología',
-          pacientes_atendidos: 12,
-          total_usd: 280.00,
-          tasa_bcv: tasaBcv,
-          honorarios_ids: [101, 102],
-          desglose_pagos: {
-            punto_de_venta_usd: 140.00,
-            pago_movil_usd: 84.00,
-            efectivo_bs_usd: 28.00,
-            divisas_usd: 28.00
-          }
-        },
-        {
-          id: 2,
-          medico: 'Dr. Carlos Mendoza',
-          especialidad: 'Ecografía',
-          pacientes_atendidos: 8,
-          total_usd: 195.00,
-          tasa_bcv: tasaBcv,
-          honorarios_ids: [103],
-          desglose_pagos: {
-            punto_de_venta_usd: 97.50,
-            pago_movil_usd: 58.50,
-            efectivo_bs_usd: 19.50,
-            divisas_usd: 19.50
-          }
-        },
-        {
-          id: 3,
-          medico: 'Dra. Carmen Rodríguez',
-          especialidad: 'Patología',
-          pacientes_atendidos: 5,
-          total_usd: 150.00,
-          tasa_bcv: tasaBcv,
-          honorarios_ids: [104],
-          desglose_pagos: {
-            punto_de_venta_usd: 75.00,
-            pago_movil_usd: 45.00,
-            efectivo_bs_usd: 15.00,
-            divisas_usd: 15.00
-          }
-        },
-        {
-          id: 4,
-          medico: 'Dra. Tania De Leon',
-          especialidad: 'Ginecología',
-          pacientes_atendidos: 9,
-          total_usd: 346.50,
-          tasa_bcv: tasaBcv,
-          honorarios_ids: [105, 106],
-          desglose_pagos: {
-            punto_de_venta_usd: 173.25,
-            pago_movil_usd: 103.95,
-            efectivo_bs_usd: 34.65,
-            divisas_usd: 34.65
-          }
-        }
-      ]);
+      // 4. Honorarios pendientes por médico (datos reales con trazabilidad por forma de cobro)
+      const resHon = await fetch('/api/tesoreria/honorarios/resumen');
+      if (resHon.ok) setHonorarios(await resHon.json());
     } catch (err) {
       console.error('Error cargando datos del sistema:', err);
     } finally {
@@ -242,14 +181,14 @@ export default function Home() {
       alert('No hay movimientos registrados para exportar.');
       return;
     }
-    const data = transacciones.map((tx: any) => ({
+    const data = transacciones.map((tx) => ({
       'ID Asiento': `#${tx.id}`,
       'Referencia': tx.referencia || 'S/R',
       'Cuenta': tx.cuenta_nombre,
       'Concepto': tx.concepto,
-      'Débito (-)': parseFloat(tx.monto_debito) || 0,
-      'Crédito (+)': parseFloat(tx.monto_credito) || 0,
-      'Saldo Posterior': parseFloat(tx.saldo_posterior) || 0,
+      'Débito (-)': Number(tx.monto_debito) || 0,
+      'Crédito (+)': Number(tx.monto_credito) || 0,
+      'Saldo Posterior': Number(tx.saldo_posterior) || 0,
       'Moneda': tx.moneda,
       'Tipo': tx.es_comision ? 'Comisión Manual' : tx.tipo_transaccion
     }));
@@ -263,16 +202,16 @@ export default function Home() {
       alert('No hay movimientos registrados para exportar.');
       return;
     }
-    const totalDebitos = transacciones.reduce((acc: number, tx: any) => acc + (parseFloat(tx.monto_debito) || 0), 0);
-    const totalCreditos = transacciones.reduce((acc: number, tx: any) => acc + (parseFloat(tx.monto_credito) || 0), 0);
+    const totalDebitos = transacciones.reduce((acc: number, tx) => acc + (Number(tx.monto_debito) || 0), 0);
+    const totalCreditos = transacciones.reduce((acc: number, tx) => acc + (Number(tx.monto_credito) || 0), 0);
 
-    const filas = transacciones.map((tx: any) => [
+    const filas = transacciones.map((tx) => [
       `#${tx.id}`,
       (tx.cuenta_nombre || '').slice(0, 18),
       (tx.concepto || '').slice(0, 26),
-      parseFloat(tx.monto_debito) > 0 ? `-${parseFloat(tx.monto_debito).toFixed(2)}` : '-',
-      parseFloat(tx.monto_credito) > 0 ? `+${parseFloat(tx.monto_credito).toFixed(2)}` : '-',
-      `${parseFloat(tx.saldo_posterior).toFixed(2)} ${tx.moneda}`,
+      Number(tx.monto_debito) > 0 ? `-${Number(tx.monto_debito).toFixed(2)}` : '-',
+      Number(tx.monto_credito) > 0 ? `+${Number(tx.monto_credito).toFixed(2)}` : '-',
+      `${Number(tx.saldo_posterior).toFixed(2)} ${tx.moneda}`,
       tx.es_comision ? 'Comisión' : (tx.tipo_transaccion || 'General')
     ]);
 
@@ -504,7 +443,7 @@ export default function Home() {
                         </td>
                       </tr>
                     ) : (
-                      transacciones.map((tx: any) => (
+                      transacciones.map((tx) => (
                         <tr key={tx.id} className="hover:bg-slate-50/80">
                           <td className="p-3 font-mono font-bold text-slate-700">
                             #{tx.id} • {tx.referencia || 'S/R'}
@@ -512,13 +451,13 @@ export default function Home() {
                           <td className="p-3 font-bold text-slate-900">{tx.cuenta_nombre}</td>
                           <td className="p-3 text-slate-700 font-medium">{tx.concepto}</td>
                           <td className="p-3 text-right font-mono font-bold text-rose-600">
-                            {parseFloat(tx.monto_debito) > 0 ? `-${parseFloat(tx.monto_debito).toFixed(2)}` : '-'}
+                            {Number(tx.monto_debito) > 0 ? `-${Number(tx.monto_debito).toFixed(2)}` : '-'}
                           </td>
                           <td className="p-3 text-right font-mono font-bold text-emerald-600">
-                            {parseFloat(tx.monto_credito) > 0 ? `+${parseFloat(tx.monto_credito).toFixed(2)}` : '-'}
+                            {Number(tx.monto_credito) > 0 ? `+${Number(tx.monto_credito).toFixed(2)}` : '-'}
                           </td>
                           <td className="p-3 text-right font-mono font-black text-slate-900">
-                            {parseFloat(tx.saldo_posterior).toLocaleString('es-VE', { minimumFractionDigits: 2 })} {tx.moneda}
+                            {Number(tx.saldo_posterior).toLocaleString('es-VE', { minimumFractionDigits: 2 })} {tx.moneda}
                           </td>
                           <td className="p-3 text-center">
                             {tx.es_comision ? (
@@ -609,20 +548,8 @@ export default function Home() {
         {/* 12. BALANCE FINANCIERO OPERATIVO (Pillar 10: Barras, Líneas, Donut, Tabla) */}
         {activeSection === 'dashboard' && (
           <div className="space-y-6 animate-in fade-in-50 duration-300">
-            <TremorDashboard 
-              ingresosUsd={3480.00}
-              ingresosBs={142500.80}
-              egresosBs={2882.70}
-              comisionesBs={32.70}
-            />
-            <DashboardFinanciero
-              ingresosTotalesBs={142500.80}
-              ingresosTotalesUsd={3480.00}
-              egresosTotalesBs={2882.70}
-              comisionesTotalesBs={32.70}
-              transaccionesCount={transacciones.length || 48}
-              tasaBcv={tasaBcv}
-            />
+            <TremorDashboard />
+            <DashboardFinanciero tasaBcv={tasaBcv} />
           </div>
         )}
 
@@ -686,6 +613,8 @@ export default function Home() {
         onOpenChange={setOpenExcel}
         onSuccess={loadInitialData}
       />
+
+      <CierreObligatorio role={role} onResuelto={loadInitialData} />
 
       {openBloqueo && (
         <BloqueoCierrePendiente

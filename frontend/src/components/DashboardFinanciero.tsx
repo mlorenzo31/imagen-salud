@@ -1,13 +1,14 @@
 'use client';
 
 import React, { useState, useRef } from 'react';
-import * as XLSX from 'xlsx';
+import { descargarExcel } from '@/lib/excel';
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
 import html2canvas from 'html2canvas';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
+import { getErrorMessage } from '@/lib/utils';
 import {
   BarChart3,
   LineChart as LineChartIcon,
@@ -40,50 +41,30 @@ import {
   Legend,
   CartesianGrid
 } from 'recharts';
+import { useResumenFinanciero } from '@/lib/useResumenFinanciero';
 
 interface DashboardFinancieroProps {
-  ingresosTotalesBs: number;
-  ingresosTotalesUsd: number;
-  egresosTotalesBs: number;
-  comisionesTotalesBs: number;
-  transaccionesCount: number;
   tasaBcv?: number;
 }
 
 type VistaModo = 'BARRAS' | 'LINEAS' | 'DONUT' | 'TABLA';
 
-export const DashboardFinanciero: React.FC<DashboardFinancieroProps> = ({
-  ingresosTotalesBs,
-  ingresosTotalesUsd,
-  egresosTotalesBs,
-  comisionesTotalesBs,
-  transaccionesCount,
-  tasaBcv = 832.49
-}) => {
+export const DashboardFinanciero: React.FC<DashboardFinancieroProps> = ({ tasaBcv: tasaProp = 0 }) => {
   const [vista, setVista] = useState<VistaModo>('BARRAS');
   const [periodo, setPeriodo] = useState<'HOY' | '7DIAS' | 'MES' | 'TODO'>('MES');
   const [exportandoPdf, setExportandoPdf] = useState(false);
   const chartRef = useRef<HTMLDivElement>(null);
 
-  // Serie de datos diarios para gráficos de Barras y Líneas
-  const datosTendencia = [
-    { dia: 'Lun 08', IngresosUSD: 420, EgresosUSD: 45, MargenUSD: 375, IngresosBs: 349645, EgresosBs: 37462 },
-    { dia: 'Mar 09', IngresosUSD: 580, EgresosUSD: 60, MargenUSD: 520, IngresosBs: 482844, EgresosBs: 49949 },
-    { dia: 'Mié 10', IngresosUSD: 650, EgresosUSD: 85, MargenUSD: 565, IngresosBs: 541118, EgresosBs: 70761 },
-    { dia: 'Jue 11', IngresosUSD: 710, EgresosUSD: 90, MargenUSD: 620, IngresosBs: 591067, EgresosBs: 74924 },
-    { dia: 'Vie 12', IngresosUSD: 840, EgresosUSD: 110, MargenUSD: 730, IngresosBs: 699291, EgresosBs: 91573 },
-    { dia: 'Sáb 13', IngresosUSD: 490, EgresosUSD: 40, MargenUSD: 450, IngresosBs: 407920, EgresosBs: 33299 },
-    { dia: 'Hoy 14', IngresosUSD: 620, EgresosUSD: 75, MargenUSD: 545, IngresosBs: 516143, EgresosBs: 62436 }
-  ];
-
-  // Datos para gráfico Donut / Pie
-  const datosDistribucion = [
-    { name: 'Consultas Médicas (Grupo C)', value: 1450, color: '#2EA89B' },
-    { name: 'Ecografía & Ginecología (Grupo A)', value: 1280, color: '#80DDD2' },
-    { name: 'Mamografía & Rayos X (Grupo B)', value: 750, color: '#9BCEDF' },
-    { name: 'Ingresos Extraordinarios', value: 380, color: '#F59E0B' },
-    { name: 'Gastos Operativos (Egresos)', value: 420, color: '#E76F3D' }
-  ];
+  // Métricas reales del período seleccionado (se refrescan solas)
+  const { data: resumen, cargando, error } = useResumenFinanciero(periodo);
+  const tasaBcv = tasaProp > 0 ? tasaProp : resumen.tasa;
+  const ingresosTotalesUsd = resumen.ingresosUsd;
+  const ingresosTotalesBs = resumen.ingresosBs;
+  const egresosTotalesBs = resumen.egresosBs;
+  const comisionesTotalesBs = resumen.comisionesBs;
+  const datosTendencia = resumen.tendencia;
+  const COLORES = ['#2EA89B', '#80DDD2', '#9BCEDF', '#F59E0B', '#E76F3D', '#6366F1'];
+  const datosDistribucion = resumen.distribucion.map((d, i) => ({ ...d, color: COLORES[i % COLORES.length] }));
 
   // Exportar Excel Completo
   const exportarExcel = () => {
@@ -96,14 +77,10 @@ export const DashboardFinanciero: React.FC<DashboardFinancieroProps> = ({
       { Indicador: 'Margen Operativo Neto Estimado', Monto_USD: ingresosTotalesUsd + (ingresosTotalesBs - egresosTotalesBs) / tasaBcv, Monto_Bs: (ingresosTotalesUsd * tasaBcv) + (ingresosTotalesBs - egresosTotalesBs) }
     ];
 
-    const wb = XLSX.utils.book_new();
-    const wsResumen = XLSX.utils.json_to_sheet(dataResumen);
-    XLSX.utils.book_append_sheet(wb, wsResumen, 'Resumen Ejecutivo');
-
-    const wsTendencia = XLSX.utils.json_to_sheet(datosTendencia);
-    XLSX.utils.book_append_sheet(wb, wsTendencia, 'Tendencia Diaria');
-
-    XLSX.writeFile(wb, `Balance_Financiero_Imagen_Salud_${Date.now()}.xlsx`);
+    descargarExcel(`Balance_Financiero_Imagen_Salud_${Date.now()}.xlsx`, [
+      { nombreHoja: 'Resumen Ejecutivo', data: dataResumen },
+      { nombreHoja: 'Tendencia Diaria', data: datosTendencia.map((d) => ({ ...d })) },
+    ]).catch((err) => console.error('Error exportando Excel:', err));
   };
 
   // Exportar PDF con captura de gráficos vía html2canvas
@@ -163,9 +140,9 @@ export const DashboardFinanciero: React.FC<DashboardFinancieroProps> = ({
                 const el = elements[i] as HTMLElement;
                 if (el.style) {
                   ['color', 'backgroundColor', 'borderColor'].forEach(prop => {
-                    const val = (el.style as any)[prop];
+                    const val = (el.style as unknown as Record<string, string>)[prop];
                     if (typeof val === 'string' && (val.includes('lab') || val.includes('oklch') || val.includes('oklab'))) {
-                      (el.style as any)[prop] = '#2EA89B';
+                      (el.style as unknown as Record<string, string>)[prop] = '#2EA89B';
                     }
                   });
                 }
@@ -176,7 +153,8 @@ export const DashboardFinanciero: React.FC<DashboardFinancieroProps> = ({
           console.warn('Dashboard canvas capture fallback:', err);
         }
         const imgData = canvas ? canvas.toDataURL('image/png') : null;
-        const finalY = (doc as any).lastAutoTable ? (doc as any).lastAutoTable.finalY + 8 : 95;
+        const lastTable = (doc as unknown as { lastAutoTable?: { finalY: number } }).lastAutoTable;
+        const finalY = lastTable ? lastTable.finalY + 8 : 95;
         if (imgData && finalY + 85 < 280) {
           doc.setFontSize(9);
           doc.setFont('helvetica', 'bold');
@@ -186,8 +164,8 @@ export const DashboardFinanciero: React.FC<DashboardFinancieroProps> = ({
       }
 
       doc.save(`Dashboard_Financiero_Imagen_Salud_${Date.now()}.pdf`);
-    } catch (err: any) {
-      alert('Error exportando PDF: ' + err.message);
+    } catch (err) {
+      alert('Error exportando PDF: ' + getErrorMessage(err));
     } finally {
       setExportandoPdf(false);
     }
@@ -291,7 +269,7 @@ export const DashboardFinanciero: React.FC<DashboardFinancieroProps> = ({
                 <YAxis stroke="#94A3B8" fontSize={11} tickFormatter={(val) => `$${val}`} />
                 <Tooltip
                   contentStyle={{ backgroundColor: '#0F172A', borderRadius: '12px', border: 'none', color: '#fff', fontSize: '11px' }}
-                  formatter={(val: any) => [`$${val} USD`, '']}
+                  formatter={(val) => [`$${val} USD`, '']}
                 />
                 <Legend wrapperStyle={{ fontSize: '11px' }} />
                 <Bar dataKey="IngresosUSD" name="Ingresos ($ USD)" fill="#2EA89B" radius={[6, 6, 0, 0]} />
@@ -312,7 +290,7 @@ export const DashboardFinanciero: React.FC<DashboardFinancieroProps> = ({
                 <YAxis stroke="#94A3B8" fontSize={11} tickFormatter={(val) => `$${val}`} />
                 <Tooltip
                   contentStyle={{ backgroundColor: '#0F172A', borderRadius: '12px', border: 'none', color: '#fff', fontSize: '11px' }}
-                  formatter={(val: any) => [`$${val} USD`, '']}
+                  formatter={(val) => [`$${val} USD`, '']}
                 />
                 <Legend wrapperStyle={{ fontSize: '11px' }} />
                 <Line type="monotone" dataKey="IngresosUSD" name="Ingresos ($ USD)" stroke="#2EA89B" strokeWidth={3} dot={{ r: 5 }} />
@@ -344,7 +322,7 @@ export const DashboardFinanciero: React.FC<DashboardFinancieroProps> = ({
                   </Pie>
                   <Tooltip
                     contentStyle={{ backgroundColor: '#0F172A', borderRadius: '12px', border: 'none', color: '#fff', fontSize: '11px' }}
-                    formatter={(val: any) => [`$${val} USD`, '']}
+                    formatter={(val) => [`$${val} USD`, '']}
                   />
                   <Legend wrapperStyle={{ fontSize: '11px' }} />
                 </PieChart>

@@ -28,6 +28,7 @@ import {
 } from 'lucide-react';
 import { exportarAExcel, exportarAPDF } from '@/lib/exportUtils';
 import { RetencionSENIAT, UserRole, ModoOperacion } from '@/types';
+import { hoyLocal } from '@/lib/date';
 
 interface ModuloRetencionesSeniatProps {
   currentRole: UserRole;
@@ -93,7 +94,7 @@ export const ModuloRetencionesSeniat: React.FC<ModuloRetencionesSeniatProps> = (
   const [comprobanteActivoImprimir, setComprobanteActivoImprimir] = useState<RetencionSENIAT | null>(null);
 
   // Form State
-  const fechaHoy = new Date().toISOString().slice(0, 10);
+  const fechaHoy = hoyLocal();
   const periodoActual = fechaHoy.slice(0, 7);
 
   const [formCliente, setFormCliente] = useState('');
@@ -485,7 +486,7 @@ export const ModuloRetencionesSeniat: React.FC<ModuloRetencionesSeniatProps> = (
                 <label className="text-xs font-bold text-slate-700">% Retención de IVA</label>
                 <select
                   value={formPctIva}
-                  onChange={(e) => setFormPctIva(Number(e.target.value) as any)}
+                  onChange={(e) => setFormPctIva(Number(e.target.value) as Parameters<typeof setFormPctIva>[0])}
                   className="w-full h-10 px-3 text-xs bg-white border border-slate-200 rounded-xl font-bold text-slate-800"
                 >
                   <option value={75}>75% (Contribuyente General)</option>
