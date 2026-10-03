@@ -54,7 +54,7 @@ export const ModuloCajaDiaria: React.FC<ModuloCajaDiariaProps> = ({ currentRole 
   const [anulandoId, setAnulandoId] = useState<number | null>(null);
 
   // Tasa Oficial BCV
-  const [tasaBcv, setTasaBcv] = useState<number>(832.49);
+  const [tasaBcv, setTasaBcv] = useState<number>(0);
 
   // === MOTOR DE BÚSQUEDA Y SEGMENTACIÓN: BUSCADOR, FILTROS Y AGRUPACIONES ===
   const [busquedaTexto, setBusquedaTexto] = useState<string>('');

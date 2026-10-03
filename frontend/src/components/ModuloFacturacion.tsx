@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -157,7 +157,7 @@ export const ModuloFacturacion: React.FC<ModuloFacturacionProps> = ({ onFacturaE
   const [selectedDoctor, setSelectedDoctor] = useState<string>('');
   
   // Tasa BCV Oficial Automática
-  const [tasaBcv, setTasaBcv] = useState<number>(832.49);
+  const [tasaBcv, setTasaBcv] = useState<number>(0);
   const [cargandoTasaBcv, setCargandoTasaBcv] = useState<boolean>(false);
   const [fuenteTasaBcv, setFuenteTasaBcv] = useState<string>('Consultando BCV...');
   const [tasaManualEditada, setTasaManualEditada] = useState<boolean>(false);
@@ -200,8 +200,13 @@ export const ModuloFacturacion: React.FC<ModuloFacturacionProps> = ({ onFacturaE
     }
   };
 
+  // Sincronización inicial y cada 5 min (sin intervención), salvo que el cajero haya fijado la tasa a mano.
+  const tasaManualRef = useRef(false);
+  useEffect(() => { tasaManualRef.current = tasaManualEditada; }, [tasaManualEditada]);
   useEffect(() => {
     sincronizarTasaBCV(false);
+    const id = setInterval(() => { if (!tasaManualRef.current) sincronizarTasaBCV(false); }, 5 * 60 * 1000);
+    return () => clearInterval(id);
   }, []);
 
   // Autoselección según Área

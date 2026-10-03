@@ -3,6 +3,7 @@ import type { PoolClient } from 'pg';
 import pool from '@/lib/db';
 import { ApiError, errorResponse, fechaHoraLocal, sesionUsuario, withTransaction } from '@/lib/apiHelpers';
 import { centsToStr, toCents } from '@/lib/money';
+import { obtenerTasaBcv } from '@/lib/tasaBcv';
 
 export async function GET(req: NextRequest) {
   try {
@@ -143,8 +144,21 @@ export async function POST(req: NextRequest) {
     const fecha = esAdmin && /^\d{4}-\d{2}-\d{2}$/.test(str(data.fecha)) ? str(data.fecha) : ahora.fecha;
     const hora = str(data.hora) || ahora.hora;
 
-    const tasaNum = Number(data.tasaBCV ?? data.tasa_bcv);
-    if (!Number.isFinite(tasaNum) || tasaNum <= 0) throw new ApiError(400, 'Debe indicarse una tasa BCV válida (> 0).');
+    // La tasa la gobierna el servidor: si el cliente no la envía se usa la vigente (sin intervención humana);
+    // si la envía y la vigente es reciente, no puede desviarse más de 5 % (evita tasas manipuladas o pestañas obsoletas).
+    const tasaCliente = Number(data.tasaBCV ?? data.tasa_bcv);
+    const vigente = await obtenerTasaBcv();
+    let tasaNum: number;
+    if (Number.isFinite(tasaCliente) && tasaCliente > 0) {
+      if (vigente?.exito && Math.abs(tasaCliente - vigente.tasa) / vigente.tasa > 0.05) {
+        throw new ApiError(400, `La tasa enviada (${tasaCliente}) difiere de la tasa BCV vigente (${vigente.tasa}). Recargue la pantalla.`);
+      }
+      tasaNum = tasaCliente;
+    } else if (vigente) {
+      tasaNum = vigente.tasa;
+    } else {
+      throw new ApiError(503, 'No hay tasa BCV disponible (proveedores caídos y sin historial).');
+    }
 
     const servicios = normalizarServicios(data);
     const totalPrecio = servicios.reduce((a, s) => a + s.precio, 0);

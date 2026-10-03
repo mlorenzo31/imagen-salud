@@ -87,7 +87,7 @@ export const ModuloIngresosExtraordinarios: React.FC<ModuloIngresosExtraordinari
   const [referencia, setReferencia] = useState<string>('');
   const [descripcion, setDescripcion] = useState<string>('');
   const [comisionBancariaManual, setComisionBancariaManual] = useState<string>('0.00');
-  const [tasaBcv, setTasaBcv] = useState<number>(832.49);
+  const [tasaBcv, setTasaBcv] = useState<number>(0);
 
   // Filtros Clínicos Avanzados State
   const [searchQuery, setSearchQuery] = useState('');

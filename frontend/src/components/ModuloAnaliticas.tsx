@@ -38,7 +38,7 @@ type GrupoAnalitica = 'NINGUNO' | 'AREA' | 'MEDICO' | 'METODO_PAGO' | 'FECHA';
 export const ModuloAnaliticas: React.FC = () => {
   const [facturas, setFacturas] = useState<FacturaCaja[]>([]);
   const [loading, setLoading] = useState(true);
-  const [tasaBcv, setTasaBcv] = useState<number>(832.49);
+  const [tasaBcv, setTasaBcv] = useState<number>(0);
 
   // === MOTOR DE BÚSQUEDA Y SEGMENTACIÓN: BUSCADOR, FILTROS Y AGRUPACIONES ===
   const [busquedaTexto, setBusquedaTexto] = useState<string>('');

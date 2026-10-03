@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { CuentaBancaria, registrarCambioDivisa } from '@/lib/api';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
@@ -25,7 +25,15 @@ export const ModalCambioDivisa: React.FC<ModalCambioDivisaProps> = ({
   const cuentasBs = cuentas.filter(c => c.moneda === 'BS');
   const [cuentaId, setCuentaId] = useState<number>(cuentasBs[0]?.id || 4);
   const [montoBs, setMontoBs] = useState<string>('');
-  const [tasaManual, setTasaManual] = useState<string>('807.39');
+  const [tasaManual, setTasaManual] = useState<string>('');
+  // Pre-llena la tasa con la BCV vigente (el operador solo la ajusta si el banco aplicó otra).
+  useEffect(() => {
+    if (!open) return;
+    fetch('/api/bcv')
+      .then(res => res.json())
+      .then(d => { if (d.tasa > 0) setTasaManual(prev => prev || String(d.tasa)); })
+      .catch(() => {});
+  }, [open]);
   const [comisionBs, setComisionBs] = useState<string>('0.00');
   const [referencia, setReferencia] = useState<string>('');
   const [notas, setNotas] = useState<string>('');

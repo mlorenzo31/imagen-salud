@@ -88,10 +88,13 @@ export default function Home() {
       .catch(() => {});
 
     // Tasa BCV
-    fetch('/api/bcv')
+    const refrescarTasa = () => fetch('/api/bcv')
       .then(res => res.json())
       .then(d => { if (d.tasa > 0) setTasaBcv(d.tasa); })
       .catch(() => {});
+    refrescarTasa();
+    const idTasa = setInterval(refrescarTasa, 5 * 60 * 1000);
+    return () => clearInterval(idTasa);
   }, []);
 
   const handleLogout = () => {

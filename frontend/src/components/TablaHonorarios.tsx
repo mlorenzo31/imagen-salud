@@ -129,7 +129,7 @@ export const TablaHonorarios: React.FC<TablaHonorariosProps> = ({
   // Totales
   const totalUSD = useMemo(() => itemsFiltrados.reduce((sum, d) => sum + d.total_usd, 0), [itemsFiltrados]);
   const totalPacientes = useMemo(() => itemsFiltrados.reduce((sum, d) => sum + d.pacientes_atendidos, 0), [itemsFiltrados]);
-  const tasaReferencia = items[0]?.tasa_bcv || 832.49;
+  const tasaReferencia = items[0]?.tasa_bcv || 0;
   const totalBS = totalUSD * tasaReferencia;
 
   // Toggle trazabilidad
@@ -243,7 +243,7 @@ export const TablaHonorarios: React.FC<TablaHonorariosProps> = ({
   };
 
   
-  const tasaBcvGlobal = items[0]?.tasa_bcv || 832.49;
+  const tasaBcvGlobal = items[0]?.tasa_bcv || 0;
 
   const datosHonorariosUniversal: DataPoint[] = useMemo(() => {
     return itemsFiltrados.map(item => ({
