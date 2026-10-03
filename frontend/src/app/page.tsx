@@ -61,7 +61,7 @@ export default function Home() {
   const [cuentas, setCuentas] = useState<CuentaBancaria[]>([]);
   const [transacciones, setTransacciones] = useState<TransaccionBancaria[]>([]);
   const [honorarios, setHonorarios] = useState<HonorarioMedico[]>([]);
-  const [tasaBcv, setTasaBcv] = useState<number>(832.49);
+  const [tasaBcv, setTasaBcv] = useState<number>(0);
   const [loading, setLoading] = useState(true);
 
   // Modales
@@ -89,7 +89,7 @@ export default function Home() {
     // Tasa BCV
     fetch('/api/bcv')
       .then(res => res.json())
-      .then(d => { if (d.tasa) setTasaBcv(d.tasa); })
+      .then(d => { if (d.tasa > 0) setTasaBcv(d.tasa); })
       .catch(() => {});
   }, []);
 

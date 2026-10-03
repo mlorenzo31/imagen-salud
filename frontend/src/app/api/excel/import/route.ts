@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import pool from '@/lib/db';
+import { errorResponse } from '@/lib/apiHelpers';
 
 export async function POST(req: NextRequest) {
   try {
@@ -38,13 +39,13 @@ export async function POST(req: NextRequest) {
         mensaje: `Carga masiva completada con éxito. Se persistieron ${insertados} atenciones clínicas.`,
         registros_insertados: insertados
       });
-    } catch (err: any) {
-      await client.query('ROLLBACK');
-      return NextResponse.json({ error: err.message }, { status: 400 });
+    } catch (err) {
+      await client.query('ROLLBACK').catch(() => {});
+      return errorResponse(err);
     } finally {
       client.release();
     }
-  } catch (err: any) {
-    return NextResponse.json({ error: err.message }, { status: 500 });
+  } catch (err) {
+    return errorResponse(err);
   }
 }

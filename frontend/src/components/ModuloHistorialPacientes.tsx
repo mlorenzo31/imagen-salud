@@ -234,7 +234,7 @@ export const ModuloHistorialPacientes: React.FC<ModuloHistorialPacientesProps> =
       };
     }
 
-    const noAnuladas = movimientos.filter(m => m.estado !== 'ANULADO');
+    const noAnuladas = movimientos.filter(m => m.estado !== 'ANULADA');
     const totalUSD = noAnuladas.reduce((acc, m) => acc + (parseFloat(String(m.precio_usd)) || 0), 0);
     const totalDivisasUSD = noAnuladas.reduce((acc, m) => acc + (parseFloat(String(m.pago_divisas)) || 0), 0);
     const totalPagoMovilBs = noAnuladas.reduce((acc, m) => acc + (parseFloat(String(m.pago_movil)) || 0), 0);
@@ -242,7 +242,7 @@ export const ModuloHistorialPacientes: React.FC<ModuloHistorialPacientesProps> =
     const totalEfectivoBs = noAnuladas.reduce((acc, m) => acc + (parseFloat(String(m.pago_efectivo_bs)) || 0), 0);
     const conAdjunto = noAnuladas.filter(m => Boolean(m.adjunto_nombre)).length;
     const conWhatsApp = noAnuladas.filter(m => Boolean(m.whatsapp_enviado)).length;
-    const anuladas = movimientos.filter(m => m.estado === 'ANULADO').length;
+    const anuladas = movimientos.filter(m => m.estado === 'ANULADA').length;
 
     // Última fecha
     const fechaObj = movimientos[0]?.fecha ? new Date(movimientos[0].fecha) : null;
@@ -285,7 +285,7 @@ export const ModuloHistorialPacientes: React.FC<ModuloHistorialPacientesProps> =
       // 1. Filtro de Estado
       if (filtroEstado === 'CULMINADOS' && m.estado !== 'FINALIZADO' && m.estado !== 'COMPLETADO') return false;
       if (filtroEstado === 'EN_PROCESO' && m.estado !== 'PENDIENTE' && m.estado !== 'EN_PROCESO' && m.estado !== 'ESPERA' && m.estado !== 'ATENCION') return false;
-      if (filtroEstado === 'ANULADOS' && m.estado !== 'ANULADO') return false;
+      if (filtroEstado === 'ANULADOS' && m.estado !== 'ANULADA') return false;
 
       // 2. Filtro de Rango de Fechas
       if (fechaDesde && m.fecha) {
@@ -372,7 +372,7 @@ export const ModuloHistorialPacientes: React.FC<ModuloHistorialPacientesProps> =
   // Total USD filtrado
   const totalUSDFiltrado = useMemo(() => {
     return movimientosFiltrados
-      .filter(m => m.estado !== 'ANULADO')
+      .filter(m => m.estado !== 'ANULADA')
       .reduce((sum, m) => sum + (parseFloat(String(m.precio_usd)) || 0), 0);
   }, [movimientosFiltrados]);
 
@@ -1134,7 +1134,7 @@ export const ModuloHistorialPacientes: React.FC<ModuloHistorialPacientesProps> =
                       {agrupacion !== 'NINGUNA' && movimientosAgrupados ? (
                         Object.entries(movimientosAgrupados).map(([nombreGrupo, listaEnGrupo]) => {
                           const subtotalGrupo = listaEnGrupo
-                            .filter(x => x.estado !== 'ANULADO')
+                            .filter(x => x.estado !== 'ANULADA')
                             .reduce((acc, x) => acc + (parseFloat(String(x.precio_usd)) || 0), 0);
 
                           const colSpanTotal = !pacienteSeleccionado ? 10 : 9;
@@ -1251,7 +1251,7 @@ export const ModuloHistorialPacientes: React.FC<ModuloHistorialPacientesProps> =
                                         <Badge className="bg-emerald-100 text-emerald-800 text-[9px] font-bold border border-emerald-200">
                                           Culminado
                                         </Badge>
-                                      ) : m.estado === 'ANULADO' ? (
+                                      ) : m.estado === 'ANULADA' ? (
                                         <Badge className="bg-rose-100 text-rose-800 text-[9px] font-bold border border-rose-200">
                                           Anulado
                                         </Badge>
@@ -1409,7 +1409,7 @@ export const ModuloHistorialPacientes: React.FC<ModuloHistorialPacientesProps> =
                                   <Badge className="bg-emerald-100 text-emerald-800 text-[9px] font-bold border border-emerald-200">
                                     Culminado
                                   </Badge>
-                                ) : m.estado === 'ANULADO' ? (
+                                ) : m.estado === 'ANULADA' ? (
                                   <Badge className="bg-rose-100 text-rose-800 text-[9px] font-bold border border-rose-200">
                                     Anulado
                                   </Badge>
@@ -1580,7 +1580,7 @@ export const ModuloHistorialPacientes: React.FC<ModuloHistorialPacientesProps> =
               </div>
 
               {/* Motivo de Anulación si aplica */}
-              {facturaDetalle.estado === 'ANULADO' && (
+              {facturaDetalle.estado === 'ANULADA' && (
                 <div className="p-3 rounded-2xl bg-rose-50 border border-rose-200 text-rose-800">
                   <p className="font-bold">Factura Anulada</p>
                   <p className="text-[11px] mt-0.5">{facturaDetalle.motivo_anulacion || 'Sin motivo especificado.'}</p>

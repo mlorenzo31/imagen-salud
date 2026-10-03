@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import pool from '@/lib/db';
+import { ApiError, errorResponse } from '@/lib/apiHelpers';
 
 export async function POST(req: NextRequest) {
   try {
@@ -19,7 +20,7 @@ export async function POST(req: NextRequest) {
       `, [fecha]);
 
       if (parseInt(pendRes.rows[0].cant) > 0) {
-        throw new Error('Aún existen pacientes pendientes de resolución para esta fecha (' + pendRes.rows[0].cant + ' pendientes).');
+        throw new ApiError(400, 'Aún existen pacientes pendientes de resolución para esta fecha (' + pendRes.rows[0].cant + ' pendientes).');
       }
 
       // Obtener totales del día
@@ -57,13 +58,13 @@ export async function POST(req: NextRequest) {
           usuario_responsable: usuario
         }
       });
-    } catch (err: any) {
-      await client.query('ROLLBACK');
-      return NextResponse.json({ error: err.message }, { status: 400 });
+    } catch (err) {
+      await client.query('ROLLBACK').catch(() => {});
+      return errorResponse(err);
     } finally {
       client.release();
     }
-  } catch (err: any) {
-    return NextResponse.json({ error: err.message }, { status: 500 });
+  } catch (err) {
+    return errorResponse(err);
   }
 }

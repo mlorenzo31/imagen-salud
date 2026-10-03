@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import pool from '@/lib/db';
+import { errorResponse } from '@/lib/apiHelpers';
 import { normalizarCedulaRif, extraerDigitos, validarEstructuraCedulaRif } from '@/lib/cedulaRif';
 
 export async function GET(req: NextRequest) {
@@ -9,7 +10,7 @@ export async function GET(req: NextRequest) {
     const activoOnly = searchParams.get('activo') === 'true';
 
     let q = 'SELECT * FROM medicos WHERE 1=1';
-    const params: any[] = [];
+    const params: unknown[] = [];
 
     if (cedula) {
       const digitos = extraerDigitos(cedula);
@@ -26,8 +27,8 @@ export async function GET(req: NextRequest) {
     q += ' ORDER BY nombre ASC';
     const result = await pool.query(q, params);
     return NextResponse.json(result.rows);
-  } catch (err: any) {
-    return NextResponse.json({ error: err.message }, { status: 500 });
+  } catch (err) {
+    return errorResponse(err);
   }
 }
 
@@ -87,11 +88,11 @@ export async function POST(req: NextRequest) {
     ]);
 
     return NextResponse.json(result.rows[0], { status: 201 });
-  } catch (err: any) {
-    if (err.code === '23505') { // Unique violation
+  } catch (err) {
+    if (typeof err === 'object' && err !== null && (err as { code?: string }).code === '23505') { // Unique violation
       return NextResponse.json({ error: 'La Cédula o RIF ya se encuentra registrada en el sistema.' }, { status: 409 });
     }
-    return NextResponse.json({ error: err.message }, { status: 500 });
+    return errorResponse(err);
   }
 }
 
@@ -154,7 +155,7 @@ export async function PUT(req: NextRequest) {
     }
 
     return NextResponse.json(result.rows[0]);
-  } catch (err: any) {
-    return NextResponse.json({ error: err.message }, { status: 500 });
+  } catch (err) {
+    return errorResponse(err);
   }
 }

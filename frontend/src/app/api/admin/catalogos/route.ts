@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import pool from '@/lib/db';
+import { errorResponse } from '@/lib/apiHelpers';
 
 export async function GET() {
   try {
@@ -32,7 +33,7 @@ export async function GET() {
       doctores,
       servicios
     });
-  } catch (err: any) {
-    return NextResponse.json({ error: err.message }, { status: 500 });
+  } catch (err) {
+    return errorResponse(err);
   }
 }

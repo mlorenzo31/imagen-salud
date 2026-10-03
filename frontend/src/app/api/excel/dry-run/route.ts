@@ -1,6 +1,15 @@
 import { NextRequest, NextResponse } from 'next/server';
 import * as XLSX from 'xlsx';
-import pool from '@/lib/db';
+import { errorResponse } from '@/lib/apiHelpers';
+import { toCents } from '@/lib/money';
+
+const cell = (row: Record<string, unknown>, ...keys: string[]): string => {
+  for (const k of keys) {
+    const v = row[k];
+    if (v !== undefined && v !== null && v !== '') return String(v).trim();
+  }
+  return '';
+};
 
 export async function POST(req: NextRequest) {
   try {
@@ -15,7 +24,7 @@ export async function POST(req: NextRequest) {
     const workbook = XLSX.read(bytes, { type: 'buffer' });
     const sheetName = workbook.SheetNames[0];
     const worksheet = workbook.Sheets[sheetName];
-    const rawData: any[] = XLSX.utils.sheet_to_json(worksheet);
+    const rawData = XLSX.utils.sheet_to_json<Record<string, unknown>>(worksheet);
 
     if (rawData.length === 0) {
       return NextResponse.json({ error: 'La hoja de Excel está vacía.' }, { status: 400 });
@@ -23,9 +32,8 @@ export async function POST(req: NextRequest) {
 
     // Médicos y servicios válidos para cross-check
     const medicosValidos = ['Dra. María González', 'Dr. Carlos Mendoza', 'Dra. Carmen Rodríguez', 'Dr. Juan Pérez'];
-    const metodosValidos = ['PAGO_MOVIL', 'EFECTIVO_BS', 'EFECTIVO_USD', 'PUNTO_VENTA'];
 
-    const filasSimuladas: any[] = [];
+    const filasSimuladas: unknown[] = [];
     let montoTotalUsd = 0;
     let montoTotalBs = 0;
     let validas = 0;
@@ -33,13 +41,13 @@ export async function POST(req: NextRequest) {
 
     rawData.forEach((row, idx) => {
       const filaNum = idx + 2; // considerando encabezado
-      const paciente = (row.Paciente || row.paciente || row.PACIENTE || '').toString().trim();
-      const cedula = (row.Cedula || row.cedula || row.CEDULA || '').toString().trim();
-      const servicio = (row.Servicio || row.servicio || row.Estudio || '').toString().trim();
-      const medico = (row.Medico || row.medico || row.Doctor || '').toString().trim();
-      const montoUsd = parseFloat(row.Monto_USD || row.monto_usd || row.USD || 0) || 0;
-      const montoBs = parseFloat(row.Monto_BS || row.monto_bs || row.BS || 0) || 0;
-      const metodoPago = (row.Metodo_Pago || row.metodo_pago || 'PAGO_MOVIL').toString().trim().toUpperCase();
+      const paciente = cell(row, 'Paciente', 'paciente', 'PACIENTE');
+      const cedula = cell(row, 'Cedula', 'cedula', 'CEDULA');
+      const servicio = cell(row, 'Servicio', 'servicio', 'Estudio');
+      const medico = cell(row, 'Medico', 'medico', 'Doctor');
+      const montoUsd = toCents(cell(row, 'Monto_USD', 'monto_usd', 'USD') || 0) / 100;
+      const montoBs = toCents(cell(row, 'Monto_BS', 'monto_bs', 'BS') || 0) / 100;
+      const metodoPago = (cell(row, 'Metodo_Pago', 'metodo_pago') || 'PAGO_MOVIL').toUpperCase();
 
       const observaciones: string[] = [];
 
@@ -81,7 +89,7 @@ export async function POST(req: NextRequest) {
       monto_total_bs: montoTotalBs,
       filas: filasSimuladas
     });
-  } catch (err: any) {
-    return NextResponse.json({ error: err.message }, { status: 500 });
+  } catch (err) {
+    return errorResponse(err);
   }
 }

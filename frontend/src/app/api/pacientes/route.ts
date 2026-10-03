@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import pool from '@/lib/db';
+import { errorResponse } from '@/lib/apiHelpers';
 import { normalizarCedulaRif, extraerDigitos } from '@/lib/cedulaRif';
 
 export async function GET(req: NextRequest) {
@@ -33,8 +34,8 @@ export async function GET(req: NextRequest) {
     );
 
     return NextResponse.json(pacientesOrdenados);
-  } catch (err: any) {
-    return NextResponse.json({ error: err.message }, { status: 500 });
+  } catch (err) {
+    return errorResponse(err);
   }
 }
 
@@ -105,7 +106,7 @@ export async function POST(req: NextRequest) {
     `, [cedulaCanonica, nombreUpper, fecha_nacimiento || null, direccionUpper, telefono]);
 
     return NextResponse.json(insertRes.rows[0]);
-  } catch (err: any) {
-    return NextResponse.json({ error: err.message }, { status: 500 });
+  } catch (err) {
+    return errorResponse(err);
   }
 }

@@ -1,5 +1,6 @@
-﻿import { NextRequest, NextResponse } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
 import pool from '@/lib/db';
+import { errorResponse } from '@/lib/apiHelpers';
 
 export async function GET(req: NextRequest) {
   try {
@@ -22,7 +23,7 @@ export async function GET(req: NextRequest) {
       FROM facturas_caja
       WHERE estado IN ('ESPERA', 'ATENCION')
     `;
-    const paramsSala: any[] = [];
+    const paramsSala: unknown[] = [];
     if (fechaParam) {
       querySala += ' AND fecha = $1 ORDER BY id ASC';
       paramsSala.push(fechaParam);
@@ -51,7 +52,7 @@ export async function GET(req: NextRequest) {
         AND adjunto_nombre IS NOT NULL 
         AND TRIM(adjunto_nombre) != ''
     `;
-    const paramsWhatsApp: any[] = [];
+    const paramsWhatsApp: unknown[] = [];
     if (fechaParam) {
       queryWhatsApp += ' AND fecha = $1 ORDER BY id ASC';
       paramsWhatsApp.push(fechaParam);
@@ -90,8 +91,7 @@ export async function GET(req: NextRequest) {
       totalWhatsAppPendientes: resultWhatsApp.rows.length,
       resumen: resumenRes.rows[0] || {}
     });
-  } catch (err: any) {
-    console.error('Error en verificar-estado-diario:', err);
-    return NextResponse.json({ error: err.message }, { status: 500 });
+  } catch (err) {
+    return errorResponse(err);
   }
 }

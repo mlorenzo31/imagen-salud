@@ -1276,7 +1276,7 @@ export const ModuloFacturacion: React.FC<ModuloFacturacionProps> = ({ onFacturaE
               {/* Botón Principal de Cobro */}
               <Button
                 type="button"
-                disabled={!isCuadrado || isSubmitting || carrito.length === 0}
+                disabled={!isCuadrado || isSubmitting || carrito.length === 0 || !(tasaBcv > 0)}
                 onClick={handleProcesarFactura}
                 className="w-full py-3.5 rounded-xl bg-slate-900 hover:bg-slate-800 text-white font-black text-xs flex items-center justify-center gap-2 shadow-lg shadow-slate-900/20 disabled:opacity-40"
               >

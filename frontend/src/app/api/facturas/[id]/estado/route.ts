@@ -1,5 +1,6 @@
-﻿import { NextRequest, NextResponse } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
 import pool from '@/lib/db';
+import { errorResponse } from '@/lib/apiHelpers';
 
 export async function PUT(
   req: NextRequest,
@@ -11,7 +12,7 @@ export async function PUT(
     const body = await req.json();
 
     const fields: string[] = [];
-    const values: any[] = [];
+    const values: unknown[] = [];
     let idx = 1;
 
     const allowedFields = [
@@ -51,7 +52,7 @@ export async function PUT(
     }
 
     return NextResponse.json(result.rows[0]);
-  } catch (err: any) {
-    return NextResponse.json({ error: err.message }, { status: 500 });
+  } catch (err) {
+    return errorResponse(err);
   }
 }
