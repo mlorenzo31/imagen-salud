@@ -5,7 +5,7 @@ const PUBLICAS = ['/api/auth/login', '/api/bcv', '/api/tv/turnos'];
 
 export async function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl;
-  if (PUBLICAS.includes(pathname)) return NextResponse.next();
+  if (PUBLICAS.includes(pathname) || pathname.startsWith('/api/resultados/')) return NextResponse.next();
 
   const session = await verifySession(request.cookies.get(SESSION_COOKIE)?.value);
   if (!session) return NextResponse.json({ error: 'No autenticado.' }, { status: 401 });

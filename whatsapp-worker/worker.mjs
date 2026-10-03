@@ -1,6 +1,6 @@
 // Bot de WhatsApp (Baileys). Debe ejecutarse en un equipo siempre encendido.
 // Lee la cola wa_outbox, envía los resultados y marca facturas_caja.whatsapp_enviado.
-// Uso: DATABASE_URL=... node worker.mjs   (ver README.md)
+// Uso: DATABASE_URL=... APP_URL=https://tu-sistema.vercel.app node worker.mjs   (ver README.md)
 import makeWASocket, { useMultiFileAuthState, DisconnectReason, fetchLatestBaileysVersion } from '@whiskeysockets/baileys';
 import pg from 'pg';
 import pino from 'pino';
@@ -8,6 +8,7 @@ import QRCode from 'qrcode';
 
 const { DATABASE_URL, DATABASE_SSL } = process.env;
 if (!DATABASE_URL) { console.error('Falta DATABASE_URL'); process.exit(1); }
+if (!process.env.APP_URL) console.warn('APP_URL no definida: se enviará solo el mensaje con enlace, sin archivos adjuntos.');
 
 const db = new pg.Pool({
   connectionString: DATABASE_URL,
@@ -21,7 +22,8 @@ const jitter = () => 4000 + Math.floor(Math.random() * 5000); // 4–9 s entre m
 
 async function asegurarTablas() {
   await db.query(`CREATE TABLE IF NOT EXISTS wa_estado (id INT PRIMARY KEY DEFAULT 1 CHECK (id = 1), estado TEXT NOT NULL DEFAULT 'APAGADO', qr TEXT, numero TEXT, latido TIMESTAMPTZ)`);
-  await db.query(`CREATE TABLE IF NOT EXISTS wa_outbox (id SERIAL PRIMARY KEY, factura_id INT NOT NULL, telefono TEXT NOT NULL, mensaje TEXT NOT NULL, adjunto_url TEXT, adjunto_nombre TEXT, estado TEXT NOT NULL DEFAULT 'PENDIENTE', intentos INT NOT NULL DEFAULT 0, error TEXT, creado TIMESTAMPTZ NOT NULL DEFAULT now(), enviado TIMESTAMPTZ)`);
+  await db.query(`CREATE TABLE IF NOT EXISTS wa_outbox (id SERIAL PRIMARY KEY, factura_id INT NOT NULL, telefono TEXT NOT NULL, mensaje TEXT NOT NULL, adjunto_url TEXT, adjunto_nombre TEXT, token TEXT, estado TEXT NOT NULL DEFAULT 'PENDIENTE', intentos INT NOT NULL DEFAULT 0, error TEXT, creado TIMESTAMPTZ NOT NULL DEFAULT now(), enviado TIMESTAMPTZ)`);
+  await db.query(`ALTER TABLE wa_outbox ADD COLUMN IF NOT EXISTS token TEXT`);
   await db.query(`CREATE INDEX IF NOT EXISTS wa_outbox_pend_idx ON wa_outbox (estado, id)`);
   await db.query(`CREATE UNIQUE INDEX IF NOT EXISTS wa_outbox_factura_uk ON wa_outbox (factura_id) WHERE estado IN ('PENDIENTE','ENVIANDO','ENVIADO')`);
   await db.query(`INSERT INTO wa_estado (id) VALUES (1) ON CONFLICT DO NOTHING`);
@@ -66,11 +68,22 @@ async function conectar() {
   });
 }
 
-async function adjuntoDe(m) {
-  if (!m.adjunto_url || !/^https?:\/\//i.test(m.adjunto_url)) return null;
-  const r = await fetch(m.adjunto_url);
-  if (!r.ok) throw new Error('No se pudo descargar el adjunto (' + r.status + ')');
-  return { buffer: Buffer.from(await r.arrayBuffer()), mime: r.headers.get('content-type') ?? 'application/octet-stream' };
+const { APP_URL } = process.env;
+
+/** Archivos del enlace de resultados (la web de la clínica los sirve por token). */
+async function archivosDe(m) {
+  if (!m.token || !APP_URL) return [];
+  const base = APP_URL.replace(/\/$/, '') + '/api/resultados/' + m.token;
+  const r = await fetch(base);
+  if (!r.ok) throw new Error('No se pudo leer el listado de resultados (' + r.status + ')');
+  const { archivos } = await r.json();
+  const out = [];
+  for (const a of archivos) {
+    const f = await fetch(base + '/' + a.id + '?descargar=1');
+    if (!f.ok) throw new Error('No se pudo descargar ' + a.nombre + ' (' + f.status + ')');
+    out.push({ nombre: a.nombre, tipo: a.tipo, buffer: Buffer.from(await f.arrayBuffer()) });
+  }
+  return out;
 }
 
 async function procesarCola() {
@@ -86,9 +99,13 @@ async function procesarCola() {
       const jid = m.telefono + '@s.whatsapp.net';
       const [chk] = await sock.onWhatsApp(jid);
       if (!chk?.exists) throw new Error('El número no tiene WhatsApp');
-      const adj = await adjuntoDe(m);
-      if (adj) await sock.sendMessage(jid, { document: adj.buffer, mimetype: adj.mime, fileName: m.adjunto_nombre ?? 'resultado', caption: m.mensaje });
-      else await sock.sendMessage(jid, { text: m.mensaje });
+      const archivos = await archivosDe(m); // se descargan antes de enviar nada: si falla, no queda a medias
+      await sock.sendMessage(jid, { text: m.mensaje });
+      for (const a of archivos) {
+        await pausa(1500);
+        if (a.tipo.startsWith('image/')) await sock.sendMessage(jid, { image: a.buffer, mimetype: a.tipo, caption: a.nombre });
+        else await sock.sendMessage(jid, { document: a.buffer, mimetype: a.tipo, fileName: a.nombre });
+      }
       const c = await db.connect();
       try {
         await c.query('BEGIN');

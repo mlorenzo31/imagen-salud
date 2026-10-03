@@ -19,5 +19,6 @@ describe('construirMensaje', () => {
   it('incluye adjunto solo si existe', () => {
     expect(construirMensaje('Ana', 'Eco', null)).not.toContain('adjunto');
     expect(construirMensaje('Ana', 'Eco', 'r.pdf')).toContain('r.pdf');
+    expect(construirMensaje('Ana', 'Eco', 'r.pdf', 'https://x/resultados/t')).toContain('https://x/resultados/t');
   });
 });

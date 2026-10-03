@@ -81,6 +81,7 @@ export const BloqueoCierrePendiente: React.FC<BloqueoCierrePendienteProps> = ({
         '🏥 *IMAGEN SALUD - Notificación de Resultados*\n\n' +
         'Estimado(a) *' + p.paciente_nombre + '*:\n' +
         'Le informamos que los resultados de su estudio *' + (p.especialidad || 'médico') + '* ya están listos y validados.\n\n' +
+        (bot.enlaces[p.id] ? '🔗 Ver y descargar sus resultados:\n' + bot.enlaces[p.id] + '\n\n' : '') +
         '_Centro Clínico Imagen Salud, C.A._'
       );
 
