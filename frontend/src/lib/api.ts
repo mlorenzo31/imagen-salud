@@ -1,5 +1,4 @@
-const PRIMARY_API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api';
-const FALLBACK_API_URL = 'http://localhost:3000/api';
+const API_BASE_URL = '/api';
 
 export interface CuentaBancaria {
   id: number;
@@ -49,15 +48,7 @@ export interface LiquidacionHonorariosPayload {
 }
 
 async function fetchWithFallback(endpoint: string, options?: RequestInit) {
-  try {
-    const res = await fetch(`${PRIMARY_API_URL}${endpoint}`, options);
-    if (res.ok || res.status === 400 || res.status === 403) return res;
-    throw new Error(`Primary API status: ${res.status}`);
-  } catch (err) {
-    // Intentar fallback a port 3000
-    const fallbackRes = await fetch(`${FALLBACK_API_URL}${endpoint}`, options);
-    return fallbackRes;
-  }
+  return fetch(`${API_BASE_URL}${endpoint}`, { credentials: 'same-origin', ...options });
 }
 
 export async function getCuentasBancarias(): Promise<CuentaBancaria[]> {

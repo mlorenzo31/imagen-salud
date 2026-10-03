@@ -9,7 +9,7 @@ export async function proxy(request: NextRequest) {
 
   const session = await verifySession(request.cookies.get(SESSION_COOKIE)?.value);
   if (!session) return NextResponse.json({ error: 'No autenticado.' }, { status: 401 });
-  if (!isAllowed(session.role, pathname)) {
+  if (!isAllowed(session.role, pathname, request.method)) {
     return NextResponse.json({ error: 'Acceso denegado para su rol.' }, { status: 403 });
   }
 

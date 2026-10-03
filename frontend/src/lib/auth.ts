@@ -61,16 +61,24 @@ export async function verifySession(token: string | undefined): Promise<SessionP
   }
 }
 
-/** Prefijos de API permitidos por rol. Si un rol no está listado, tiene acceso total. */
+/** Prefijos de API por rol. El admin tiene acceso total. */
 const CAJERO_API = ['/api/facturas', '/api/pacientes', '/api/medicos', '/api/bcv', '/api/cierres/verificar-estado-diario', '/api/auth'];
-const ASISTENTE_BLOQUEADO = ['/api/tesoreria', '/api/cierres/ejecutar-cierre', '/api/cierres/resolver-paciente', '/api/admin'];
-const SOLO_ADMIN = ['/api/tesoreria/cambio-divisa', '/api/admin', '/api/excel', '/api/cierres/ejecutar-cierre'];
+const SOLO_ADMIN = [
+  '/api/tesoreria/cambio-divisa',
+  '/api/tesoreria/conciliacion/ejecutar',
+  '/api/tesoreria/honorarios/liquidar',
+  '/api/admin',
+  '/api/excel',
+  '/api/cierres/ejecutar-cierre',
+];
 
 const matches = (path: string, prefixes: string[]) => prefixes.some((p) => path === p || path.startsWith(p + '/'));
 
-export function isAllowed(role: UserRole, path: string): boolean {
+export function isAllowed(role: UserRole, path: string, method: string = 'GET'): boolean {
   if (role === 'admin') return true;
   if (matches(path, SOLO_ADMIN)) return false;
   if (role === 'cajero') return matches(path, CAJERO_API);
-  return !matches(path, ASISTENTE_BLOQUEADO);
+  // Asistente: lectura de tesorería permitida; cualquier escritura en tesorería queda reservada al admin.
+  if (matches(path, ['/api/tesoreria']) && method !== 'GET') return false;
+  return true;
 }
