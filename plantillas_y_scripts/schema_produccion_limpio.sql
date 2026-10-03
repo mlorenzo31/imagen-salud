@@ -373,3 +373,8 @@ VALUES
   ('admin', '!', 'Manuel Administrador', 'admin', 'admin@imagensalud.com'),
   ('cajero1', '!', 'Cajero de Guardia', 'cajero', 'cajero@imagensalud.com')
 ON CONFLICT DO NOTHING;
+
+-- Restricciones de unicidad requeridas por la aplicación (ON CONFLICT y búsquedas por código)
+CREATE UNIQUE INDEX IF NOT EXISTS ux_pacientes_cedula ON pacientes (cedula);
+CREATE UNIQUE INDEX IF NOT EXISTS ux_cuentas_bancarias_codigo ON cuentas_bancarias (codigo);
+CREATE UNIQUE INDEX IF NOT EXISTS ux_usuarios_login ON usuarios (user_login);
