@@ -1,25 +1,7 @@
 'use client';
 
-import React, { useState, useEffect, useRef, useMemo } from 'react';
-import { 
-  Building2, 
-  Volume2, 
-  VolumeX, 
-  Maximize2, 
-  Minimize2, 
-  Clock, 
-  Users, 
-  Sparkles, 
-  Stethoscope, 
-  Activity, 
-  Radio, 
-  Calendar,
-  CheckCircle2,
-  Bell,
-  HeartPulse
-} from 'lucide-react';
-import { Badge } from '@/components/ui/badge';
-import { Button } from '@/components/ui/button';
+import Image from 'next/image';
+import { useState, useEffect, useRef, useMemo } from 'react';import { Volume2, VolumeX, Maximize2, Minimize2, Users, Stethoscope } from 'lucide-react';import { Badge } from '@/components/ui/badge';
 import { ejecutarLlamadoCompleto } from '@/lib/audioLlamado';
 import { 
   GrupoClinico, 
@@ -86,7 +68,7 @@ export default function PantallaTVSalaEspera() {
   // Polling de Facturas y Turnos desde la base de datos
   const cargarTurnos = async () => {
     try {
-      const res = await fetch('/api/facturas?abiertas=1');
+      const res = await fetch('/api/tv/turnos');
       if (res.ok) {
         const data: TurnoItem[] = await res.json();
         // Filtrar turnos activos no anulados y mapear a Grupo Clínico estricto
@@ -177,20 +159,18 @@ export default function PantallaTVSalaEspera() {
       {/* Header Corporativo Oficial en Blanco Clínico */}
       <header className="bg-white rounded-3xl p-5 lg:p-6 border border-slate-200/80 shadow-sm flex items-center justify-between">
         <div className="flex items-center space-x-4">
-          <div className="w-14 h-14 rounded-2xl bg-white flex items-center justify-center shadow-md shadow-slate-200 border-2 border-[#80DDD2]">
-            <Building2 className="w-8 h-8 text-[#2EA89B]" />
-          </div>
+          <Image src="/logo.png" alt="Imagen Salud" width={594} height={576} priority className="h-16 w-auto" />
           <div>
             <div className="flex items-center gap-2">
-              <h1 className="text-2xl lg:text-3xl font-black tracking-tight text-slate-900">
-                IMAGEN SALUD
+              <h1 className="text-2xl lg:text-3xl font-semibold tracking-tight text-slate-900">
+                Sala de espera
               </h1>
-              <Badge className="bg-[#EBF9F7] text-[#1D7A70] border border-[#80DDD2]/50 text-xs font-bold font-mono">
-                SALA DE ESPERA
+              <Badge className="bg-[#EBF9F7] text-[#1D7A70] border border-[#80DDD2]/50 text-xs font-bold">
+                EN VIVO
               </Badge>
             </div>
             <p className="text-xs lg:text-sm font-bold text-[#2EA89B] uppercase tracking-widest mt-0.5">
-              Centro Clínico Radiológico, C.A.
+              Centro de Atención Radiológica
             </p>
           </div>
         </div>

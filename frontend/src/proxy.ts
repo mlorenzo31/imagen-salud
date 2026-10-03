@@ -1,7 +1,7 @@
 import { NextResponse, type NextRequest } from 'next/server';
 import { SESSION_COOKIE, isAllowed, verifySession } from '@/lib/auth';
 
-const PUBLICAS = ['/api/auth/login', '/api/bcv'];
+const PUBLICAS = ['/api/auth/login', '/api/bcv', '/api/tv/turnos'];
 
 export async function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl;

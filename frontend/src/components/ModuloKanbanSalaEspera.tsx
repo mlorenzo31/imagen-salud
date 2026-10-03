@@ -1,5 +1,6 @@
 'use client';
 
+import { despacharWhatsApp, resumenOmitidos } from '@/lib/despacharWhatsApp';
 import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { ejecutarLlamadoCompleto } from '@/lib/audioLlamado';
 import { UserRole, ModoOperacion, ReembolsoPendiente, ServicioFactura } from '@/types';
@@ -401,6 +402,14 @@ export const ModuloKanbanSalaEspera: React.FC<ModuloKanbanSalaEsperaProps> = ({
       '_Centro Clínico Imagen Salud, C.A._'
     );
 
+    const bot = await despacharWhatsApp([p.id], telInternacional);
+    if (bot.modo === 'bot') {
+      alert(bot.encolados > 0
+        ? '✅ Mensaje en cola: el bot lo enviará en unos segundos y quedará registrado como enviado.'
+        : 'No se encoló:\n' + resumenOmitidos(bot.omitidos));
+      return;
+    }
+
     const waUrl = 'https://api.whatsapp.com/send?phone=' + telInternacional + '&text=' + mensaje;
     window.open(waUrl, '_blank');
 
@@ -452,6 +461,14 @@ export const ModuloKanbanSalaEspera: React.FC<ModuloKanbanSalaEsperaProps> = ({
   const handleEjecutarDespachoMasivo = async () => {
     if (pacientesPendientesWhatsApp.length === 0) {
       alert('No existen resultados pendientes por enviar por WhatsApp.');
+      return;
+    }
+
+    const botMasivo = await despacharWhatsApp(pacientesPendientesWhatsApp.map(x => x.id));
+    if (botMasivo.modo === 'bot') {
+      setModalMasivoWhatsApp(false);
+      alert('✅ ' + botMasivo.encolados + ' mensajes en cola; el bot los envía de forma escalonada.' +
+        (botMasivo.omitidos.length ? '\n\nOmitidos:\n' + resumenOmitidos(botMasivo.omitidos) : ''));
       return;
     }
 

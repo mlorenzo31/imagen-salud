@@ -1,29 +1,8 @@
 'use client';
 
 import React from 'react';
-import { 
-  ShoppingCart, 
-  Receipt, 
-  Tv, 
-  CreditCard, 
-  FileCheck2, 
-  Wallet, 
-  TrendingUp, 
-  ArrowDownRight, 
-  ArrowLeftRight, 
-  Stethoscope, 
-  ShieldAlert, 
-  LayoutDashboard, 
-  BarChart3, 
-  Settings, 
-  FileSpreadsheet,
-  Building2,
-  LogOut,
-  Eye,
-  CheckCircle2,
-  History
-} from 'lucide-react';
-import { UserRole, ModoOperacion } from '@/types';
+import Image from 'next/image';
+import { ShoppingCart, Receipt, Tv, CreditCard, FileCheck2, Wallet, TrendingUp, ArrowDownRight, ArrowLeftRight, Stethoscope, ShieldAlert, LayoutDashboard, BarChart3, Settings, FileSpreadsheet, LogOut, Eye, CheckCircle2, History } from 'lucide-react';import { UserRole, ModoOperacion } from '@/types';
 
 interface SidebarProps {
   currentRole: UserRole;
@@ -94,15 +73,8 @@ export const Sidebar: React.FC<SidebarProps> = ({
     <aside className="w-64 bg-white text-slate-700 h-screen sticky top-0 flex flex-col border-r border-slate-200/80 shrink-0">
       {/* Marca */}
       <div className="px-5 pt-5 pb-4">
-        <div className="flex items-center gap-3">
-          <div className="size-10 rounded-xl bg-gradient-to-br from-clinica-aquamarine to-clinica-primary flex items-center justify-center shadow-sm shadow-clinica-primary/30">
-            <Building2 className="w-5 h-5 text-white" strokeWidth={1.75} />
-          </div>
-          <div className="leading-tight">
-            <h1 className="text-[15px] font-semibold tracking-tight text-slate-900">Imagen Salud</h1>
-            <p className="text-[11px] text-slate-500">Centro Clínico, C.A.</p>
-          </div>
-        </div>
+        <h1 className="sr-only">Imagen Salud · Centro de Atención Radiológica</h1>
+        <Image src="/logo.png" alt="Imagen Salud, Centro de Atención Radiológica" width={594} height={576} priority className="w-24 h-auto mx-auto" />
       </div>
 
       {/* Perfil y modo de operación */}

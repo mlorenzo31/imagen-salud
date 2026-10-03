@@ -1,26 +1,12 @@
 'use client';
 
 import React, { useState } from 'react';
+import Image from 'next/image';
 import { Card, CardContent, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
-import { 
-  Building2, 
-  Lock, 
-  UserCheck, 
-  ShieldCheck, 
-  Eye, 
-  EyeOff, 
-  AlertCircle,
-  Stethoscope,
-  KeyRound,
-  CheckCircle2,
-  Briefcase,
-  FileCheck2,
-  Receipt
-} from 'lucide-react';
-import { UserRole, ModoOperacion } from '@/types';
+import { Lock, ShieldCheck, Eye, EyeOff, AlertCircle, KeyRound, CheckCircle2, Briefcase, Receipt } from 'lucide-react';import { UserRole, ModoOperacion } from '@/types';
 
 interface LoginScreenProps {
   onLoginSuccess: (role: UserRole, nombreUsuario: string, modo: ModoOperacion) => void;
@@ -66,17 +52,10 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({ onLoginSuccess }) => {
       <div className="w-full max-w-lg space-y-6 relative z-10 animate-in fade-in-50 duration-500">
         {/* Identidad Corporativa Oficial */}
         <div className="text-center space-y-2">
-          <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-white shadow-xl shadow-clinica-primary/10 border border-clinica-aquamarine/30 text-clinica-primary mb-1">
-            <Building2 className="w-9 h-9 text-clinica-primary" />
-          </div>
-          <h1 className="text-2xl font-black tracking-tight text-slate-900">
-            IMAGEN SALUD
-          </h1>
-          <p className="text-xs text-clinica-primary font-bold uppercase tracking-widest">
-            Centro Clínico Radiológico, C.A.
-          </p>
-          <p className="text-xs text-slate-500 max-w-xs mx-auto">
-            Sistema Hospitalario de Admisión, Facturación Multimoneda y Control Financiero
+          <h1 className="sr-only">Imagen Salud · Centro de Atención Radiológica</h1>
+          <Image src="/logo.png" alt="Imagen Salud, Centro de Atención Radiológica" width={594} height={576} priority className="mx-auto w-40 h-auto" />
+          <p className="text-sm text-slate-500 max-w-xs mx-auto pt-2">
+            Admisión, facturación multimoneda y control financiero
           </p>
         </div>
 
