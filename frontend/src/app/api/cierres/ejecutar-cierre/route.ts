@@ -32,7 +32,7 @@ export async function POST(req: NextRequest) {
           COALESCE(SUM(pago_punto), 0) as total_punto_bs,
           COALESCE(SUM(pago_movil), 0) as total_pago_movil_bs
         FROM facturas_caja
-        WHERE fecha = $1 AND estado != 'ANULADA'
+        WHERE fecha = $1 AND estado NOT IN ('ANULADA', 'ANULADA_SALA')
       `, [fecha]);
 
       const t = totalesRes.rows[0] || {};

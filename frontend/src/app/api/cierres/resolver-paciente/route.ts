@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 import pool from '@/lib/db';
 import { errorResponse, fechaHoraLocal, sesionUsuario } from '@/lib/apiHelpers';
+import { esAnulada } from '@/lib/estados';
+import { revertirTesoreriaPorAnulacion } from '@/lib/anulacion';
 
 export async function POST(req: NextRequest) {
   try {
@@ -14,7 +16,11 @@ export async function POST(req: NextRequest) {
       if (accion === 'CULMINAR') {
         await client.query("UPDATE facturas_caja SET estado = 'FINALIZADO', etapa_actual = 2 WHERE id = $1", [registro_id]);
       } else if (accion === 'ANULAR') {
+        const previo = await client.query('SELECT estado FROM facturas_caja WHERE id = $1 FOR UPDATE', [registro_id]);
         await client.query("UPDATE facturas_caja SET estado = 'ANULADA' WHERE id = $1", [registro_id]);
+        if (previo.rows.length > 0 && !esAnulada(previo.rows[0].estado)) {
+          await revertirTesoreriaPorAnulacion(client, registro_id, usuario, 'Anulada en auditoría de cierre');
+        }
       } else if (accion === 'CARTERA_DEUDOR') {
         await client.query("UPDATE facturas_caja SET estado = 'FINALIZADO', etapa_actual = 2 WHERE id = $1", [registro_id]);
         await client.query(`

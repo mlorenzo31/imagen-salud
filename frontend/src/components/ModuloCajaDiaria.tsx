@@ -39,6 +39,7 @@ import {
 import { FacturaCaja, UserRole } from '@/types';
 import { exportarAExcel, exportarAPDF } from '@/lib/exportUtils';
 import { hoyLocal, sumarDias } from '@/lib/date';
+import { esAnulada } from '@/lib/estados';
 
 interface ModuloCajaDiariaProps {
   currentRole: UserRole;
@@ -166,9 +167,9 @@ export const ModuloCajaDiaria: React.FC<ModuloCajaDiariaProps> = ({ currentRole 
         else if (est.includes('BIOPSIA') || est.includes('CITOLOGÍA')) clave = 'Ginecología & Patología';
         else clave = 'Otros Procedimientos';
       } else if (agruparPor === 'ESTADO') {
-        clave = f.estado === 'ANULADA' ? 'Anuladas' :
-                f.etapa_actual === '2' || f.estado === 'FINALIZADO' ? 'Finalizadas / Atendidas' :
-                f.etapa_actual === '1' || f.estado === 'ATENCION' ? 'En Atención' : 'En Espera';
+        clave = esAnulada(f.estado) ? 'Anuladas' :
+                String(f.etapa_actual) === '2' || f.estado === 'FINALIZADO' ? 'Finalizadas / Atendidas' :
+                String(f.etapa_actual) === '1' || f.estado === 'ATENCION' ? 'En Atención' : 'En Espera';
       } else if (agruparPor === 'METODO_PAGO') {
         if (Number(f.pago_divisas || 0) > 0 && (Number(f.pago_punto || 0) + Number(f.pago_movil || 0) + Number(f.pago_efectivo_bs || 0)) > 0) {
           clave = 'Pago Mixto (Divisas + Bolívares)';
@@ -192,7 +193,7 @@ export const ModuloCajaDiaria: React.FC<ModuloCajaDiariaProps> = ({ currentRole 
     });
 
     return Object.entries(mapGrupos).map(([nombreGrupo, items]) => {
-      const subtotalUSD = items.filter(x => x.estado !== 'ANULADA').reduce((sum, x) => sum + Number(x.precio_usd || 0), 0);
+      const subtotalUSD = items.filter(x => !esAnulada(x.estado)).reduce((sum, x) => sum + Number(x.precio_usd || 0), 0);
       const subtotalBs = subtotalUSD * tasaBcv;
       return {
         nombreGrupo,
@@ -217,7 +218,7 @@ export const ModuloCajaDiaria: React.FC<ModuloCajaDiariaProps> = ({ currentRole 
   };
 
   // Métricas Multimoneda
-  const facturasActivas = facturasFiltradas.filter(f => f.estado !== 'ANULADA');
+  const facturasActivas = facturasFiltradas.filter(f => !esAnulada(f.estado));
   const totalFacturas = facturasFiltradas.length;
   const totalCobradoUSD = facturasActivas.reduce((sum, f) => sum + Number(f.precio_usd || 0), 0);
   const totalCobradoBs = totalCobradoUSD * tasaBcv;
@@ -234,7 +235,7 @@ export const ModuloCajaDiaria: React.FC<ModuloCajaDiariaProps> = ({ currentRole 
   const totalPagoMovilBs = facturasActivas.reduce((sum, f) => sum + Number(f.pago_movil || 0), 0);
   const totalPagoMovilEquivUSD = tasaBcv > 0 ? totalPagoMovilBs / tasaBcv : 0;
 
-  const totalAnuladas = facturasFiltradas.filter(f => f.estado === 'ANULADA').length;
+  const totalAnuladas = facturasFiltradas.filter(f => esAnulada(f.estado)).length;
 
   // Anular factura
   const handleAnular = async (id: number) => {
@@ -244,7 +245,7 @@ export const ModuloCajaDiaria: React.FC<ModuloCajaDiariaProps> = ({ currentRole 
       const res = await fetch(`/api/facturas/${id}/estado`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ estado: 'ANULADA', etapa_actual: 'FINALIZADO' })
+        body: JSON.stringify({ estado: 'ANULADA', etapa_actual: 2 })
       });
       if (res.ok) {
         alert('Factura anulada con éxito.');
@@ -272,7 +273,7 @@ export const ModuloCajaDiaria: React.FC<ModuloCajaDiariaProps> = ({ currentRole 
     }
 
     const filas = facturasFiltradas.map(f => {
-      const isAnulada = f.estado === 'ANULADA';
+      const isAnulada = esAnulada(f.estado);
       const precioUSD = Number(f.precio_usd || 0);
       const tasa = Number(f.tasa_bcv || tasaBcv);
       const totalBS = precioUSD * tasa;
@@ -293,7 +294,7 @@ export const ModuloCajaDiaria: React.FC<ModuloCajaDiariaProps> = ({ currentRole 
         'Punto POS Bs': Number(f.pago_punto || 0),
         'Pago Móvil Bs': Number(f.pago_movil || 0),
         'Estado': isAnulada ? 'ANULADA' : f.estado,
-        'Etapa': f.etapa_actual === '2' ? 'FINALIZADO' : f.etapa_actual === '1' ? 'ATENCIÓN' : 'ESPERA',
+        'Etapa': String(f.etapa_actual) === '2' ? 'FINALIZADO' : String(f.etapa_actual) === '1' ? 'ATENCIÓN' : 'ESPERA',
         'Grupo Clinico': agruparPor !== 'NINGUNO' ? agruparPor : 'General'
       };
     });
@@ -310,12 +311,12 @@ export const ModuloCajaDiaria: React.FC<ModuloCajaDiariaProps> = ({ currentRole 
     }
 
     const totalUSD = facturasFiltradas
-      .filter(f => f.estado !== 'ANULADA')
+      .filter(f => !esAnulada(f.estado))
       .reduce((acc, f) => acc + Number(f.precio_usd || 0), 0);
     const totalBS = totalUSD * tasaBcv;
 
     const filas = facturasFiltradas.map(f => {
-      const isAnulada = f.estado === 'ANULADA';
+      const isAnulada = esAnulada(f.estado);
       const precioUSD = Number(f.precio_usd || 0);
       const tasa = Number(f.tasa_bcv || tasaBcv);
       const totalBsRec = precioUSD * tasa;
@@ -329,7 +330,7 @@ export const ModuloCajaDiaria: React.FC<ModuloCajaDiariaProps> = ({ currentRole 
         (f.medico || 'N/A').slice(0, 16),
         `$${precioUSD.toFixed(2)}`,
         `Bs. ${totalBsRec.toLocaleString('es-VE', { minimumFractionDigits: 0, maximumFractionDigits: 0 })}`,
-        isAnulada ? 'ANULADA' : f.etapa_actual === '2' ? 'LISTO' : 'PROCESO'
+        isAnulada ? 'ANULADA' : String(f.etapa_actual) === '2' ? 'LISTO' : 'PROCESO'
       ];
     });
 
@@ -767,7 +768,7 @@ export const ModuloCajaDiaria: React.FC<ModuloCajaDiariaProps> = ({ currentRole 
                       {!isColapsado && (
                         <div className="pl-4 bg-white divide-y divide-slate-100">
                           {grp.items.map(f => {
-                            const isAnulada = f.estado === 'ANULADA';
+                            const isAnulada = esAnulada(f.estado);
                             const tasaFactura = Number(f.tasa_bcv || tasaBcv);
                             const totalBsFactura = Number(f.precio_usd || 0) * tasaFactura;
                             return (
@@ -788,10 +789,10 @@ export const ModuloCajaDiaria: React.FC<ModuloCajaDiariaProps> = ({ currentRole 
                                   </div>
                                   <Badge className={
                                     isAnulada ? 'bg-rose-600' :
-                                    f.etapa_actual === '2' || f.estado === 'FINALIZADO' ? 'bg-emerald-600' :
-                                    f.etapa_actual === '1' || f.estado === 'ATENCION' ? 'bg-amber-500' : 'bg-blue-600'
+                                    String(f.etapa_actual) === '2' || f.estado === 'FINALIZADO' ? 'bg-emerald-600' :
+                                    String(f.etapa_actual) === '1' || f.estado === 'ATENCION' ? 'bg-amber-500' : 'bg-blue-600'
                                   }>
-                                    {isAnulada ? 'ANULADA' : f.etapa_actual === '2' || f.estado === 'FINALIZADO' ? 'LISTO' : f.etapa_actual === '1' || f.estado === 'ATENCION' ? 'ATENCIÓN' : 'ESPERA'}
+                                    {isAnulada ? 'ANULADA' : String(f.etapa_actual) === '2' || f.estado === 'FINALIZADO' ? 'LISTO' : String(f.etapa_actual) === '1' || f.estado === 'ATENCION' ? 'ATENCIÓN' : 'ESPERA'}
                                   </Badge>
                                   <div className="flex items-center gap-1">
                                     <button
@@ -847,7 +848,7 @@ export const ModuloCajaDiaria: React.FC<ModuloCajaDiariaProps> = ({ currentRole 
                   </tr>
                 ) : (
                   facturasFiltradas.map((f) => {
-                    const isAnulada = f.estado === 'ANULADA';
+                    const isAnulada = esAnulada(f.estado);
                     const tasaFactura = Number(f.tasa_bcv || tasaBcv);
                     const totalBsFactura = Number(f.precio_usd || 0) * tasaFactura;
 
@@ -907,11 +908,11 @@ export const ModuloCajaDiaria: React.FC<ModuloCajaDiariaProps> = ({ currentRole 
                             <Badge variant="destructive" className="text-[10px] font-bold">
                               ANULADA
                             </Badge>
-                          ) : f.etapa_actual === '2' || f.estado === 'FINALIZADO' ? (
+                          ) : String(f.etapa_actual) === '2' || f.estado === 'FINALIZADO' ? (
                             <Badge className="bg-emerald-600 hover:bg-emerald-700 text-[10px] font-bold">
                               FINALIZADO
                             </Badge>
-                          ) : f.etapa_actual === '1' || f.estado === 'ATENCION' ? (
+                          ) : String(f.etapa_actual) === '1' || f.estado === 'ATENCION' ? (
                             <Badge className="bg-amber-500 hover:bg-amber-600 text-[10px] font-bold">
                               EN ATENCIÓN
                             </Badge>

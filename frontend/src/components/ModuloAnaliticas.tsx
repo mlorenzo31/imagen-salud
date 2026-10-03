@@ -32,6 +32,7 @@ import { FacturaCaja, DataPoint } from '@/types';
 import { UniversalDataView } from '@/components/analytics/UniversalDataView';
 import { exportarAExcel, exportarAPDF } from '@/lib/exportUtils';
 import { hoyLocal } from '@/lib/date';
+import { esAnulada } from '@/lib/estados';
 
 type GrupoAnalitica = 'NINGUNO' | 'AREA' | 'MEDICO' | 'METODO_PAGO' | 'FECHA';
 
@@ -91,7 +92,7 @@ export const ModuloAnaliticas: React.FC = () => {
   const facturasFiltradas = useMemo(() => {
     return facturas.filter(f => {
       // 1. Descartar anuladas para analíticas de rendimiento real
-      if (f.estado === 'ANULADA') return false;
+      if (esAnulada(f.estado)) return false;
 
       // 2. Filtro de Texto Multifaceta
       if (busquedaTexto.trim()) {
