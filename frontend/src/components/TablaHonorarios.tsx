@@ -160,20 +160,19 @@ export const TablaHonorarios: React.FC<TablaHonorariosProps> = ({
     setLoading(true);
 
     try {
-      const res = await fetch('/api/honorarios/liquidar', {
+      const res = await fetch('/api/tesoreria/honorarios/liquidar', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          medico_nombre: selectedDoctor.medico,
-          total_usd: selectedDoctor.total_usd,
-          tasa_bcv: selectedDoctor.tasa_bcv,
+          medico: selectedDoctor.medico,
+          honorarios_ids: selectedDoctor.honorarios_ids,
+          tasa_cambio_bcv: selectedDoctor.tasa_bcv,
           pago_movil_bs: parseFloat(pagoMovilBs) || 0,
-          comision_pm_bs: parseFloat(comisionPMBs) || 0,
-          referencia_pm: refPM,
+          comision_pago_movil_bs: parseFloat(comisionPMBs) || 0,
           efectivo_bs: parseFloat(efectivoBs) || 0,
           efectivo_usd: parseFloat(efectivoUsd) || 0,
-          observaciones,
-          usuario: currentRole === 'admin' ? 'Director Médico' : 'Administrador'
+          referencia: refPM || undefined,
+          observaciones: observaciones || undefined
         })
       });
 

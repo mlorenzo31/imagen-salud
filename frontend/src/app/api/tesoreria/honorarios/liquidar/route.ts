@@ -61,6 +61,12 @@ export async function POST(request: NextRequest) {
       if (hon.rows.length === 0) throw new ApiError(400, 'Los honorarios seleccionados ya fueron pagados o no existen.');
       const sumaUsd = hon.rows.reduce((acc, r) => acc + toCents(r.monto_usd), 0);
 
+      // Cuadre: lo entregado (Bs convertidos a la tasa informada + USD) debe igualar lo adeudado; la comisión no cuenta.
+      const entregadoUsd = Math.round((pm + efBs) / tasa) + efUsd;
+      if (Math.abs(entregadoUsd - sumaUsd) > 2) {
+        throw new ApiError(400, `El pago no cubre la liquidación: entregado $${centsToStr(entregadoUsd)} vs adeudado $${centsToStr(sumaUsd)}.`);
+      }
+
       const referencia = b.referencia || `HON-${Date.now()}`;
       const pagoRes = await client.query(
         `INSERT INTO pagos_honorarios

@@ -145,69 +145,9 @@ export default function Home() {
         }
       }
 
-      // 4. Honorarios de Médicos con Trazabilidad
-      setHonorarios([
-        {
-          id: 1,
-          medico: 'Dra. María González',
-          especialidad: 'Radiología',
-          pacientes_atendidos: 12,
-          total_usd: 280.00,
-          tasa_bcv: tasaBcv,
-          honorarios_ids: [101, 102],
-          desglose_pagos: {
-            punto_de_venta_usd: 140.00,
-            pago_movil_usd: 84.00,
-            efectivo_bs_usd: 28.00,
-            divisas_usd: 28.00
-          }
-        },
-        {
-          id: 2,
-          medico: 'Dr. Carlos Mendoza',
-          especialidad: 'Ecografía',
-          pacientes_atendidos: 8,
-          total_usd: 195.00,
-          tasa_bcv: tasaBcv,
-          honorarios_ids: [103],
-          desglose_pagos: {
-            punto_de_venta_usd: 97.50,
-            pago_movil_usd: 58.50,
-            efectivo_bs_usd: 19.50,
-            divisas_usd: 19.50
-          }
-        },
-        {
-          id: 3,
-          medico: 'Dra. Carmen Rodríguez',
-          especialidad: 'Patología',
-          pacientes_atendidos: 5,
-          total_usd: 150.00,
-          tasa_bcv: tasaBcv,
-          honorarios_ids: [104],
-          desglose_pagos: {
-            punto_de_venta_usd: 75.00,
-            pago_movil_usd: 45.00,
-            efectivo_bs_usd: 15.00,
-            divisas_usd: 15.00
-          }
-        },
-        {
-          id: 4,
-          medico: 'Dra. Tania De Leon',
-          especialidad: 'Ginecología',
-          pacientes_atendidos: 9,
-          total_usd: 346.50,
-          tasa_bcv: tasaBcv,
-          honorarios_ids: [105, 106],
-          desglose_pagos: {
-            punto_de_venta_usd: 173.25,
-            pago_movil_usd: 103.95,
-            efectivo_bs_usd: 34.65,
-            divisas_usd: 34.65
-          }
-        }
-      ]);
+      // 4. Honorarios pendientes por médico (datos reales con trazabilidad por forma de cobro)
+      const resHon = await fetch('/api/tesoreria/honorarios/resumen');
+      if (resHon.ok) setHonorarios(await resHon.json());
     } catch (err) {
       console.error('Error cargando datos del sistema:', err);
     } finally {
