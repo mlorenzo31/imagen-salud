@@ -548,20 +548,8 @@ export default function Home() {
         {/* 12. BALANCE FINANCIERO OPERATIVO (Pillar 10: Barras, Líneas, Donut, Tabla) */}
         {activeSection === 'dashboard' && (
           <div className="space-y-6 animate-in fade-in-50 duration-300">
-            <TremorDashboard 
-              ingresosUsd={3480.00}
-              ingresosBs={142500.80}
-              egresosBs={2882.70}
-              comisionesBs={32.70}
-            />
-            <DashboardFinanciero
-              ingresosTotalesBs={142500.80}
-              ingresosTotalesUsd={3480.00}
-              egresosTotalesBs={2882.70}
-              comisionesTotalesBs={32.70}
-              transaccionesCount={transacciones.length || 48}
-              tasaBcv={tasaBcv}
-            />
+            <TremorDashboard />
+            <DashboardFinanciero tasaBcv={tasaBcv} />
           </div>
         )}
 

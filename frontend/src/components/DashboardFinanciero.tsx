@@ -41,50 +41,30 @@ import {
   Legend,
   CartesianGrid
 } from 'recharts';
+import { useResumenFinanciero } from '@/lib/useResumenFinanciero';
 
 interface DashboardFinancieroProps {
-  ingresosTotalesBs: number;
-  ingresosTotalesUsd: number;
-  egresosTotalesBs: number;
-  comisionesTotalesBs: number;
-  transaccionesCount: number;
   tasaBcv?: number;
 }
 
 type VistaModo = 'BARRAS' | 'LINEAS' | 'DONUT' | 'TABLA';
 
-export const DashboardFinanciero: React.FC<DashboardFinancieroProps> = ({
-  ingresosTotalesBs,
-  ingresosTotalesUsd,
-  egresosTotalesBs,
-  comisionesTotalesBs,
-  transaccionesCount,
-  tasaBcv = 832.49
-}) => {
+export const DashboardFinanciero: React.FC<DashboardFinancieroProps> = ({ tasaBcv: tasaProp = 0 }) => {
   const [vista, setVista] = useState<VistaModo>('BARRAS');
   const [periodo, setPeriodo] = useState<'HOY' | '7DIAS' | 'MES' | 'TODO'>('MES');
   const [exportandoPdf, setExportandoPdf] = useState(false);
   const chartRef = useRef<HTMLDivElement>(null);
 
-  // Serie de datos diarios para gráficos de Barras y Líneas
-  const datosTendencia = [
-    { dia: 'Lun 08', IngresosUSD: 420, EgresosUSD: 45, MargenUSD: 375, IngresosBs: 349645, EgresosBs: 37462 },
-    { dia: 'Mar 09', IngresosUSD: 580, EgresosUSD: 60, MargenUSD: 520, IngresosBs: 482844, EgresosBs: 49949 },
-    { dia: 'Mié 10', IngresosUSD: 650, EgresosUSD: 85, MargenUSD: 565, IngresosBs: 541118, EgresosBs: 70761 },
-    { dia: 'Jue 11', IngresosUSD: 710, EgresosUSD: 90, MargenUSD: 620, IngresosBs: 591067, EgresosBs: 74924 },
-    { dia: 'Vie 12', IngresosUSD: 840, EgresosUSD: 110, MargenUSD: 730, IngresosBs: 699291, EgresosBs: 91573 },
-    { dia: 'Sáb 13', IngresosUSD: 490, EgresosUSD: 40, MargenUSD: 450, IngresosBs: 407920, EgresosBs: 33299 },
-    { dia: 'Hoy 14', IngresosUSD: 620, EgresosUSD: 75, MargenUSD: 545, IngresosBs: 516143, EgresosBs: 62436 }
-  ];
-
-  // Datos para gráfico Donut / Pie
-  const datosDistribucion = [
-    { name: 'Consultas Médicas (Grupo C)', value: 1450, color: '#2EA89B' },
-    { name: 'Ecografía & Ginecología (Grupo A)', value: 1280, color: '#80DDD2' },
-    { name: 'Mamografía & Rayos X (Grupo B)', value: 750, color: '#9BCEDF' },
-    { name: 'Ingresos Extraordinarios', value: 380, color: '#F59E0B' },
-    { name: 'Gastos Operativos (Egresos)', value: 420, color: '#E76F3D' }
-  ];
+  // Métricas reales del período seleccionado (se refrescan solas)
+  const { data: resumen, cargando, error } = useResumenFinanciero(periodo);
+  const tasaBcv = tasaProp > 0 ? tasaProp : resumen.tasa;
+  const ingresosTotalesUsd = resumen.ingresosUsd;
+  const ingresosTotalesBs = resumen.ingresosBs;
+  const egresosTotalesBs = resumen.egresosBs;
+  const comisionesTotalesBs = resumen.comisionesBs;
+  const datosTendencia = resumen.tendencia;
+  const COLORES = ['#2EA89B', '#80DDD2', '#9BCEDF', '#F59E0B', '#E76F3D', '#6366F1'];
+  const datosDistribucion = resumen.distribucion.map((d, i) => ({ ...d, color: COLORES[i % COLORES.length] }));
 
   // Exportar Excel Completo
   const exportarExcel = () => {

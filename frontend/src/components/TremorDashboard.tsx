@@ -4,33 +4,20 @@ import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { TrendingUp, TrendingDown, DollarSign, Activity, Percent, ArrowUpRight } from 'lucide-react';
+import { useResumenFinanciero } from '@/lib/useResumenFinanciero';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
 
-interface TremorDashboardProps {
-  ingresosUsd: number;
-  ingresosBs: number;
-  egresosBs: number;
-  comisionesBs: number;
-}
+export const TremorDashboard: React.FC = () => {
+  // KPIs del mes en curso y flujo de los últimos 7 días, ambos con datos reales
+  const { data: mes } = useResumenFinanciero('MES');
+  const { data: semana } = useResumenFinanciero('7DIAS');
+  const ingresosUsd = mes.ingresosUsd;
+  const ingresosBs = mes.ingresosBs;
+  const egresosBs = mes.egresosBs;
+  const comisionesBs = mes.comisionesBs;
+  const dataFlujo = semana.tendencia.map(d => ({ dia: d.dia, ingresos: d.IngresosBs, egresos: d.EgresosBs }));
 
-export const TremorDashboard: React.FC<TremorDashboardProps> = ({
-  ingresosUsd,
-  ingresosBs,
-  egresosBs,
-  comisionesBs
-}) => {
-  // Datos analíticos de flujo semanal (Gráfico de barras SVG interactivo de alta fidelidad estilo Tremor)
-  const dataFlujo = [
-    { dia: 'Lun', ingresos: 42000, egresos: 8500 },
-    { dia: 'Mar', ingresos: 58000, egresos: 12400 },
-    { dia: 'Mié', ingresos: 39000, egresos: 6200 },
-    { dia: 'Jue', ingresos: 71000, egresos: 15300 },
-    { dia: 'Vie', ingresos: 89000, egresos: 21000 },
-    { dia: 'Sáb', ingresos: 64000, egresos: 9800 },
-    { dia: 'Dom', ingresos: 28000, egresos: 4500 }
-  ];
-
-  const maxVal = Math.max(...dataFlujo.map(d => Math.max(d.ingresos, d.egresos))) * 1.15;
+  const maxVal = Math.max(1, ...dataFlujo.map(d => Math.max(d.ingresos, d.egresos))) * 1.15;
 
   return (
     <div className="space-y-6">
@@ -41,7 +28,7 @@ export const TremorDashboard: React.FC<TremorDashboardProps> = ({
             <div className="flex items-center justify-between">
               <span className="text-xs font-bold text-slate-500 uppercase tracking-wider">Recaudación USD</span>
               <Badge className="bg-emerald-50 text-emerald-700 border border-emerald-200 text-[10px] font-bold">
-                +14.2% mes
+                Mes en curso
               </Badge>
             </div>
             <div className="text-2xl font-black font-mono text-slate-900 mt-2">
@@ -49,7 +36,7 @@ export const TremorDashboard: React.FC<TremorDashboardProps> = ({
             </div>
             <div className="mt-3 flex items-center text-[11px] text-emerald-600 font-bold space-x-1">
               <TrendingUp className="w-3.5 h-3.5" />
-              <span>Acreditado 100% en Bóveda</span>
+              <span>Efectivo en divisas cobrado</span>
             </div>
           </CardContent>
         </Card>
@@ -67,7 +54,7 @@ export const TremorDashboard: React.FC<TremorDashboardProps> = ({
             </div>
             <div className="mt-3 flex items-center text-[11px] text-blue-600 font-bold space-x-1">
               <Activity className="w-3.5 h-3.5" />
-              <span>Conciliado en tiempo real</span>
+              <span>Punto + Pago Móvil + Efectivo Bs</span>
             </div>
           </CardContent>
         </Card>
@@ -95,7 +82,7 @@ export const TremorDashboard: React.FC<TremorDashboardProps> = ({
             <div className="flex items-center justify-between">
               <span className="text-xs font-bold text-slate-500 uppercase tracking-wider">Comisiones Pago Móvil</span>
               <Badge className="bg-amber-50 text-amber-700 border border-amber-200 text-[10px] font-bold">
-                100% Manual
+                Bs
               </Badge>
             </div>
             <div className="text-2xl font-black font-mono text-slate-900 mt-2">
@@ -114,7 +101,7 @@ export const TremorDashboard: React.FC<TremorDashboardProps> = ({
         <div className="flex items-center justify-between pb-2 border-b border-slate-100">
           <div>
             <CardTitle className="text-base font-black text-slate-900">
-              Flujo Semanal de Liquidez: Ingresos vs Egresos
+              Flujo de los últimos 7 días: Ingresos facturados vs Egresos (Bs)
             </CardTitle>
             <p className="text-xs text-slate-500 mt-0.5">
               Comparativa diaria de entradas y salidas de capital (Bs)
