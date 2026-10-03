@@ -74,20 +74,17 @@ export default function Home() {
 
   // Recuperar sesión y tasa BCV
   useEffect(() => {
-    try {
-      const sessionStr = localStorage.getItem('imagen_salud_session');
-      if (sessionStr) {
-        const session = JSON.parse(sessionStr);
+    fetch('/api/auth/session')
+      .then(res => (res.ok ? res.json() : null))
+      .then(session => {
         if (session && session.role) {
           setRole(session.role);
           setNombreUsuario(session.nombre || 'Usuario Clínico');
           if (session.modo) setModoOperacion(session.modo);
           setIsAuthenticated(true);
         }
-      }
-    } catch (e) {
-      console.warn('Error recuperando sesión:', e);
-    }
+      })
+      .catch(() => {});
 
     // Tasa BCV
     fetch('/api/bcv')
@@ -97,9 +94,7 @@ export default function Home() {
   }, []);
 
   const handleLogout = () => {
-    try {
-      localStorage.removeItem('imagen_salud_session');
-    } catch (e) {}
+    fetch('/api/auth/logout', { method: 'POST' }).catch(() => {});
     setIsAuthenticated(false);
     setActiveSection('facturacion');
   };
