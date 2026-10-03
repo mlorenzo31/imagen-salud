@@ -1,5 +1,6 @@
 'use client';
 
+import { despacharWhatsApp, resumenOmitidos } from '@/lib/despacharWhatsApp';
 import React, { useState } from 'react';
 import { resolverPacienteCierre } from '@/lib/api';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
@@ -61,6 +62,21 @@ export const BloqueoCierrePendiente: React.FC<BloqueoCierrePendienteProps> = ({
       if (!tel) tel = '584140000000';
       if (tel.startsWith('0')) tel = '58' + tel.slice(1);
 
+      const bot = await despacharWhatsApp([p.id]);
+      if (bot.modo === 'bot') {
+        if (bot.encolados === 0) {
+          alert('No se encoló:\n' + resumenOmitidos(bot.omitidos));
+          return;
+        }
+        const restantes = listaWhatsApp.filter(item => item.id !== p.id);
+        setListaWhatsApp(restantes);
+        if (listaSala.length === 0 && restantes.length === 0) {
+          alert('✅ Mensajes en cola. El cierre se habilita cuando el bot confirme los envíos (unos segundos).');
+          onOpenChange(false);
+        }
+        return;
+      }
+
       const mensaje = encodeURIComponent(
         '🏥 *IMAGEN SALUD - Notificación de Resultados*\n\n' +
         'Estimado(a) *' + p.paciente_nombre + '*:\n' +
@@ -96,6 +112,15 @@ export const BloqueoCierrePendiente: React.FC<BloqueoCierrePendienteProps> = ({
     if (listaWhatsApp.length === 0) return;
     setDespachandoMasivo(true);
     try {
+      const bot = await despacharWhatsApp(listaWhatsApp.map(x => x.id));
+      if (bot.modo === 'bot') {
+        const fallidos = new Set(bot.omitidos.filter(o => o.motivo !== 'Ya en cola' && o.motivo !== 'Ya enviado').map(o => o.id));
+        setListaWhatsApp(listaWhatsApp.filter(x => fallidos.has(x.id)));
+        alert('✅ ' + bot.encolados + ' mensajes en cola; el cierre se habilita al confirmarse los envíos.' +
+          (fallidos.size ? '\n\nRequieren atención:\n' + resumenOmitidos(bot.omitidos.filter(o => fallidos.has(o.id))) : ''));
+        if (fallidos.size === 0 && listaSala.length === 0) onOpenChange(false);
+        return;
+      }
       for (const p of listaWhatsApp) {
         await fetch('/api/facturas/' + p.id + '/estado', {
           method: 'PUT',

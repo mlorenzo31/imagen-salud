@@ -1,0 +1,27 @@
+import { NextResponse } from 'next/server';
+import pool from '@/lib/db';
+import { errorResponse } from '@/lib/apiHelpers';
+
+export const dynamic = 'force-dynamic';
+
+/** "MARIA ELENA PEREZ GOMEZ" → "MARIA E." (la pantalla de sala es pública: no se expone el nombre completo ni la cédula). */
+const abreviar = (nombre: string | null): string => {
+  const partes = (nombre ?? '').trim().split(/\s+/).filter(Boolean);
+  if (partes.length === 0) return 'Paciente';
+  return partes.length === 1 ? partes[0] : `${partes[0]} ${partes[1][0]}.`;
+};
+
+/** Turnos activos para la TV de la sala de espera. Público por diseño (la pantalla no inicia sesión), con datos mínimos. */
+export async function GET() {
+  try {
+    const r = await pool.query(`
+      SELECT id, turno_num, nombre_paciente, estudio, medico, estado, etapa_actual, hora, fecha, grupo_clinico
+      FROM facturas_caja
+      WHERE estado IN ('ESPERA', 'ATENCION')
+      ORDER BY id ASC
+      LIMIT 200`);
+    return NextResponse.json(r.rows.map((t) => ({ ...t, nombre_paciente: abreviar(t.nombre_paciente) })));
+  } catch (err) {
+    return errorResponse(err);
+  }
+}

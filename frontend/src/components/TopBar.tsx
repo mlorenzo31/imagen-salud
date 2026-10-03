@@ -3,6 +3,7 @@
 import React from 'react';
 import { CircleDollarSign } from 'lucide-react';
 import type { UserRole } from '@/types';
+import { WhatsAppEstado } from '@/components/WhatsAppEstado';
 
 const TITULOS: Record<string, { titulo: string; detalle: string }> = {
   facturacion: { titulo: 'Recepción', detalle: 'Registro del paciente, estudios y cobro' },
@@ -47,6 +48,8 @@ export const TopBar: React.FC<Props> = ({ seccion, tasaBcv, nombreUsuario, role 
 
         <div className="flex items-center gap-3 shrink-0">
           <span className="hidden md:block text-xs text-slate-500">{fecha}</span>
+
+          <WhatsAppEstado />
 
           <div
             title="Tasa oficial BCV (se actualiza automáticamente)"
