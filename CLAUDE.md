@@ -21,6 +21,12 @@ Enfocado actualmente en el desarrollo y mejora de un sistema de gestión de clí
 - Avísame proactivamente cuando convenga `/compact` o `/clear`.
 - No hagas commit/push ni PR sin pedírtelo.
 
+## Convenciones
+- Tasa BCV: siempre vía `lib/tasaBcv.ts` (automática, sin valores por defecto). Nunca hardcodear tasas.
+- Anular factura = `lib/anulacion.ts` (revierte tesorería, idempotente). Estados anulados: `lib/estados.ts`.
+- Componentes grandes se dividen en subcarpetas (`components/historial/`, `kanban/`, `admincatalogos/`, ...); el estado queda en el contenedor `Modulo*.tsx`.
+- Excel: `lib/excel.ts` (read/write-excel-file). No usar `xlsx` (vulnerable).
+
 ## Comandos (en frontend/)
 - `npm test` (vitest), `npm run typecheck`, `npm run lint`
 - Variables requeridas: ver `frontend/.env.example` (DATABASE_URL, AUTH_SECRET, AUTH_PIN_*)
