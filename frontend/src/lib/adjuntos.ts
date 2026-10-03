@@ -72,6 +72,14 @@ export async function almacen() {
 
 export const nuevaRuta = (facturaId: number, nombre: string) => `${facturaId}/${randomUUID()}-${nombreSeguro(nombre)}`;
 
-export function urlResultados(origen: string, token: string): string {
-  return `${(process.env.APP_URL ?? origen).replace(/\/$/, '')}/resultados/${token}`;
+/**
+ * Base pública de los enlaces. Prioriza APP_URL y luego el dominio de producción de Vercel
+ * (las URLs de despliegue/preview suelen exigir inicio de sesión en Vercel; la de producción no).
+ */
+export function baseUrl(origen: string): string {
+  const prod = process.env.VERCEL_PROJECT_PRODUCTION_URL;
+  return (process.env.APP_URL ?? (prod ? `https://${prod}` : origen)).replace(/\/$/, '');
 }
+
+export const urlResultados = (origen: string, token: string) => `${baseUrl(origen)}/resultados/${token}`;
+export const urlApiResultados = (origen: string, token: string) => `${baseUrl(origen)}/api/resultados/${token}`;
