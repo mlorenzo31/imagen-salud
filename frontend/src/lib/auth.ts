@@ -62,7 +62,7 @@ export async function verifySession(token: string | undefined): Promise<SessionP
 }
 
 /** Prefijos de API por rol. El admin tiene acceso total. */
-const CAJERO_API = ['/api/facturas', '/api/pacientes', '/api/medicos', '/api/bcv', '/api/cierres/verificar-estado-diario', '/api/cierres/estado-jornada', '/api/auth'];
+const CAJERO_API = ['/api/facturas', '/api/pacientes', '/api/medicos', '/api/bcv', '/api/cierres/verificar-estado-diario', '/api/cierres/estado-jornada', '/api/catalogo', '/api/auth'];
 const SOLO_ADMIN = [
   '/api/tesoreria/cambio-divisa',
   '/api/tesoreria/conciliacion/ejecutar',
@@ -77,6 +77,9 @@ const matches = (path: string, prefixes: string[]) => prefixes.some((p) => path 
 export function isAllowed(role: UserRole, path: string, method: string = 'GET'): boolean {
   if (role === 'admin') return true;
   if (matches(path, SOLO_ADMIN)) return false;
+  // El catálogo se consulta libremente, pero solo el administrador lo modifica.
+  if (matches(path, ['/api/catalogo']) && method !== 'GET') return false;
+  if (path === '/api/pacientes' && method === 'PUT') return false;
   if (role === 'cajero') return matches(path, CAJERO_API);
   // Asistente: lectura de tesorería permitida; cualquier escritura en tesorería queda reservada al admin.
   if (matches(path, ['/api/tesoreria']) && method !== 'GET') return false;

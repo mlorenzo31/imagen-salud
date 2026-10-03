@@ -1,528 +1,339 @@
 'use client';
 
-import React, { useState, useMemo } from 'react';
-import { Card } from '@/components/ui/card';import { Button } from '@/components/ui/button';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import { Card, CardContent } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { AlertTriangle, CheckCircle2 } from 'lucide-react';import { exportarAExcel, exportarAPDF } from '@/lib/exportUtils';
-import { ConciliacionPOS, UserRole, ModoOperacion, CuentaBancaria } from '@/types';
+import { Input } from '@/components/ui/input';
+import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { AlertTriangle, CheckCircle2, ChevronDown, ChevronRight, CreditCard, FileSpreadsheet, RefreshCw } from 'lucide-react';
+import { exportarAExcel } from '@/lib/exportUtils';
+import { centsToNumber, toCents } from '@/lib/money';
 import { hoyLocal } from '@/lib/date';
-import { ConciliarDialog } from '@/components/conciliacion/ConciliarDialog';
-import { RegistrarPagoDialog } from '@/components/conciliacion/RegistrarPagoDialog';
-import { SeccionPagosRecibidos } from '@/components/conciliacion/SeccionPagosRecibidos';
-import { SeccionLotesPOS } from '@/components/conciliacion/SeccionLotesPOS';
-import { EncabezadoConciliacion } from '@/components/conciliacion/EncabezadoConciliacion';
+import { getErrorMessage } from '@/lib/utils';
+import type { CuentaBancaria, ModoOperacion, UserRole } from '@/types';
 
-interface ModuloConciliacionPOSProps {
+interface Lote {
+  fecha: string;
+  cantidad: number;
+  bruto: number;
+  pendientes: number;
+  bruto_pendiente: number;
+  neto: number;
+  comision: number;
+  ids_pendientes: number[];
+  referencia: string | null;
+  conciliado_por: string | null;
+  estado: 'PENDIENTE' | 'CONCILIADO';
+}
+
+interface TransaccionPendiente {
+  id: number;
+  fecha_transaccion: string;
+  hora_transaccion: string | null;
+  nombre_paciente: string | null;
+  cedula_paciente: string | null;
+  monto_bruto_bs: string | number;
+}
+
+interface Props {
   currentRole: UserRole;
   modoOperacion: ModoOperacion;
-  cuentas: CuentaBancaria[];
+  cuentas?: CuentaBancaria[];
   onConciliacionCompletada?: () => void;
 }
 
-export interface PagoRecibidoCaja {
-  id: number;
-  fecha: string;
-  hora: string;
-  paciente: string;
-  cedula: string;
-  factura_id: string;
-  metodo: 'PUNTO_POS' | 'PAGO_MOVIL' | 'TRANSFERENCIA';
-  banco: string;
-  referencia: string;
-  monto_bs: number;
-  monto_usd: number;
-  estado: 'CONCILIADO' | 'PENDIENTE';
-  fecha_conciliado?: string;
-  referencia_extracto?: string;
-}
+const bs = (n: number) => `Bs. ${n.toLocaleString('es-VE', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
 
-const LOTES_INICIALES: ConciliacionPOS[] = [
-  {
-    id: 1,
-    fecha_operacion: '2026-09-12',
-    fecha_cierre_lote: '2026-09-12',
-    lote_numero: '000412',
-    tipo_tarjeta: 'TDD',
-    banco: 'Banco Banesco (Punto 01 - Admisión)',
-    monto_bruto_pos_bs: 45200.00,
-    comision_bancaria_bs: 678.00,
-    comision_porcentaje: 1.5,
-    monto_neto_liquidado_bs: 44522.00,
-    diferencia_cuadre_bs: 0.00,
-    estado: 'CONCILIADO',
-    notas: 'Liquidación nocturna automática 100% cuadrada',
-    usuario: 'Asistente Administrativo'
-  },
-  {
-    id: 2,
-    fecha_operacion: '2026-09-11',
-    fecha_cierre_lote: '2026-09-11',
-    lote_numero: '000409',
-    tipo_tarjeta: 'TDC',
-    banco: 'Banco Mercantil (Punto 02 - Triaje)',
-    monto_bruto_pos_bs: 18500.00,
-    comision_bancaria_bs: 555.00,
-    comision_porcentaje: 3.0,
-    monto_neto_liquidado_bs: 17945.00,
-    diferencia_cuadre_bs: 0.00,
-    estado: 'CONCILIADO',
-    notas: 'Cierre de lote verificado en estado de cuenta mercantil',
-    usuario: 'Director Médico (Admin)'
-  },
-  {
-    id: 3,
-    fecha_operacion: '2026-09-10',
-    fecha_cierre_lote: '2026-09-10',
-    lote_numero: '000398',
-    tipo_tarjeta: 'TDD',
-    banco: 'Banco de Venezuela (Punto 03 - Caja)',
-    monto_bruto_pos_bs: 12400.00,
-    comision_bancaria_bs: 186.00,
-    comision_porcentaje: 1.5,
-    monto_neto_liquidado_bs: 12214.00,
-    diferencia_cuadre_bs: 0.00,
-    estado: 'PENDIENTE',
-    notas: 'Pendiente validar abono en cuenta bancaria BDV',
-    usuario: 'Asistente Administrativo'
-  }
-];
+/**
+ * Conciliación de punto de venta con datos reales: cada día se agrupan los cobros con tarjeta que siguen "en tránsito"
+ * y, al confirmar el abono del banco, el servidor acredita el neto en la cuenta, registra la comisión y asienta el movimiento.
+ */
+export const ModuloConciliacionPOS: React.FC<Props> = ({ currentRole, modoOperacion, onConciliacionCompletada }) => {
+  const [lotes, setLotes] = useState<Lote[]>([]);
+  const [cargando, setCargando] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [filtro, setFiltro] = useState<'TODOS' | 'PENDIENTE' | 'CONCILIADO'>('TODOS');
+  const [busqueda, setBusqueda] = useState('');
+  const [expandido, setExpandido] = useState<string | null>(null);
+  const [detalle, setDetalle] = useState<TransaccionPendiente[]>([]);
 
-const PAGOS_CAJA_INICIALES: PagoRecibidoCaja[] = [
-  {
-    id: 101,
-    fecha: '2026-09-14',
-    hora: '09:15',
-    paciente: 'Mariana Silva',
-    cedula: 'V-19845210',
-    factura_id: 'FAC-0981',
-    metodo: 'PUNTO_POS',
-    banco: 'Banesco (Punto 01)',
-    referencia: 'POS-7821',
-    monto_bs: 3450.00,
-    monto_usd: 4.14,
-    estado: 'PENDIENTE'
-  },
-  {
-    id: 102,
-    fecha: '2026-09-14',
-    hora: '10:30',
-    paciente: 'Carlos Mendoza',
-    cedula: 'V-15420112',
-    factura_id: 'FAC-0982',
-    metodo: 'PAGO_MOVIL',
-    banco: 'Banco de Venezuela',
-    referencia: 'PM-99321',
-    monto_bs: 5800.00,
-    monto_usd: 6.96,
-    estado: 'PENDIENTE'
-  },
-  {
-    id: 103,
-    fecha: '2026-09-14',
-    hora: '11:45',
-    paciente: 'Elena Rivas',
-    cedula: 'V-22114589',
-    factura_id: 'FAC-0983',
-    metodo: 'PUNTO_POS',
-    banco: 'Mercantil (Punto 02)',
-    referencia: 'POS-8902',
-    monto_bs: 8200.00,
-    monto_usd: 9.85,
-    estado: 'CONCILIADO',
-    fecha_conciliado: '2026-09-14',
-    referencia_extracto: 'EXT-55201'
-  },
-  {
-    id: 104,
-    fecha: '2026-09-14',
-    hora: '12:20',
-    paciente: 'Pedro Hernández',
-    cedula: 'V-11895421',
-    factura_id: 'FAC-0984',
-    metodo: 'PAGO_MOVIL',
-    banco: 'Banesco Pago Móvil',
-    referencia: 'PM-44512',
-    monto_bs: 4100.00,
-    monto_usd: 4.92,
-    estado: 'PENDIENTE'
-  }
-];
-
-export const ModuloConciliacionPOS: React.FC<ModuloConciliacionPOSProps> = ({
-  currentRole,
-  modoOperacion,
-  cuentas,
-  onConciliacionCompletada
-}) => {
-  // Pestaña activa: Lotes POS vs Pagos Recibidos en Caja
-  const [subTab, setSubTab] = useState<'lotes' | 'pagos_caja'>('lotes');
-
-  // Estado de lotes
-  const [lotes, setLotes] = useState<ConciliacionPOS[]>(LOTES_INICIALES);
-  const [searchQuery, setSearchQuery] = useState('');
-  const [filtroEstado, setFiltroEstado] = useState<'TODOS' | 'CONCILIADO' | 'PENDIENTE' | 'DESCUADRADO'>('TODOS');
-  const [filtroTipoTarjeta, setFiltroTipoTarjeta] = useState<string>('TODAS');
-
-  // Estado de pagos individuales recibidos en caja
-  const [pagosCaja, setPagosCaja] = useState<PagoRecibidoCaja[]>(PAGOS_CAJA_INICIALES);
-  const [filtroMetodoPago, setFiltroMetodoPago] = useState<string>('TODOS');
-  const [busquedaPagos, setBusquedaPagos] = useState<string>('');
-
-  // Modales
-  const [openModalRegistro, setOpenModalRegistro] = useState(false);
-  const [openModalConciliar, setOpenModalConciliar] = useState(false);
-  const [loteAConciliar, setLoteAConciliar] = useState<ConciliacionPOS | null>(null);
-
-  // Formulario de Conciliación Bancaria de Lote
-  const [cuentaConciliacion, setCuentaConciliacion] = useState('Banco de Venezuela - Cta Cte Principal');
-  const [refBancaria, setRefBancaria] = useState('');
+  const [loteActivo, setLoteActivo] = useState<Lote | null>(null);
+  const [neto, setNeto] = useState('');
+  const [referencia, setReferencia] = useState('');
   const [fechaAbono, setFechaAbono] = useState(hoyLocal());
-  const [montoRealAcreditado, setMontoRealAcreditado] = useState<string>('');
-  const [notasConciliacion, setNotasConciliacion] = useState('');
+  const [guardando, setGuardando] = useState(false);
+  const [errorModal, setErrorModal] = useState<string | null>(null);
 
-  // Formulario Registrar Nuevo Cierre de Lote
-  const [formLote, setFormLote] = useState('');
-  const [formTipo, setFormTipo] = useState<'TDD' | 'TDC'>('TDD');
-  const [formBanco, setFormBanco] = useState('Banco Banesco (Punto 01 - Admisión)');
-  const [formFechaOperacion, setFormFechaOperacion] = useState(hoyLocal());
-  const [formMontoBruto, setFormMontoBruto] = useState<number | ''>('');
-  const [formComisionBs, setFormComisionBs] = useState<number | ''>('');
-  const [formComisionPct, setFormComisionPct] = useState<number>(1.5);
-  const [formNotas, setFormNotas] = useState('');
+  const esAdmin = currentRole === 'admin';
+  const soloLectura = modoOperacion === 'vista';
 
-  const isReadOnly = modoOperacion === 'vista';
+  const cargar = useCallback(async () => {
+    setCargando(true);
+    try {
+      const res = await fetch('/api/tesoreria/conciliacion/lotes');
+      if (!res.ok) throw new Error('No se pudieron cargar los lotes de punto de venta.');
+      setLotes(await res.json());
+      setError(null);
+    } catch (e) {
+      setError(getErrorMessage(e));
+    } finally {
+      setCargando(false);
+    }
+  }, []);
 
-  // Alerta de lotes pendientes de días anteriores
-  const lotesPendientesDiasPrevios = useMemo(() => {
-    const fechaHoy = hoyLocal();
-    return lotes.filter(l => l.estado !== 'CONCILIADO' && l.fecha_operacion < fechaHoy);
-  }, [lotes]);
+  useEffect(() => {
+    const t = setTimeout(cargar, 0);
+    return () => clearTimeout(t);
+  }, [cargar]);
 
-  // Actualizar comisión sugerida al cambiar tipo
-  const handleTipoChange = (tipo: 'TDD' | 'TDC') => {
-    setFormTipo(tipo);
-    const pct = tipo === 'TDD' ? 1.5 : 3.0;
-    setFormComisionPct(pct);
-    if (typeof formMontoBruto === 'number') {
-      setFormComisionBs(Number(((formMontoBruto * pct) / 100).toFixed(2)));
+  const hoy = hoyLocal();
+  const pendientesAnteriores = useMemo(() => lotes.filter((l) => l.estado === 'PENDIENTE' && l.fecha < hoy), [lotes, hoy]);
+
+  const visibles = useMemo(() => lotes.filter((l) => {
+    if (filtro !== 'TODOS' && l.estado !== filtro) return false;
+    return !busqueda.trim() || l.fecha.includes(busqueda.trim()) || (l.referencia ?? '').toLowerCase().includes(busqueda.trim().toLowerCase());
+  }), [lotes, filtro, busqueda]);
+
+  const totales = useMemo(() => ({
+    bruto: lotes.reduce((a, l) => a + toCents(l.bruto), 0),
+    comision: lotes.reduce((a, l) => a + toCents(l.comision), 0),
+    neto: lotes.reduce((a, l) => a + toCents(l.neto), 0),
+    pendientes: lotes.filter((l) => l.estado === 'PENDIENTE').length,
+  }), [lotes]);
+
+  const alternarDetalle = async (l: Lote) => {
+    if (expandido === l.fecha) { setExpandido(null); return; }
+    setExpandido(l.fecha);
+    try {
+      const res = await fetch('/api/tesoreria/conciliacion/pendientes');
+      const data: { transacciones: TransaccionPendiente[] } = await res.json();
+      setDetalle((data.transacciones ?? []).filter((t) => String(t.fecha_transaccion).slice(0, 10) === l.fecha));
+    } catch {
+      setDetalle([]);
     }
   };
 
-  const handleBrutoChange = (val: string) => {
-    const num = parseFloat(val);
-    setFormMontoBruto(isNaN(num) ? '' : num);
-    if (!isNaN(num)) {
-      setFormComisionBs(Number(((num * formComisionPct) / 100).toFixed(2)));
-    } else {
-      setFormComisionBs('');
-    }
-  };
-
-  // Abrir Modal de Conciliación de Lote
-  const handleAbrirModalConciliar = (lote: ConciliacionPOS) => {
-    setLoteAConciliar(lote);
-    setMontoRealAcreditado(lote.monto_neto_liquidado_bs.toFixed(2));
-    setRefBancaria(`ABONO-LOTE-${lote.lote_numero}`);
+  const abrirConciliar = (l: Lote) => {
+    if (soloLectura) return alert('Modo Vista activo.');
+    setLoteActivo(l);
+    setNeto('');
+    setReferencia(`ABONO-POS-${l.fecha.replaceAll('-', '')}`);
     setFechaAbono(hoyLocal());
-    setNotasConciliacion(`Abono validado en cuenta ${lote.banco}`);
-    setOpenModalConciliar(true);
+    setErrorModal(null);
   };
 
-  // Confirmar Conciliación del Lote
-  const handleConfirmarConciliacion = () => {
-    if (!loteAConciliar) return;
-    const realNum = parseFloat(montoRealAcreditado) || 0;
-    const diferencia = realNum - loteAConciliar.monto_neto_liquidado_bs;
-    const nuevoEstado = Math.abs(diferencia) > 0.01 ? 'DESCUADRADO' : 'CONCILIADO';
+  const brutoLote = loteActivo ? toCents(loteActivo.bruto_pendiente) : 0;
+  const netoCents = (() => { try { return toCents(neto); } catch { return NaN; } })();
+  const comisionCents = Number.isNaN(netoCents) ? NaN : brutoLote - netoCents;
+  const netoValido = neto !== '' && !Number.isNaN(netoCents) && netoCents > 0 && comisionCents >= 0;
 
-    setLotes(prev => prev.map(l => {
-      if (l.id === loteAConciliar.id) {
-        return {
-          ...l,
-          estado: nuevoEstado,
-          diferencia_cuadre_bs: diferencia,
-          notas: notasConciliacion || `Conciliado con ref: ${refBancaria}`,
-          fecha_cierre_lote: fechaAbono
-        };
-      }
-      return l;
-    }));
-
-    setOpenModalConciliar(false);
-    setLoteAConciliar(null);
-    if (onConciliacionCompletada) onConciliacionCompletada();
-  };
-
-  // Conciliar Rápido (1 Clic)
-  const handleConciliarRapido = (lote: ConciliacionPOS) => {
-    if (isReadOnly) return alert('Modo Vista activo.');
-    const confirmar = confirm(`¿Confirmar conciliación directa del Lote #${lote.lote_numero} por Bs. ${lote.monto_neto_liquidado_bs.toLocaleString('es-VE', { minimumFractionDigits: 2 })}?`);
-    if (!confirmar) return;
-
-    setLotes(prev => prev.map(l => l.id === lote.id ? { ...l, estado: 'CONCILIADO', notas: 'Conciliación rápida verificada en banco' } : l));
-    if (onConciliacionCompletada) onConciliacionCompletada();
-  };
-
-  // Reabrir lote si se necesita rectificar
-  const handleReabrirLote = (id: number) => {
-    if (isReadOnly) return alert('Modo Vista activo.');
-    setLotes(prev => prev.map(l => l.id === id ? { ...l, estado: 'PENDIENTE' } : l));
-  };
-
-  // Conciliar Pago Individual de Caja
-  const handleConciliarPagoIndividual = (id: number) => {
-    setPagosCaja(prev => prev.map(p => {
-      if (p.id === id) {
-        return {
-          ...p,
-          estado: 'CONCILIADO',
-          fecha_conciliado: hoyLocal(),
-          referencia_extracto: `EXT-${Math.floor(Math.random() * 89999 + 10000)}`
-        };
-      }
-      return p;
-    }));
-  };
-
-  // Conciliar Todos los Pagos Pendientes de Caja
-  const handleConciliarTodosLosPagos = () => {
-    const pendientesCount = pagosCaja.filter(p => p.estado === 'PENDIENTE').length;
-    if (pendientesCount === 0) {
-      alert('Todos los pagos ya están conciliados.');
-      return;
+  const confirmar = async () => {
+    if (!loteActivo || !netoValido) return;
+    setGuardando(true);
+    setErrorModal(null);
+    try {
+      const res = await fetch('/api/tesoreria/conciliacion/ejecutar', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          transaccion_ids: loteActivo.ids_pendientes,
+          monto_neto_acreditado_bs: centsToNumber(netoCents),
+          comision_bancaria_bs: centsToNumber(comisionCents),
+          fecha_acreditacion: fechaAbono,
+          referencia: referencia.trim() || undefined,
+        }),
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(data.error || 'No se pudo conciliar el lote.');
+      setLoteActivo(null);
+      setExpandido(null);
+      await cargar();
+      onConciliacionCompletada?.();
+    } catch (e) {
+      setErrorModal(getErrorMessage(e));
+    } finally {
+      setGuardando(false);
     }
-    const conf = confirm(`¿Desea marcar como CONCILIADOS en banco los ${pendientesCount} pagos pendientes de caja?`);
-    if (!conf) return;
-
-    setPagosCaja(prev => prev.map(p => ({
-      ...p,
-      estado: 'CONCILIADO',
-      fecha_conciliado: hoyLocal(),
-      referencia_extracto: p.referencia_extracto || `EXT-${Math.floor(Math.random() * 89999 + 10000)}`
-    })));
   };
 
-  // Registrar Nuevo Cierre de Lote
-  const handleSubmitNuevoLote = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (isReadOnly) return alert('Modo solo lectura.');
-    const bruto = typeof formMontoBruto === 'number' ? formMontoBruto : 0;
-    const comision = typeof formComisionBs === 'number' ? formComisionBs : 0;
-    const neto = bruto - comision;
-
-    const nuevoLote: ConciliacionPOS = {
-      id: Date.now(),
-      fecha_operacion: formFechaOperacion,
-      fecha_cierre_lote: formFechaOperacion,
-      lote_numero: formLote.trim(),
-      tipo_tarjeta: formTipo,
-      banco: formBanco,
-      monto_bruto_pos_bs: bruto,
-      comision_bancaria_bs: comision,
-      comision_porcentaje: formComisionPct,
-      monto_neto_liquidado_bs: neto,
-      diferencia_cuadre_bs: 0.00,
-      estado: 'PENDIENTE',
-      notas: formNotas.trim() || 'Cierre registrado, pendiente confirmación en extracto',
-      usuario: currentRole === 'admin' ? 'Director Médico (Admin)' : 'Asistente Administrativo'
-    };
-
-    setLotes([nuevoLote, ...lotes]);
-    setOpenModalRegistro(false);
-    // Limpiar formulario
-    setFormLote('');
-    setFormMontoBruto('');
-    setFormComisionBs('');
-    setFormNotas('');
-  };
-
-  // Filtros de Lotes
-  const lotesFiltrados = useMemo(() => {
-    return lotes.filter((l) => {
-      const matchSearch =
-        l.lote_numero.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        l.banco.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        l.usuario.toLowerCase().includes(searchQuery.toLowerCase());
-
-      const matchEstado = filtroEstado === 'TODOS' || l.estado === filtroEstado;
-      const matchTipo = filtroTipoTarjeta === 'TODAS' || l.tipo_tarjeta === filtroTipoTarjeta;
-
-      return matchSearch && matchEstado && matchTipo;
-    });
-  }, [lotes, searchQuery, filtroEstado, filtroTipoTarjeta]);
-
-  // Totales
-  const totalBrutoBs = lotesFiltrados.reduce((acc, l) => acc + l.monto_bruto_pos_bs, 0);
-  const totalComisionesBs = lotesFiltrados.reduce((acc, l) => acc + l.comision_bancaria_bs, 0);
-  const totalNetoLiquidadoBs = lotesFiltrados.reduce((acc, l) => acc + l.monto_neto_liquidado_bs, 0);
-  const totalLotesPendientes = lotes.filter(l => l.estado === 'PENDIENTE').length;
-
-  // Filtros de Pagos de Caja
-  const pagosFiltrados = useMemo(() => {
-    return pagosCaja.filter(p => {
-      const matchSearch =
-        p.paciente.toLowerCase().includes(busquedaPagos.toLowerCase()) ||
-        p.cedula.toLowerCase().includes(busquedaPagos.toLowerCase()) ||
-        p.referencia.toLowerCase().includes(busquedaPagos.toLowerCase()) ||
-        p.factura_id.toLowerCase().includes(busquedaPagos.toLowerCase());
-
-      const matchMetodo = filtroMetodoPago === 'TODOS' || p.metodo === filtroMetodoPago;
-      return matchSearch && matchMetodo;
-    });
-  }, [pagosCaja, busquedaPagos, filtroMetodoPago]);
-
-  const totalPagosPendientes = pagosCaja.filter(p => p.estado === 'PENDIENTE').length;
-  const totalBsPagosRecibidos = pagosFiltrados.reduce((acc, p) => acc + p.monto_bs, 0);
-
-  // Exportar Excel de Lotes
-  const handleExportExcel = () => {
-    const data = lotesFiltrados.map((l) => ({
-      'N° Lote': l.lote_numero,
-      'Fecha Operación': l.fecha_operacion,
-      'Tipo Tarjeta': l.tipo_tarjeta,
-      'Terminal / Banco': l.banco,
-      'Bruto POS (Bs)': l.monto_bruto_pos_bs,
-      'Comisión Banco (Bs)': l.comision_bancaria_bs,
-      '% Comisión': l.comision_porcentaje,
-      'Neto Liquidado (Bs)': l.monto_neto_liquidado_bs,
-      'Diferencia (Bs)': l.diferencia_cuadre_bs,
-      'Estado': l.estado,
-      'Auditor': l.usuario,
-      'Notas': l.notas || ''
-    }));
-
-    exportarAExcel('Auditoria_Conciliacion_POS', [
-      { nombreHoja: 'Cierres de Lote POS', data }
-    ]);
-  };
-
-  // Exportar PDF
-  const handleExportPDF = () => {
-    const filas = lotesFiltrados.map((l) => [
-      `Lote #${l.lote_numero}`,
-      l.fecha_operacion,
-      l.tipo_tarjeta,
-      l.banco,
-      `Bs. ${l.monto_bruto_pos_bs.toLocaleString('es-VE', { minimumFractionDigits: 2 })}`,
-      `-Bs. ${l.comision_bancaria_bs.toLocaleString('es-VE', { minimumFractionDigits: 2 })}`,
-      `Bs. ${l.monto_neto_liquidado_bs.toLocaleString('es-VE', { minimumFractionDigits: 2 })}`,
-      l.estado
-    ]);
-
-    exportarAPDF({
-      titulo: 'AUDITORÍA Y CONCILIACIÓN DE PUNTOS DE VENTA (POS)',
-      subtitulo: 'Centro Clínico Radiológico Imagen Salud, C.A. — Terminales TDD / TDC (Puntos de Venta)',
-      nombreArchivo: 'Conciliacion_POS_Clinica',
-      kpis: [
-        { label: 'Total Lotes', valor: `${lotesFiltrados.length}` },
-        { label: 'Total Bruto POS', valor: `Bs. ${totalBrutoBs.toLocaleString('es-VE', { minimumFractionDigits: 2 })}` },
-        { label: 'Total Comisiones', valor: `Bs. ${totalComisionesBs.toLocaleString('es-VE', { minimumFractionDigits: 2 })}` },
-        { label: 'Neto Liquidado', valor: `Bs. ${totalNetoLiquidadoBs.toLocaleString('es-VE', { minimumFractionDigits: 2 })}` }
-      ],
-      columnas: ['Lote', 'Fecha', 'Tipo', 'Terminal', 'Bruto POS', 'Comisión', 'Neto Banco', 'Estado'],
-      filas
-    });
-  };
+  const exportar = () => exportarAExcel('Conciliacion_POS', [{
+    nombreHoja: 'Lotes POS',
+    data: visibles.map((l) => ({
+      Fecha: l.fecha, Cobros: l.cantidad, 'Bruto (Bs)': l.bruto, 'Comisión (Bs)': l.comision, 'Neto acreditado (Bs)': l.neto,
+      Estado: l.estado, Referencia: l.referencia ?? '', 'Conciliado por': l.conciliado_por ?? '',
+    })),
+  }]);
 
   return (
     <div className="space-y-6">
-      {/* Alerta de Auditoría Interactiva con Acción Directa */}
-      {lotesPendientesDiasPrevios.length > 0 && (
-        <div className="bg-rose-50 border-2 border-rose-200 p-4 sm:p-5 rounded-2xl flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 shadow-sm animate-in fade-in-50">
-          <div className="flex items-start gap-3">
-            <div className="w-10 h-10 rounded-xl bg-rose-600 text-white flex items-center justify-center shrink-0 shadow-md shadow-rose-600/20">
-              <AlertTriangle className="w-5 h-5" />
-            </div>
-            <div>
-              <h4 className="font-black text-rose-950 text-sm">
-                Alerta de Auditoría: {lotesPendientesDiasPrevios.length} Lote(s) sin Conciliar de Días Anteriores
-              </h4>
-              <p className="text-xs text-rose-800 mt-0.5">
-                Existen cierres de lote bancarios sin confirmar abono en cuenta bancaria. Es obligatorio conciliar antes del cierre final.
-              </p>
-              <div className="flex flex-wrap gap-2 mt-2">
-                {lotesPendientesDiasPrevios.map(p => (
-                  <Badge key={p.id} className="bg-white text-rose-900 border border-rose-300 font-mono text-[11px] py-1 px-2.5">
-                    Lote #{p.lote_numero} • {p.banco} ({p.fecha_operacion}) — Bs. {p.monto_bruto_pos_bs.toLocaleString('es-VE', { minimumFractionDigits: 2 })}
-                  </Badge>
-                ))}
-              </div>
-            </div>
-          </div>
-          <div className="shrink-0 w-full sm:w-auto">
-            <Button
-              onClick={() => handleAbrirModalConciliar(lotesPendientesDiasPrevios[0])}
-              className="w-full sm:w-auto rounded-xl bg-rose-600 hover:bg-rose-700 text-white font-bold text-xs px-4 h-9 shadow-sm flex items-center justify-center gap-1.5"
-            >
-              <CheckCircle2 className="w-4 h-4" />
-              <span>⚡ Conciliar Este Lote Ahora</span>
-            </Button>
+      {pendientesAnteriores.length > 0 && (
+        <div className="flex items-start gap-3 rounded-xl border border-clinica-coral/30 bg-clinica-coral-soft p-4">
+          <AlertTriangle className="w-5 h-5 text-clinica-coral shrink-0 mt-0.5" />
+          <div className="text-sm">
+            <p className="font-semibold text-clinica-coral">
+              {pendientesAnteriores.length} lote(s) de días anteriores sin conciliar
+            </p>
+            <p className="text-slate-600 mt-0.5">
+              Hay {bs(pendientesAnteriores.reduce((a, l) => a + l.bruto_pendiente, 0))} en cobros con tarjeta esperando confirmación de abono bancario:{' '}
+              {pendientesAnteriores.slice(0, 4).map((l) => l.fecha).join(', ')}{pendientesAnteriores.length > 4 ? '…' : ''}.
+            </p>
           </div>
         </div>
       )}
 
-      {/* Encabezado Corporativo y Conmutador de Pestañas */}
-      <EncabezadoConciliacion setSubTab={setSubTab} subTab={subTab} lotes={lotes} pagosCaja={pagosCaja} handleExportExcel={handleExportExcel} handleExportPDF={handleExportPDF} isReadOnly={isReadOnly} setOpenModalRegistro={setOpenModalRegistro} />
-
-      {/* KPI Cards */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        <Card className="rounded-2xl border border-slate-200 bg-white p-4 sm:p-5 shadow-sm">
-          <p className="text-[11px] font-bold text-slate-400 uppercase tracking-wider">
-            {subTab === 'lotes' ? 'Bruto Facturado en POS' : 'Total Cobrado en Caja'}
-          </p>
-          <h3 className="text-xl sm:text-2xl font-black text-slate-900 mt-1">
-            Bs. {(subTab === 'lotes' ? totalBrutoBs : totalBsPagosRecibidos).toLocaleString('es-VE', { minimumFractionDigits: 2 })}
-          </h3>
-          <p className="text-[11px] text-slate-400 mt-1">
-            {subTab === 'lotes' ? 'Cobros totales en terminales' : 'Tarjetas POS y Pago Móvil'}
-          </p>
-        </Card>
-
-        <Card className="rounded-2xl border border-slate-200 bg-white p-4 sm:p-5 shadow-sm">
-          <p className="text-[11px] font-bold text-slate-400 uppercase tracking-wider">Comisiones Retenidas</p>
-          <h3 className="text-xl sm:text-2xl font-black text-rose-600 mt-1">
-            - Bs. {totalComisionesBs.toLocaleString('es-VE', { minimumFractionDigits: 2 })}
-          </h3>
-          <p className="text-[11px] text-slate-400 mt-1">Retención bancaria aplicada (1.5% - 3%)</p>
-        </Card>
-
-        <Card className="rounded-2xl border border-slate-200 bg-white p-4 sm:p-5 shadow-sm">
-          <p className="text-[11px] font-bold text-slate-400 uppercase tracking-wider">Neto Acreditado en Banco</p>
-          <h3 className="text-xl sm:text-2xl font-black text-[#1D7A70] mt-1">
-            Bs. {totalNetoLiquidadoBs.toLocaleString('es-VE', { minimumFractionDigits: 2 })}
-          </h3>
-          <p className="text-[11px] text-slate-400 mt-1">Fondos disponibles en cuentas de la clínica</p>
-        </Card>
-
-        <Card className="rounded-2xl border border-slate-200 bg-white p-4 sm:p-5 shadow-sm">
-          <p className="text-[11px] font-bold text-slate-400 uppercase tracking-wider">Estado de Conciliación</p>
-          <div className="flex items-baseline gap-2 mt-1">
-            <h3 className="text-xl sm:text-2xl font-black text-slate-900">
-              {subTab === 'lotes' ? lotesFiltrados.length : pagosFiltrados.length}
-            </h3>
-            <span className="text-xs text-slate-400">registros</span>
+      <Card>
+        <CardContent className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+          <div className="flex items-center gap-3">
+            <div className="p-2.5 bg-clinica-selection rounded-xl text-clinica-primary"><CreditCard className="w-6 h-6" /></div>
+            <div>
+              <h2 className="text-lg font-semibold text-slate-900">Conciliación de punto de venta</h2>
+              <p className="text-sm text-slate-500">Cobros con tarjeta por día, pendientes de abono y ya acreditados en banco</p>
+            </div>
           </div>
-          <p className="text-[11px] font-bold text-rose-600 mt-1">
-            {(subTab === 'lotes' ? totalLotesPendientes : totalPagosPendientes)} pendientes de conciliar
-          </p>
-        </Card>
+          <div className="flex items-center gap-2">
+            <Button variant="outline" size="sm" onClick={cargar} disabled={cargando}>
+              <RefreshCw className={`w-3.5 h-3.5 ${cargando ? 'animate-spin' : ''}`} /> Actualizar
+            </Button>
+            <Button variant="outline" size="sm" onClick={exportar} disabled={visibles.length === 0}>
+              <FileSpreadsheet className="w-3.5 h-3.5" /> Excel
+            </Button>
+          </div>
+        </CardContent>
+      </Card>
+
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+        <Card><CardContent><p className="text-[11px] uppercase tracking-wide text-slate-500">Bruto en terminal (90 días)</p><p className="text-xl font-semibold text-slate-900 mt-1">{bs(centsToNumber(totales.bruto))}</p></CardContent></Card>
+        <Card><CardContent><p className="text-[11px] uppercase tracking-wide text-slate-500">Comisiones retenidas</p><p className="text-xl font-semibold text-clinica-coral mt-1">{bs(centsToNumber(totales.comision))}</p></CardContent></Card>
+        <Card><CardContent><p className="text-[11px] uppercase tracking-wide text-slate-500">Neto acreditado en banco</p><p className="text-xl font-semibold text-clinica-dark mt-1">{bs(centsToNumber(totales.neto))}</p></CardContent></Card>
+        <Card><CardContent><p className="text-[11px] uppercase tracking-wide text-slate-500">Lotes por conciliar</p><p className={`text-xl font-semibold mt-1 ${totales.pendientes > 0 ? 'text-clinica-coral' : 'text-clinica-dark'}`}>{totales.pendientes}</p></CardContent></Card>
       </div>
 
-      {/* 1. SECCIÓN: CIERRES DE LOTE POS */}
-      {subTab === 'lotes' && (
-        <SeccionLotesPOS searchQuery={searchQuery} setSearchQuery={setSearchQuery} setFiltroEstado={setFiltroEstado} filtroEstado={filtroEstado} filtroTipoTarjeta={filtroTipoTarjeta} setFiltroTipoTarjeta={setFiltroTipoTarjeta} lotesFiltrados={lotesFiltrados} isReadOnly={isReadOnly} handleReabrirLote={handleReabrirLote} handleAbrirModalConciliar={handleAbrirModalConciliar} handleConciliarRapido={handleConciliarRapido} />
-      )}
+      <Card>
+        <CardContent className="space-y-4">
+          <div className="flex flex-col sm:flex-row gap-3 sm:items-center justify-between">
+            <Input value={busqueda} onChange={(e) => setBusqueda(e.target.value)} placeholder="Buscar por fecha (AAAA-MM-DD) o referencia…" className="max-w-sm" />
+            <div className="inline-flex rounded-lg bg-slate-100 p-1 text-xs">
+              {(['TODOS', 'PENDIENTE', 'CONCILIADO'] as const).map((f) => (
+                <button key={f} onClick={() => setFiltro(f)} className={`px-3 py-1.5 rounded-md font-medium transition-colors ${filtro === f ? 'bg-white text-slate-900 shadow-xs' : 'text-slate-500 hover:text-slate-800'}`}>
+                  {f === 'TODOS' ? 'Todos' : f === 'PENDIENTE' ? 'Pendientes' : 'Conciliados'}
+                </button>
+              ))}
+            </div>
+          </div>
 
-      {/* 2. SECCIÓN: CONCILIACIÓN DE PAGOS RECIBIDOS EN CAJA (INDIVIDUAL) */}
-      {subTab === 'pagos_caja' && (
-        <SeccionPagosRecibidos busquedaPagos={busquedaPagos} setBusquedaPagos={setBusquedaPagos} filtroMetodoPago={filtroMetodoPago} setFiltroMetodoPago={setFiltroMetodoPago} isReadOnly={isReadOnly} handleConciliarTodosLosPagos={handleConciliarTodosLosPagos} pagosFiltrados={pagosFiltrados} handleConciliarPagoIndividual={handleConciliarPagoIndividual} />
-      )}
+          {error && <p className="text-sm text-clinica-coral">{error}</p>}
 
-      {/* MODAL 1: REGISTRAR NUEVO CIERRE DE LOTE */}
-      <RegistrarPagoDialog openModalRegistro={openModalRegistro} setOpenModalRegistro={setOpenModalRegistro} handleSubmitNuevoLote={handleSubmitNuevoLote} formLote={formLote} setFormLote={setFormLote} formTipo={formTipo} handleTipoChange={handleTipoChange} formBanco={formBanco} setFormBanco={setFormBanco} formFechaOperacion={formFechaOperacion} setFormFechaOperacion={setFormFechaOperacion} formMontoBruto={formMontoBruto} handleBrutoChange={handleBrutoChange} formComisionPct={formComisionPct} formComisionBs={formComisionBs} setFormComisionBs={setFormComisionBs} formNotas={formNotas} setFormNotas={setFormNotas} />
+          <div className="overflow-x-auto">
+            <table className="w-full text-sm">
+              <thead>
+                <tr className="text-left text-[11px] uppercase text-slate-500 border-b border-slate-200">
+                  <th className="py-2 pr-3 w-6" />
+                  <th className="py-2 pr-3">Fecha</th>
+                  <th className="py-2 pr-3 text-right">Cobros</th>
+                  <th className="py-2 pr-3 text-right">Bruto</th>
+                  <th className="py-2 pr-3 text-right">Comisión</th>
+                  <th className="py-2 pr-3 text-right">Neto acreditado</th>
+                  <th className="py-2 pr-3">Estado</th>
+                  <th className="py-2 text-right">Acción</th>
+                </tr>
+              </thead>
+              <tbody>
+                {visibles.length === 0 && (
+                  <tr><td colSpan={8} className="py-10 text-center text-slate-500">{cargando ? 'Cargando…' : 'No hay cobros con tarjeta para mostrar.'}</td></tr>
+                )}
+                {visibles.map((l) => (
+                  <React.Fragment key={l.fecha}>
+                    <tr className="border-b border-slate-100 hover:bg-slate-50/60">
+                      <td className="py-3 pr-3">
+                        {l.estado === 'PENDIENTE' && (
+                          <button onClick={() => alternarDetalle(l)} aria-label="Ver cobros del lote" className="text-slate-400 hover:text-slate-700">
+                            {expandido === l.fecha ? <ChevronDown className="w-4 h-4" /> : <ChevronRight className="w-4 h-4" />}
+                          </button>
+                        )}
+                      </td>
+                      <td className="py-3 pr-3 font-medium text-slate-800 tabular-nums">{l.fecha}</td>
+                      <td className="py-3 pr-3 text-right tabular-nums">{l.cantidad}</td>
+                      <td className="py-3 pr-3 text-right tabular-nums">{bs(l.bruto)}</td>
+                      <td className="py-3 pr-3 text-right tabular-nums text-clinica-coral">{l.estado === 'CONCILIADO' ? bs(l.comision) : '—'}</td>
+                      <td className="py-3 pr-3 text-right tabular-nums text-clinica-dark">{l.estado === 'CONCILIADO' ? bs(l.neto) : '—'}</td>
+                      <td className="py-3 pr-3">
+                        {l.estado === 'CONCILIADO'
+                          ? <Badge className="bg-clinica-selection text-clinica-dark border border-clinica-aquamarine/50"><CheckCircle2 className="w-3 h-3" /> Conciliado</Badge>
+                          : <Badge className="bg-clinica-coral-soft text-clinica-coral border border-clinica-coral/30">Pendiente</Badge>}
+                        {l.estado === 'CONCILIADO' && l.referencia && <span className="ml-2 text-xs text-slate-400">{l.referencia}</span>}
+                      </td>
+                      <td className="py-3 text-right">
+                        {l.estado === 'PENDIENTE' && esAdmin && (
+                          <Button size="sm" onClick={() => abrirConciliar(l)} className="bg-clinica-primary hover:bg-clinica-primary-dark text-white">Conciliar abono</Button>
+                        )}
+                        {l.estado === 'PENDIENTE' && !esAdmin && <span className="text-xs text-slate-400">Solo administrador</span>}
+                      </td>
+                    </tr>
+                    {expandido === l.fecha && (
+                      <tr className="bg-slate-50/70">
+                        <td />
+                        <td colSpan={7} className="py-3 pr-3">
+                          {detalle.length === 0 ? <p className="text-xs text-slate-500">Sin detalle disponible.</p> : (
+                            <ul className="divide-y divide-slate-200/70 text-xs">
+                              {detalle.map((t) => (
+                                <li key={t.id} className="flex items-center justify-between py-1.5">
+                                  <span className="text-slate-700">{t.hora_transaccion ?? ''} · {t.nombre_paciente ?? 'Paciente'} <span className="text-slate-400">{t.cedula_paciente}</span></span>
+                                  <span className="tabular-nums font-medium">{bs(Number(t.monto_bruto_bs))}</span>
+                                </li>
+                              ))}
+                            </ul>
+                          )}
+                        </td>
+                      </tr>
+                    )}
+                  </React.Fragment>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </CardContent>
+      </Card>
 
-      {/* MODAL 2: CONCILIAR ABONO BANCARIO DEL LOTE (AUDITORÍA) */}
-      <ConciliarDialog openModalConciliar={openModalConciliar} setOpenModalConciliar={setOpenModalConciliar} loteAConciliar={loteAConciliar} cuentaConciliacion={cuentaConciliacion} setCuentaConciliacion={setCuentaConciliacion} cuentas={cuentas} refBancaria={refBancaria} setRefBancaria={setRefBancaria} fechaAbono={fechaAbono} setFechaAbono={setFechaAbono} montoRealAcreditado={montoRealAcreditado} setMontoRealAcreditado={setMontoRealAcreditado} notasConciliacion={notasConciliacion} setNotasConciliacion={setNotasConciliacion} handleConfirmarConciliacion={handleConfirmarConciliacion} />
+      <Dialog open={loteActivo !== null} onOpenChange={(o) => { if (!o) setLoteActivo(null); }}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader><DialogTitle>Conciliar abono del {loteActivo?.fecha}</DialogTitle></DialogHeader>
+          <div className="space-y-3 text-sm">
+            <div className="rounded-lg bg-slate-50 border border-slate-200 p-3 flex justify-between">
+              <span className="text-slate-500">{loteActivo?.pendientes} cobro(s) · bruto en terminal</span>
+              <strong className="tabular-nums">{bs(centsToNumber(brutoLote))}</strong>
+            </div>
+            <div>
+              <label className="text-xs font-medium text-slate-600 block mb-1">Monto neto abonado por el banco (Bs)</label>
+              <Input type="number" step="0.01" value={neto} onChange={(e) => setNeto(e.target.value)} placeholder="Según el extracto bancario" />
+            </div>
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <label className="text-xs font-medium text-slate-600 block mb-1">Fecha del abono</label>
+                <Input type="date" value={fechaAbono} onChange={(e) => setFechaAbono(e.target.value)} />
+              </div>
+              <div>
+                <label className="text-xs font-medium text-slate-600 block mb-1">Referencia</label>
+                <Input value={referencia} onChange={(e) => setReferencia(e.target.value)} maxLength={100} />
+              </div>
+            </div>
+            <div className="rounded-lg border border-slate-200 p-3 flex justify-between text-xs">
+              <span className="text-slate-500">Comisión bancaria retenida</span>
+              {netoValido
+                ? <strong className="text-clinica-coral tabular-nums">{bs(centsToNumber(comisionCents))} ({brutoLote > 0 ? ((comisionCents / brutoLote) * 100).toFixed(2) : '0'}%)</strong>
+                : <span className="text-slate-400">{neto !== '' && comisionCents < 0 ? 'El neto no puede superar el bruto' : '—'}</span>}
+            </div>
+            <p className="text-xs text-slate-500">Al confirmar se acredita el neto en la cuenta del punto de venta, se descuenta del saldo en tránsito y se registra el movimiento.</p>
+            {errorModal && <p className="text-xs font-medium text-clinica-coral">{errorModal}</p>}
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setLoteActivo(null)}>Cancelar</Button>
+            <Button onClick={confirmar} disabled={!netoValido || guardando} className="bg-clinica-primary hover:bg-clinica-primary-dark text-white">
+              {guardando ? 'Guardando…' : 'Confirmar conciliación'}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };

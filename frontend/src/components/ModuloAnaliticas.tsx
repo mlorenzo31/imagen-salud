@@ -31,7 +31,7 @@ import {
 import { FacturaCaja, DataPoint } from '@/types';
 import { UniversalDataView } from '@/components/analytics/UniversalDataView';
 import { exportarAExcel, exportarAPDF } from '@/lib/exportUtils';
-import { hoyLocal } from '@/lib/date';
+import { hoyLocal, parseFechaLocal } from '@/lib/date';
 import { esAnulada } from '@/lib/estados';
 
 type GrupoAnalitica = 'NINGUNO' | 'AREA' | 'MEDICO' | 'METODO_PAGO' | 'FECHA';
@@ -112,7 +112,7 @@ export const ModuloAnaliticas: React.FC = () => {
         if (filtroPeriodo === 'SEMANA') {
           const hace7Dias = new Date();
           hace7Dias.setDate(hace7Dias.getDate() - 7);
-          const fechaFactura = new Date(f.fecha);
+          const fechaFactura = parseFechaLocal(f.fecha);
           if (fechaFactura < hace7Dias) return false;
         }
 
@@ -366,7 +366,7 @@ export const ModuloAnaliticas: React.FC = () => {
 
       if (!agrupado[cat]) agrupado[cat] = { totalUSD: 0, honorariosUSD: 0, cantidad: 0 };
       agrupado[cat].totalUSD += Number(f.precio_usd || 0);
-      agrupado[cat].honorariosUSD += Number(f.total_honorarios || (Number(f.precio_usd || 0) * 0.5));
+      agrupado[cat].honorariosUSD += Number(f.total_honorarios ?? 0);
       agrupado[cat].cantidad += 1;
     });
 
@@ -378,13 +378,7 @@ export const ModuloAnaliticas: React.FC = () => {
       cantidad: val.cantidad
     }));
 
-    return lista.length > 0 ? lista : [
-      { label: 'Ecografía General', valorUSD: 450, secundario: 225, valorBS: 450 * tasaBcv, cantidad: 15 },
-      { label: 'Ginecología Integral', valorUSD: 380, secundario: 266, valorBS: 380 * tasaBcv, cantidad: 10 },
-      { label: 'Mamografía Digital', valorUSD: 520, secundario: 260, valorBS: 520 * tasaBcv, cantidad: 12 },
-      { label: 'Radiología RX Tórax', valorUSD: 290, secundario: 145, valorBS: 290 * tasaBcv, cantidad: 11 },
-      { label: 'Consultas Médicas', valorUSD: 640, secundario: 448, valorBS: 640 * tasaBcv, cantidad: 16 }
-    ];
+    return lista;
   }, [facturasFiltradas, agruparPor, tasaBcv]);
 
   return (
@@ -635,9 +629,9 @@ export const ModuloAnaliticas: React.FC = () => {
         tasaBcv={tasaBcv}
         totales={{
           label: 'TOTAL GENERAL',
-          totalUSD: totalFacturadoUSD || 2280,
-          totalBS: totalFacturadoBS || (2280 * tasaBcv),
-          secundarioUSD: totalHonorariosMedicosUSD || 1344
+          totalUSD: totalFacturadoUSD,
+          totalBS: totalFacturadoBS,
+          secundarioUSD: totalHonorariosMedicosUSD
         }}
         nombreArchivoExport="analitica_universal_imagen_salud"
       />

@@ -31,15 +31,18 @@ export const ModalEstudio: React.FC<ModalEstudioProps> = ({ modalServicio, formS
         </div>
         <div className="grid grid-cols-2 gap-2">
           <div>
-            <label className="text-[11px] font-bold text-slate-600 block mb-1">Grupo Clínico</label>
+            <label className="text-[11px] font-bold text-slate-600 block mb-1">Área médica</label>
             <select
-              value={formServicio.grupo_clinico || 'A'}
-              onChange={e => setFormServicio({ ...formServicio, grupo_clinico: e.target.value as ServicioCatalogo['grupo_clinico'] })}
+              value={formServicio.area || 'ECOGRAFIA_AM'}
+              onChange={e => setFormServicio({ ...formServicio, area: e.target.value })}
               className="w-full h-8 px-2.5 rounded-xl border border-slate-200 bg-white text-xs"
             >
-              <option value="A">Grupo A: Ginecología & Eco</option>
-              <option value="B">Grupo B: Mamo & Rayos X</option>
-              <option value="C">Grupo C: Consultas Médicas</option>
+              <option value="ECOGRAFIA_AM">Ecografía AM (Grupo A)</option>
+              <option value="ECOGRAFIA_PM">Ecografía PM (Grupo A)</option>
+              <option value="GINECOLOGIA">Ginecología y biopsias (Grupo A)</option>
+              <option value="RADIOLOGIA">Radiología / Rayos X (Grupo B)</option>
+              <option value="MAMOGRAFIA">Mamografía (Grupo B)</option>
+              <option value="CONSULTAS">Consultas especializadas (Grupo C)</option>
             </select>
           </div>
           <div>
@@ -56,13 +59,20 @@ export const ModalEstudio: React.FC<ModalEstudioProps> = ({ modalServicio, formS
 
         {/* Repartos Porcentuales */}
         <div className="p-3 bg-slate-50 rounded-xl border border-slate-200/80 space-y-2">
-          <span className="text-[10px] font-bold text-slate-500 uppercase block">Reglas de Reparto (%):</span>
+          <div className="flex items-center justify-between">
+            <span className="text-[10px] font-bold text-slate-500 uppercase block">Reglas de Reparto (%):</span>
+            {(() => {
+              const suma = (formServicio.reparto_clinica_pct ?? 0) + (formServicio.reparto_medico_pct ?? 0) + (formServicio.reparto_eco_pct ?? 0) + (formServicio.reparto_patologo_pct ?? 0);
+              const ok = Math.abs(suma - 100) < 0.01;
+              return <span className={`text-[10px] font-semibold ${ok ? 'text-clinica-dark' : 'text-clinica-coral'}`}>Suma: {suma.toFixed(2)}% {ok ? '✓' : '(debe ser 100%)'}</span>;
+            })()}
+          </div>
           <div className="grid grid-cols-2 gap-2">
             <div>
               <label className="text-[10px] text-slate-500 block">Clínica %</label>
               <Input
                 type="number"
-                value={formServicio.reparto_clinica_pct ?? 35}
+                value={formServicio.reparto_clinica_pct ?? 0}
                 onChange={e => setFormServicio({ ...formServicio, reparto_clinica_pct: parseFloat(e.target.value) || 0 })}
                 className="h-7 text-xs font-mono"
               />
@@ -71,7 +81,7 @@ export const ModalEstudio: React.FC<ModalEstudioProps> = ({ modalServicio, formS
               <label className="text-[10px] text-slate-500 block">Médico %</label>
               <Input
                 type="number"
-                value={formServicio.reparto_medico_pct ?? 50}
+                value={formServicio.reparto_medico_pct ?? 0}
                 onChange={e => setFormServicio({ ...formServicio, reparto_medico_pct: parseFloat(e.target.value) || 0 })}
                 className="h-7 text-xs font-mono"
               />

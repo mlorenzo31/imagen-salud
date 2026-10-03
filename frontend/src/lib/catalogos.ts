@@ -74,7 +74,8 @@ export const ESTUDIOS_CLINICOS: Record<string, EstudioItem[]> = {
     { nombre: "CONSULTA +CITOLOGIA", precio: 35, area: "GINECOLOGIA", sala: "CONSULTORIO_GINECO", dist: { imagen: 16, medico: 14, eco: 0, patologo: 5 } },
     { nombre: "CITOLOGIA", precio: 25, area: "GINECOLOGIA", sala: "CONSULTORIO_GINECO", dist: { imagen: 12, medico: 8, eco: 0, patologo: 5 } },
     { nombre: "RETIRO DE APARATO", precio: 50, area: "GINECOLOGIA", sala: "CONSULTORIO_GINECO", dist: { imagen: 30, medico: 20, eco: 0, patologo: 0 } },
-    { nombre: "DOPPLER OBSTETRICO", precio: 35, area: "GINECOLOGIA", sala: "CONSULTORIO_GINECO", dist: { imagen: 0, medico: 9, eco: 21, patologo: 0 } },
+    // El reparto original sumaba $30 de $35: los $5 faltantes se asignan a la clínica (confirmar con la dirección).
+    { nombre: "DOPPLER OBSTETRICO", precio: 35, area: "GINECOLOGIA", sala: "CONSULTORIO_GINECO", dist: { imagen: 5, medico: 9, eco: 21, patologo: 0 } },
     { nombre: "MORFOLOGICO SABADO", precio: 45, area: "GINECOLOGIA", sala: "CONSULTORIO_GINECO", dist: { imagen: 0, medico: 13.5, eco: 31.5, patologo: 0 } },
     { nombre: "BIOPSIA", precio: 160, area: "GINECOLOGIA", sala: "CONSULTORIO_GINECO", dist: { imagen: 50, medico: 50, eco: 0, patologo: 60 } }
   ]

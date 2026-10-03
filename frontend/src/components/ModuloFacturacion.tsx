@@ -5,7 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
-import { ShoppingCart, CreditCard, CheckCircle2, AlertCircle, Trash2, Search, UserCheck, Stethoscope, RefreshCw, RotateCcw, X } from 'lucide-react';import { ESTUDIOS_CLINICOS, ESPECIALISTAS_MEDICOS } from '@/lib/catalogos';import { facturaCreateSchema } from '@/lib/validations';
+import { ShoppingCart, CreditCard, CheckCircle2, AlertCircle, Trash2, Search, UserCheck, Stethoscope, RefreshCw, RotateCcw, X } from 'lucide-react';import { ESPECIALISTAS_MEDICOS } from '@/lib/catalogos';import { useCatalogoEstudios } from '@/lib/useCatalogoEstudios';import { facturaCreateSchema } from '@/lib/validations';
 import { mapearEstudioAGrupo, GrupoClinico } from '@/lib/gruposClinicos';import { normalizarCedulaRif } from '@/lib/cedulaRif';import { aFormatoInputDate, calcularEdadReal, hoyLocal } from '@/lib/date';
 import { getErrorMessage } from '@/lib/utils';
 import {
@@ -120,6 +120,7 @@ export const ModuloFacturacion: React.FC<ModuloFacturacionProps> = ({ onFacturaE
   };
 
   // Selector de Estudio y Reglas de Doctores
+  const { catalogo } = useCatalogoEstudios();
   const [selectedArea, setSelectedArea] = useState<string>('ECOGRAFIA_AM');
   const [selectedEstudioNombre, setSelectedEstudioNombre] = useState<string>('');
   const [selectedDoctor, setSelectedDoctor] = useState<string>('');
@@ -177,9 +178,17 @@ export const ModuloFacturacion: React.FC<ModuloFacturacionProps> = ({ onFacturaE
     return () => clearInterval(id);
   }, []);
 
+  // Si el catálogo se actualiza y el estudio elegido ya no existe, se vuelve al primero del área.
+  useEffect(() => {
+    const lista = catalogo[selectedArea] || [];
+    if (lista.length > 0 && !lista.some((e) => e.nombre === selectedEstudioNombre)) {
+      setSelectedEstudioNombre(lista[0].nombre);
+    }
+  }, [catalogo, selectedArea, selectedEstudioNombre]);
+
   // Autoselección según Área
   useEffect(() => {
-    const estudiosArea = ESTUDIOS_CLINICOS[selectedArea] || [];
+    const estudiosArea = catalogo[selectedArea] || [];
     if (estudiosArea.length > 0) {
       setSelectedEstudioNombre(estudiosArea[0].nombre);
     } else {
@@ -296,7 +305,7 @@ export const ModuloFacturacion: React.FC<ModuloFacturacionProps> = ({ onFacturaE
 
   // Agregar Estudio al Carrito
   const handleAgregarEstudio = () => {
-    const estudiosArea = ESTUDIOS_CLINICOS[selectedArea] || [];
+    const estudiosArea = catalogo[selectedArea] || [];
     const estudioObj = estudiosArea.find(e => e.nombre === selectedEstudioNombre);
     if (!estudioObj) return;
 
@@ -510,7 +519,7 @@ export const ModuloFacturacion: React.FC<ModuloFacturacionProps> = ({ onFacturaE
     }
   };
 
-  const estudiosActuales = ESTUDIOS_CLINICOS[selectedArea] || [];
+  const estudiosActuales = catalogo[selectedArea] || [];
   const esEstudioTecnico = selectedArea === 'RADIOLOGIA' || selectedArea === 'MAMOGRAFIA';
   const esEcografia = selectedArea === 'ECOGRAFIA_AM' || selectedArea === 'ECOGRAFIA_PM';
   const esGinecologia = selectedArea === 'GINECOLOGIA';

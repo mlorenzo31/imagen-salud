@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import pool from '@/lib/db';
 import { errorResponse } from '@/lib/apiHelpers';
+import { asegurarCatalogo } from '@/lib/catalogoDb';
 import { normalizarCedulaRif, extraerDigitos } from '@/lib/cedulaRif';
 
 export async function GET(req: NextRequest) {
@@ -20,12 +21,21 @@ export async function GET(req: NextRequest) {
       return NextResponse.json(result.rows[0]);
     }
 
-    // Consulta con deduplicación garantizada
+    // Consulta con deduplicación garantizada, visitas (facturas no anuladas) y saldo pendiente de cartera
+    let tieneActivo = true;
+    try { await asegurarCatalogo(); } catch { tieneActivo = false; }
     const result = await pool.query(`
-      SELECT DISTINCT ON (regexp_replace(cedula, '[^0-9]', '', 'g')) 
-        id, cedula, nombre, fecha_nacimiento, direccion, telefono
-      FROM pacientes 
-      ORDER BY regexp_replace(cedula, '[^0-9]', '', 'g'), id DESC
+      SELECT DISTINCT ON (regexp_replace(p.cedula, '[^0-9]', '', 'g'))
+        p.id, p.cedula, p.nombre, p.fecha_nacimiento, p.direccion, p.telefono,
+        ${tieneActivo ? 'COALESCE(p.activo, TRUE)' : 'TRUE'} AS activo,
+        (SELECT COUNT(*)::int FROM facturas_caja f
+           WHERE regexp_replace(f.cedula_paciente, '[^0-9]', '', 'g') = regexp_replace(p.cedula, '[^0-9]', '', 'g')
+             AND f.estado NOT IN ('ANULADA', 'ANULADA_SALA')) AS visitas,
+        (SELECT COALESCE(SUM(c.saldo_restante_usd), 0) FROM cartera_deudores c
+           WHERE regexp_replace(c.cedula_paciente, '[^0-9]', '', 'g') = regexp_replace(p.cedula, '[^0-9]', '', 'g')
+             AND c.estado = 'PENDIENTE') AS saldo_pendiente_usd
+      FROM pacientes p
+      ORDER BY regexp_replace(p.cedula, '[^0-9]', '', 'g'), p.id DESC
     `);
     
     // Ordenar alfabéticamente por nombre para la UI
@@ -106,6 +116,23 @@ export async function POST(req: NextRequest) {
     `, [cedulaCanonica, nombreUpper, fecha_nacimiento || null, direccionUpper, telefono]);
 
     return NextResponse.json(insertRes.rows[0]);
+  } catch (err) {
+    return errorResponse(err);
+  }
+}
+
+/** Activa o desactiva un paciente del catálogo (solo administrador; ver lib/auth.ts). */
+export async function PUT(req: NextRequest) {
+  try {
+    const { id, activo } = (await req.json()) as { id?: unknown; activo?: unknown };
+    const pid = Number(id);
+    if (!Number.isInteger(pid) || pid <= 0 || typeof activo !== 'boolean') {
+      return NextResponse.json({ error: 'Se requiere id (entero) y activo (booleano).' }, { status: 400 });
+    }
+    await asegurarCatalogo();
+    const r = await pool.query('UPDATE pacientes SET activo = $1 WHERE id = $2 RETURNING id, activo', [activo, pid]);
+    if (r.rows.length === 0) return NextResponse.json({ error: 'Paciente no encontrado.' }, { status: 404 });
+    return NextResponse.json(r.rows[0]);
   } catch (err) {
     return errorResponse(err);
   }
