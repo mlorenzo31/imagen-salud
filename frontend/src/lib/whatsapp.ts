@@ -15,12 +15,13 @@ export function normalizarTelefono(crudo: string | null | undefined): string | n
   return null;
 }
 
-export function construirMensaje(nombre: string, estudio: string, adjunto: string | null): string {
+export function construirMensaje(nombre: string, estudio: string, adjunto: string | null, enlace?: string | null): string {
   const doc = adjunto ? `\n📎 *Documento adjunto:* ${adjunto}` : '';
+  const link = enlace ? `\n\n🔗 Ver y descargar sus resultados:\n${enlace}` : '';
   return (
     '🏥 *IMAGEN SALUD - Notificación de Resultados*\n\n' +
     `Estimado(a) *${nombre}*:\n` +
-    `Le informamos que los resultados de su estudio *${estudio || 'médico'}* ya están listos y validados.${doc}\n\n` +
+    `Le informamos que los resultados de su estudio *${estudio || 'médico'}* ya están listos y validados.${doc}${link}\n\n` +
     '_Centro Clínico Imagen Salud, C.A._'
   );
 }
@@ -43,12 +44,14 @@ export async function asegurarTablasWhatsapp(db: Db): Promise<void> {
       mensaje TEXT NOT NULL,
       adjunto_url TEXT,
       adjunto_nombre TEXT,
+      token TEXT,
       estado TEXT NOT NULL DEFAULT 'PENDIENTE',
       intentos INT NOT NULL DEFAULT 0,
       error TEXT,
       creado TIMESTAMPTZ NOT NULL DEFAULT now(),
       enviado TIMESTAMPTZ
     )`);
+  await db.query(`ALTER TABLE wa_outbox ADD COLUMN IF NOT EXISTS token TEXT`);
   await db.query(`CREATE INDEX IF NOT EXISTS wa_outbox_pend_idx ON wa_outbox (estado, id)`);
   await db.query(`
     CREATE UNIQUE INDEX IF NOT EXISTS wa_outbox_factura_uk ON wa_outbox (factura_id)

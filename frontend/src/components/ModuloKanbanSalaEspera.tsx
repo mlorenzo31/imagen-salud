@@ -1,6 +1,7 @@
 'use client';
 
 import { despacharWhatsApp, resumenOmitidos } from '@/lib/despacharWhatsApp';
+import { subirAdjuntos } from '@/lib/subirAdjuntos';
 import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { ejecutarLlamadoCompleto } from '@/lib/audioLlamado';
 import { UserRole, ModoOperacion, ReembolsoPendiente, ServicioFactura } from '@/types';
@@ -331,39 +332,21 @@ export const ModuloKanbanSalaEspera: React.FC<ModuloKanbanSalaEsperaProps> = ({
   };
 
   const handleArchivoSeleccionado = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file || !pacienteAdjuntoId) return;
+    const archivos = Array.from(e.target.files ?? []);
+    if (archivos.length === 0 || !pacienteAdjuntoId) return;
+    const facturaId = pacienteAdjuntoId;
 
     try {
-      const nombreArchivo = file.name;
-      const tipoArchivo = file.type || 'application/pdf';
-
-      await fetch('/api/facturas/' + pacienteAdjuntoId + '/estado', {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          adjunto_nombre: nombreArchivo,
-          adjunto_tipo: tipoArchivo,
-          whatsapp_enviado: false
-        })
-      });
-
-      setPacientes(prev => prev.map(p => {
-        if (p.id === pacienteAdjuntoId) {
-          return {
-            ...p,
-            adjunto_nombre: nombreArchivo,
-            adjunto_tipo: tipoArchivo,
-            whatsapp_enviado: false
-          };
-        }
-        return p;
-      }));
-
-      alert('Documento "' + nombreArchivo + '" adjuntado exitosamente. La atención está lista para envío por WhatsApp.');
-    } catch (err) {
-      console.error('Error adjuntando archivo:', err);
-      alert('Error al adjuntar el archivo.');
+      const r = await subirAdjuntos(facturaId, archivos);
+      if (r.subidos > 0) {
+        setPacientes(prev => prev.map(p => p.id === facturaId
+          ? { ...p, adjunto_nombre: r.adjuntoNombre ?? p.adjunto_nombre, whatsapp_enviado: false }
+          : p));
+      }
+      const resumen = r.subidos > 0
+        ? r.subidos + ' archivo(s) adjuntado(s). La atención está lista para envío por WhatsApp.'
+        : 'No se adjuntó ningún archivo.';
+      alert(resumen + (r.errores.length ? '\n\nNo se pudieron subir:\n' + r.errores.join('\n') : ''));
     } finally {
       setPacienteAdjuntoId(null);
     }
@@ -393,15 +376,6 @@ export const ModuloKanbanSalaEspera: React.FC<ModuloKanbanSalaEsperaProps> = ({
       telInternacional = '58' + tel;
     }
 
-    const docNombre = p.adjunto_nombre ? ('\n📎 *Documento adjunto:* ' + p.adjunto_nombre) : '';
-    const mensaje = encodeURIComponent(
-      '🏥 *IMAGEN SALUD - Notificación Oficial de Resultados*\n\n' +
-      'Estimado(a) *' + p.nombre_paciente + '*:\n' +
-      'Le informamos que los resultados de su estudio *' + p.estudio + '* ya han sido debidamente procesados, validados y firmados por el especialista.' + docNombre + '\n\n' +
-      '✅ Sus resultados digitales están a su disposición. Agradecemos su confianza en nuestro centro médico.\n\n' +
-      '_Centro Clínico Imagen Salud, C.A._'
-    );
-
     const bot = await despacharWhatsApp([p.id], telInternacional);
     if (bot.modo === 'bot') {
       alert(bot.encolados > 0
@@ -409,6 +383,16 @@ export const ModuloKanbanSalaEspera: React.FC<ModuloKanbanSalaEsperaProps> = ({
         : 'No se encoló:\n' + resumenOmitidos(bot.omitidos));
       return;
     }
+
+    const docNombre = p.adjunto_nombre ? ('\n📎 *Documento adjunto:* ' + p.adjunto_nombre) : '';
+    const mensaje = encodeURIComponent(
+      '🏥 *IMAGEN SALUD - Notificación Oficial de Resultados*\n\n' +
+      'Estimado(a) *' + p.nombre_paciente + '*:\n' +
+      'Le informamos que los resultados de su estudio *' + p.estudio + '* ya han sido debidamente procesados, validados y firmados por el especialista.' + docNombre + '\n\n' +
+      (bot.enlaces[p.id] ? '🔗 Ver y descargar sus resultados:\n' + bot.enlaces[p.id] + '\n\n' : '') +
+      '✅ Sus resultados digitales están a su disposición. Agradecemos su confianza en nuestro centro médico.\n\n' +
+      '_Centro Clínico Imagen Salud, C.A._'
+    );
 
     const waUrl = 'https://api.whatsapp.com/send?phone=' + telInternacional + '&text=' + mensaje;
     window.open(waUrl, '_blank');
@@ -591,7 +575,8 @@ export const ModuloKanbanSalaEspera: React.FC<ModuloKanbanSalaEsperaProps> = ({
         type="file" 
         ref={fileInputRef} 
         onChange={handleArchivoSeleccionado}
-        accept=".pdf,.png,.jpg,.jpeg,.docx" 
+        accept=".pdf,.png,.jpg,.jpeg,.webp,.docx" 
+        multiple
         className="hidden" 
       />
 
