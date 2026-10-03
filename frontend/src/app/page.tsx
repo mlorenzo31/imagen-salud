@@ -7,6 +7,7 @@ import { ModalEgreso } from '@/components/ModalEgreso';
 import { ModalCambioDivisa } from '@/components/ModalCambioDivisa';
 import { BloqueoCierrePendiente } from '@/components/BloqueoCierrePendiente';
 import { CierreObligatorio } from '@/components/CierreObligatorio';
+import { TopBar } from '@/components/TopBar';
 import { TablaHonorarios } from '@/components/TablaHonorarios';
 import { DashboardFinanciero } from '@/components/DashboardFinanciero';
 import { TremorDashboard } from '@/components/TremorDashboard';
@@ -244,7 +245,7 @@ export default function Home() {
   }
 
   return (
-    <div className="flex bg-slate-50 min-h-screen text-slate-800 font-sans antialiased">
+    <div className="flex bg-slate-50 min-h-screen text-slate-800 antialiased">
       {/* Sidebar con control estricto RBAC */}
       <Sidebar
         currentRole={role}
@@ -257,7 +258,9 @@ export default function Home() {
       />
 
       {/* Contenedor Principal Pulcro (85-90% Blanco Clínico) */}
-      <main className="flex-1 p-6 lg:p-8 max-w-7xl mx-auto overflow-y-auto space-y-6">
+      <div className="flex-1 min-w-0 flex flex-col">
+      <TopBar seccion={activeSection} tasaBcv={tasaBcv} nombreUsuario={nombreUsuario} role={role} />
+      <main className="flex-1 w-full p-6 lg:p-8 max-w-7xl mx-auto space-y-6">
 
         {/* Banner Crítico de Atenciones Abiertas de Fecha Anterior (Pillar 4) */}
         {pacientesPendientes.length > 0 && role === 'admin' && (
@@ -592,6 +595,7 @@ export default function Home() {
           </div>
         )}
       </main>
+      </div>
 
       {/* Modales Globales */}
       <ModalEgreso
