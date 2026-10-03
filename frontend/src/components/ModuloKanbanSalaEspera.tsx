@@ -69,24 +69,8 @@ export const ModuloKanbanSalaEspera: React.FC<ModuloKanbanSalaEsperaProps> = ({
   const [llamandoId, setLlamandoId] = useState<number | null>(null);
 
   // Bandeja de Reembolsos Pendientes (Anulaciones en sala de espera)
-  const [reembolsos, setReembolsos] = useState<ReembolsoPendiente[]>([
-    {
-      id: 1,
-      paciente_nombre: 'Alejandro Morales',
-      cedula: 'V-18456123',
-      turno_num: 'A-04',
-      servicio: 'Ecografía Abdominal',
-      monto_usd: 25.00,
-      monto_bs: 20812.25,
-      metodo_origen: 'Pago Móvil',
-      cuenta_id: 4,
-      motivo_anulacion: 'Paciente tuvo emergencia familiar y se retiró de sala',
-      fecha: '2026-09-14',
-      hora: '10:30 AM',
-      estado: 'PENDIENTE_BANCO',
-      usuario_autoriza: 'Director Médico'
-    }
-  ]);
+  // Bandeja de reversiones de la sesión (sin datos de muestra). Los reversos contables ya se asientan al anular la factura.
+  const [reembolsos, setReembolsos] = useState<ReembolsoPendiente[]>([]);
 
   // Modal Anulación en Sala
   const [pacienteAAnular, setPacienteAAnular] = useState<PacienteTurno | null>(null);

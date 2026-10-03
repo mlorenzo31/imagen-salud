@@ -90,3 +90,13 @@ export function sumarDias(fecha: string, dias: number): string {
   const dt = new Date(Date.UTC(y, m - 1, d + dias));
   return dt.toISOString().slice(0, 10);
 }
+
+/**
+ * Convierte 'YYYY-MM-DD' (o un ISO que empiece así) en una fecha a medianoche LOCAL del navegador.
+ * `new Date('2026-10-03')` es medianoche UTC y en Venezuela (UTC-4) se mostraría como el 2 de octubre.
+ */
+export function parseFechaLocal(valor: string | Date): Date {
+  if (valor instanceof Date) return valor;
+  const m = /^(\d{4})-(\d{2})-(\d{2})/.exec(valor);
+  return m ? new Date(Number(m[1]), Number(m[2]) - 1, Number(m[3])) : new Date(valor);
+}

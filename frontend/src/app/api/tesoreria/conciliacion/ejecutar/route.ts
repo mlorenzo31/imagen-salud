@@ -2,6 +2,7 @@ import { NextResponse, type NextRequest } from 'next/server';
 import { z } from 'zod';
 import { ApiError, fechaHoraLocal, parseBody, sesionUsuario, withTransaction, errorResponse } from '@/lib/apiHelpers';
 import { centsToNumber, centsToStr, toCents } from '@/lib/money';
+import { repartirProporcional } from '@/lib/conciliacion';
 
 const schema = z.object({
   transaccion_ids: z.array(z.coerce.number().int().positive()).min(1, 'Debe seleccionar al menos una transacción para conciliar.'),
@@ -38,13 +39,20 @@ export async function POST(request: NextRequest) {
       }
       const fechaAcred = body.fecha_acreditacion || fecha;
 
-      await client.query(
-        `UPDATE transacciones_tarjetas_transito
-         SET estado = 'CONCILIADO', monto_neto_acreditado_bs = $1, comision_bancaria_bs = $2,
-             fecha_acreditacion = $3, referencia_bancaria = $4, conciliado_por = $5, conciliado_en = NOW()
-         WHERE id = ANY($6::int[])`,
-        [centsToStr(netoCents), centsToStr(comisionCents), fechaAcred, body.referencia || 'CONCILIACION', usuario, body.transaccion_ids]
-      );
+      // Neto y comisión se reparten entre los cobros del lote en proporción a su bruto, de modo que
+      // las sumas por cobro son exactas (y anular una factura reversa solo lo que le corresponde).
+      const ordenadas = [...trans.rows].sort((a, b) => a.id - b.id);
+      const comisiones = repartirProporcional(ordenadas.map((r) => toCents(r.monto_bruto_bs)), comisionCents);
+      for (let i = 0; i < ordenadas.length; i++) {
+        const brutoFila = toCents(ordenadas[i].monto_bruto_bs);
+        await client.query(
+          `UPDATE transacciones_tarjetas_transito
+           SET estado = 'CONCILIADO', monto_neto_acreditado_bs = $1, comision_bancaria_bs = $2,
+               fecha_acreditacion = $3, referencia_bancaria = $4, conciliado_por = $5, conciliado_en = NOW()
+           WHERE id = $6`,
+          [centsToStr(brutoFila - comisiones[i]), centsToStr(comisiones[i]), fechaAcred, body.referencia || 'CONCILIACION', usuario, ordenadas[i].id]
+        );
+      }
 
       const cuenta = await client.query(
         "SELECT id, saldo_actual, saldo_transito FROM cuentas_bancarias WHERE codigo = 'PUNTO_VENTA_BS' FOR UPDATE"

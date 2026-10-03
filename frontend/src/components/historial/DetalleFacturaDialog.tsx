@@ -8,6 +8,7 @@ import { normalizarCedulaRif } from '@/lib/cedulaRif';
 import { esAnulada } from '@/lib/estados';
 import { FacturaCaja } from '@/types';
 import React from 'react';
+import { parseFechaLocal } from '@/lib/date';
 
 interface DetalleFacturaDialogProps {
   facturaDetalle: FacturaCaja | null;
@@ -40,7 +41,7 @@ export const DetalleFacturaDialog: React.FC<DetalleFacturaDialogProps> = ({ fact
             </div>
             <div className="text-right">
               <Badge className="bg-slate-800 text-white font-mono text-xs">
-                {facturaDetalle.fecha ? new Date(facturaDetalle.fecha).toLocaleDateString('es-VE') : ''}
+                {facturaDetalle.fecha ? parseFechaLocal(facturaDetalle.fecha).toLocaleDateString('es-VE') : ''}
               </Badge>
               <p className="text-[10px] text-slate-400 mt-0.5">{facturaDetalle.hora || ''}</p>
             </div>

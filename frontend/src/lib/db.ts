@@ -1,4 +1,7 @@
-import { Pool, type PoolConfig } from 'pg';
+import { Pool, types, type PoolConfig } from 'pg';
+
+// Las columnas DATE se entregan como 'YYYY-MM-DD'. Como Date serían medianoche UTC y se verían un día antes en Venezuela (UTC-4).
+types.setTypeParser(1082, (v: string) => v);
 
 declare global {
   var _pgPool: Pool | undefined;

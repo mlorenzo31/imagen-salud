@@ -6,7 +6,7 @@ import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { Search, History, Globe, DollarSign, Paperclip, RefreshCw, Download, Printer, MessageCircle, Activity, X } from 'lucide-react';import { UserRole, FacturaCaja } from '@/types';
 import { normalizarCedulaRif, extraerDigitos, sonMismoDocumento } from '@/lib/cedulaRif';
-import { hoyLocal, sumarDias } from '@/lib/date';import { esAnulada } from '@/lib/estados';
+import { hoyLocal, parseFechaLocal, sumarDias } from '@/lib/date';import { esAnulada } from '@/lib/estados';
 import { DetalleFacturaDialog } from '@/components/historial/DetalleFacturaDialog';
 import { TablaMovimientosHistorial } from '@/components/historial/TablaMovimientosHistorial';
 import { PanelFiltrosAvanzados } from '@/components/historial/PanelFiltrosAvanzados';
@@ -208,7 +208,7 @@ export const ModuloHistorialPacientes: React.FC<ModuloHistorialPacientesProps> =
     const anuladas = movimientos.filter(m => esAnulada(m.estado)).length;
 
     // Última fecha
-    const fechaObj = movimientos[0]?.fecha ? new Date(movimientos[0].fecha) : null;
+    const fechaObj = movimientos[0]?.fecha ? parseFechaLocal(movimientos[0].fecha) : null;
     const ultimaVisita = fechaObj ? fechaObj.toLocaleDateString('es-VE', { day: '2-digit', month: '2-digit', year: 'numeric' }) : 'N/A';
 
     return {
@@ -304,7 +304,7 @@ export const ModuloHistorialPacientes: React.FC<ModuloHistorialPacientesProps> =
 
       if (agrupacion === 'FECHA') {
         if (m.fecha) {
-          const d = new Date(m.fecha);
+          const d = parseFechaLocal(m.fecha);
           clave = d.toLocaleDateString('es-VE', { month: 'long', year: 'numeric' });
           clave = clave.charAt(0).toUpperCase() + clave.slice(1);
         } else {
@@ -418,7 +418,7 @@ export const ModuloHistorialPacientes: React.FC<ModuloHistorialPacientesProps> =
 
     const rows = movimientosFiltrados.map(m => [
       m.id,
-      m.fecha ? new Date(m.fecha).toISOString().slice(0, 10) : '',
+      m.fecha ? m.fecha.slice(0, 10) : '',
       `"${m.hora || ''}"`,
       `"${normalizarCedulaRif(m.cedula_paciente || '')}"`,
       `"${m.nombre_paciente || ''}"`,

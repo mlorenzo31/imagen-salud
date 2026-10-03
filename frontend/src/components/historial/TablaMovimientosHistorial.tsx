@@ -9,6 +9,7 @@ import { normalizarCedulaRif, sonMismoDocumento } from '@/lib/cedulaRif';
 import { esAnulada } from '@/lib/estados';
 import { FacturaCaja } from '@/types';
 import type { PacienteData } from '../ModuloHistorialPacientes';
+import { parseFechaLocal } from '@/lib/date';
 
 interface TablaMovimientosHistorialProps {
   cargandoMovimientos: boolean;
@@ -100,7 +101,7 @@ export const TablaMovimientosHistorial: React.FC<TablaMovimientosHistorialProps>
                       </td>
                     </tr>
                     {listaEnGrupo.map((m) => {
-                      const fechaFormateada = m.fecha ? new Date(m.fecha).toLocaleDateString('es-VE') : 'N/A';
+                      const fechaFormateada = m.fecha ? parseFechaLocal(m.fecha).toLocaleDateString('es-VE') : 'N/A';
                       const tieneAdjunto = Boolean(m.adjunto_nombre);
                       const waEnviado = Boolean(m.whatsapp_enviado);
 
@@ -258,7 +259,7 @@ export const TablaMovimientosHistorial: React.FC<TablaMovimientosHistorialProps>
               })
             ) : (
               movimientosFiltrados.map((m) => {
-                const fechaFormateada = m.fecha ? new Date(m.fecha).toLocaleDateString('es-VE') : 'N/A';
+                const fechaFormateada = m.fecha ? parseFechaLocal(m.fecha).toLocaleDateString('es-VE') : 'N/A';
                 const tieneAdjunto = Boolean(m.adjunto_nombre);
                 const waEnviado = Boolean(m.whatsapp_enviado);
 
