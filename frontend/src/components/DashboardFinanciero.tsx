@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useRef } from 'react';
-import * as XLSX from 'xlsx';
+import { descargarExcel } from '@/lib/excel';
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
 import html2canvas from 'html2canvas';
@@ -77,14 +77,10 @@ export const DashboardFinanciero: React.FC<DashboardFinancieroProps> = ({ tasaBc
       { Indicador: 'Margen Operativo Neto Estimado', Monto_USD: ingresosTotalesUsd + (ingresosTotalesBs - egresosTotalesBs) / tasaBcv, Monto_Bs: (ingresosTotalesUsd * tasaBcv) + (ingresosTotalesBs - egresosTotalesBs) }
     ];
 
-    const wb = XLSX.utils.book_new();
-    const wsResumen = XLSX.utils.json_to_sheet(dataResumen);
-    XLSX.utils.book_append_sheet(wb, wsResumen, 'Resumen Ejecutivo');
-
-    const wsTendencia = XLSX.utils.json_to_sheet(datosTendencia);
-    XLSX.utils.book_append_sheet(wb, wsTendencia, 'Tendencia Diaria');
-
-    XLSX.writeFile(wb, `Balance_Financiero_Imagen_Salud_${Date.now()}.xlsx`);
+    descargarExcel(`Balance_Financiero_Imagen_Salud_${Date.now()}.xlsx`, [
+      { nombreHoja: 'Resumen Ejecutivo', data: dataResumen },
+      { nombreHoja: 'Tendencia Diaria', data: datosTendencia.map((d) => ({ ...d })) },
+    ]).catch((err) => console.error('Error exportando Excel:', err));
   };
 
   // Exportar PDF con captura de gráficos vía html2canvas

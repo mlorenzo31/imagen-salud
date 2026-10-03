@@ -38,7 +38,7 @@ import {
   limpiarNombreInput,
   limpiarTelefonoInput
 } from '@/lib/pacienteValidation';
-import * as XLSX from 'xlsx';
+import { leerHojaComoObjetos } from '@/lib/excel';
 import { getErrorMessage } from '@/lib/utils';
 
 interface ModuloAdminCatalogosProps {
@@ -545,15 +545,9 @@ export const ModuloAdminCatalogos: React.FC<ModuloAdminCatalogosProps> = ({ curr
   const procesarArchivoDryRun = (file: File) => {
     setProcesandoDryRun(true);
     setImportacionExitosa(false);
-    const reader = new FileReader();
-
-    reader.onload = evt => {
+    (async () => {
       try {
-        const bstr = evt.target?.result;
-        const wb = XLSX.read(bstr, { type: 'binary' });
-        const wsname = wb.SheetNames[0];
-        const ws = wb.Sheets[wsname];
-        const rows = XLSX.utils.sheet_to_json<Record<string, string | number | undefined>>(ws);
+        const rows = await leerHojaComoObjetos(await file.arrayBuffer(), file.name);
 
         // Pre-validaciones por fila (Dry-Run)
         const cedulasVistas = new Set<string>();
@@ -612,9 +606,7 @@ export const ModuloAdminCatalogos: React.FC<ModuloAdminCatalogosProps> = ({ curr
       } finally {
         setProcesandoDryRun(false);
       }
-    };
-
-    reader.readAsBinaryString(file);
+    })();
   };
 
   const handleConfirmarImportacion = async () => {

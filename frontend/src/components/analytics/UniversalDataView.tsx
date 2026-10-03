@@ -36,7 +36,7 @@ import {
   Legend
 } from 'recharts';
 import { DataViewMode, DataPoint } from '@/types';
-import * as XLSX from 'xlsx';
+import { descargarExcel } from '@/lib/excel';
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
 import html2canvas from 'html2canvas';
@@ -137,7 +137,7 @@ export const UniversalDataView: React.FC<UniversalDataViewProps> = ({
   const sumBS = totales?.totalBS ?? (tasaBcv > 0 ? sumPrincipal * tasaBcv : data.reduce((acc, curr) => acc + Number(curr.valorBS || 0), 0));
 
   // Exportar a Excel
-  const handleExportExcel = () => {
+  const handleExportExcel = async () => {
     try {
       setIsExporting(true);
       const rowsToExport = data.map((item, idx) => {
@@ -159,17 +159,10 @@ export const UniversalDataView: React.FC<UniversalDataViewProps> = ({
       });
       rowsToExport.push(filaTotal);
 
-      const wb = XLSX.utils.book_new();
-      const ws = XLSX.utils.json_to_sheet(rowsToExport);
-
-      const colWidths = Object.keys(rowsToExport[0] || {}).map(k => ({
-        wch: Math.max(k.length + 4, 16)
-      }));
-      ws['!cols'] = colWidths;
-
-      XLSX.utils.book_append_sheet(wb, ws, 'Datos');
       const timestamp = hoyLocal();
-      XLSX.writeFile(wb, `${nombreArchivoExport}_${timestamp}.xlsx`);
+      await descargarExcel(`${nombreArchivoExport}_${timestamp}.xlsx`, [
+        { nombreHoja: 'Datos', data: rowsToExport, anchoMinimo: 16 },
+      ]);
     } catch (err) {
       console.error('Error al exportar Excel:', err);
     } finally {

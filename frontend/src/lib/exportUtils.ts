@@ -1,4 +1,4 @@
-import * as XLSX from 'xlsx';
+import { descargarExcel } from '@/lib/excel';
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
 
@@ -28,29 +28,12 @@ export interface ExcelSheetData {
 /**
  * Exporta datos estructurados a un archivo Excel (.xlsx)
  */
-export function exportarAExcel(nombreArchivo: string, hojas: ExcelSheetData[]) {
-  try {
-    const wb = XLSX.utils.book_new();
-
-    hojas.forEach(h => {
-      const ws = XLSX.utils.json_to_sheet(h.data);
-      if (h.data.length > 0) {
-        const colWidths = Object.keys(h.data[0]).map(key => ({
-          wch: Math.max(key.length + 3, 14)
-        }));
-        ws['!cols'] = colWidths;
-      }
-      XLSX.utils.book_append_sheet(wb, ws, h.nombreHoja.slice(0, 31));
-    });
-
-    const timestamp = new Date().toISOString().slice(0, 10);
-    const cleanFileName = `${nombreArchivo.replace(/\s+/g, '_')}_${timestamp}.xlsx`;
-    XLSX.writeFile(wb, cleanFileName);
-    return true;
-  } catch (error) {
-    console.error('Error al exportar a Excel:', error);
-    return false;
-  }
+export function exportarAExcel(nombreArchivo: string, hojas: ExcelSheetData[]): boolean {
+  const timestamp = new Date().toISOString().slice(0, 10);
+  const cleanFileName = `${nombreArchivo.replace(/\s+/g, '_')}_${timestamp}.xlsx`;
+  // La descarga es asíncrona; los errores se registran sin interrumpir la interfaz.
+  descargarExcel(cleanFileName, hojas).catch((error) => console.error('Error al exportar a Excel:', error));
+  return true;
 }
 
 /**
