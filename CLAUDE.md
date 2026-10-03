@@ -6,8 +6,7 @@ Maneja flujos, procesos e implementaciones de Odoo (NO desarrollo ni modificaci�
 Enfocado actualmente en el desarrollo y mejora de un sistema de gestión de clínica (migrado de JS a TS) y en automatizaciones con Google Apps Script.
 
 ## Proyecto (imagen-salud)
-- `frontend/`: Next.js (src/app, rutas API: facturas, tesorería, cierres, excel, pacientes, médicos, bcv)
-- `backend/`: servicios de apoyo
+- `frontend/`: Next.js 16 + TS estricto. Rutas API en `src/app/api`; auth/RBAC en `src/proxy.ts` y `src/lib/auth.ts`; dinero en `src/lib/money.ts` (centavos enteros, NUNCA float)
 - `plantillas_y_scripts/`: plantillas Excel y SQL (`schema_produccion_limpio.sql` = esquema de referencia)
 - Rama de trabajo: `claude/clinic-setup-audit-4w37fl`
 
@@ -21,3 +20,7 @@ Enfocado actualmente en el desarrollo y mejora de un sistema de gestión de clí
 - No leas archivos completos sin necesidad; respeta `.claudeignore`.
 - Avísame proactivamente cuando convenga `/compact` o `/clear`.
 - No hagas commit/push ni PR sin pedírtelo.
+
+## Comandos (en frontend/)
+- `npm test` (vitest), `npm run typecheck`, `npm run lint`
+- Variables requeridas: ver `frontend/.env.example` (DATABASE_URL, AUTH_SECRET, AUTH_PIN_*)

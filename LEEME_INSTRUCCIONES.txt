@@ -5,7 +5,7 @@ GUÍA DE PUESTA EN PRODUCCIÓN Y PLANTILLAS EXCEL - IMAGEN SALUD
 1. CARPETA DE PRODUCCIÓN CREADA:
    Ruta: Desktop\imagen-salud-produccion\
    Contiene el código fuente limpio y ordenado:
-   - backend\  -> Servidor Express API
+   - (el antiguo backend Express fue migrado a rutas TypeScript dentro de frontend\)
    - frontend\ -> Aplicación Next.js / React
 
 2. PLANTILLAS EXCEL GENERADAS:
