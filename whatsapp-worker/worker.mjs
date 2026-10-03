@@ -8,7 +8,6 @@ import QRCode from 'qrcode';
 
 const { DATABASE_URL, DATABASE_SSL } = process.env;
 if (!DATABASE_URL) { console.error('Falta DATABASE_URL'); process.exit(1); }
-if (!process.env.APP_URL) console.warn('APP_URL no definida: se enviará solo el mensaje con enlace, sin archivos adjuntos.');
 
 const db = new pg.Pool({
   connectionString: DATABASE_URL,
@@ -72,10 +71,14 @@ const { APP_URL } = process.env;
 
 /** Archivos del enlace de resultados (la web de la clínica los sirve por token). */
 async function archivosDe(m) {
-  if (!m.token || !APP_URL) return [];
-  const base = APP_URL.replace(/\/$/, '') + '/api/resultados/' + m.token;
+  if (!m.token) return [];
+  // La URL viene en la cola (la fija el sistema); APP_URL solo se usa para filas antiguas sin URL.
+  const base = m.adjunto_url || (APP_URL ? APP_URL.replace(/\/$/, '') + '/api/resultados/' + m.token : null);
+  if (!base) return [];
   const r = await fetch(base);
-  if (!r.ok) throw new Error('No se pudo leer el listado de resultados (' + r.status + ')');
+  if (!r.ok || !(r.headers.get('content-type') ?? '').includes('json')) {
+    throw new Error('El sistema no entregó el listado de resultados (' + r.status + '). Si pide acceso de Vercel, desactive la protección del despliegue de producción.');
+  }
   const { archivos } = await r.json();
   const out = [];
   for (const a of archivos) {

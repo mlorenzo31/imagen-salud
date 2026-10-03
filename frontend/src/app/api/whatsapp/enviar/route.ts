@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
 import { ApiError, errorResponse, parseBody } from '@/lib/apiHelpers';
 import pool from '@/lib/db';
-import { asegurarTablasAdjuntos, tokenDe, urlResultados } from '@/lib/adjuntos';
+import { asegurarTablasAdjuntos, tokenDe, urlApiResultados, urlResultados } from '@/lib/adjuntos';
 import { construirMensaje, leerEstadoBot, normalizarTelefono } from '@/lib/whatsapp';
 
 const Schema = z.object({
@@ -57,9 +57,9 @@ export async function POST(req: NextRequest) {
       const tel = normalizarTelefono(telefono && factura_ids.length === 1 ? telefono : f.telefono_paciente);
       if (!tel) { omitidos.push({ id: f.id, motivo: 'Teléfono inválido' }); continue; }
       const r = await pool.query(
-        `INSERT INTO wa_outbox (factura_id, telefono, mensaje, adjunto_nombre, token)
-         VALUES ($1,$2,$3,$4,$5) ON CONFLICT DO NOTHING`,
-        [f.id, tel, construirMensaje(f.nombre_paciente ?? '', f.estudio ?? '', f.adjunto_nombre, enlaces[f.id]), f.adjunto_nombre, tokens[f.id] ?? null],
+        `INSERT INTO wa_outbox (factura_id, telefono, mensaje, adjunto_nombre, token, adjunto_url)
+         VALUES ($1,$2,$3,$4,$5,$6) ON CONFLICT DO NOTHING`,
+        [f.id, tel, construirMensaje(f.nombre_paciente ?? '', f.estudio ?? '', f.adjunto_nombre, enlaces[f.id]), f.adjunto_nombre, tokens[f.id] ?? null, tokens[f.id] ? urlApiResultados(origen, tokens[f.id]) : null],
       );
       if (r.rowCount) encolados++; else omitidos.push({ id: f.id, motivo: 'Ya en cola' });
     }
