@@ -5,6 +5,7 @@ import { ApiError, errorResponse, fechaHoraLocal, sesionUsuario, withTransaction
 import { centsToStr, toCents } from '@/lib/money';
 import { obtenerTasaBcv } from '@/lib/tasaBcv';
 import { exigirJornadaAlDia, ultimaFechaCerrada } from '@/lib/cierre';
+import { listarEstudios, repartoCents, type EstudioFila } from '@/lib/catalogoDb';
 
 export async function GET(req: NextRequest) {
   try {
@@ -84,7 +85,7 @@ interface Servicio {
 const str = (v: unknown): string => (typeof v === 'string' ? v : v == null ? '' : String(v));
 const HONORARIOS_DEFECTO_PCT = 70; // % del precio si el servicio no informa honorarios
 
-function normalizarServicios(data: Raw): Servicio[] {
+function normalizarServicios(data: Raw, catalogo: EstudioFila[]): Servicio[] {
   const lista: Raw[] = Array.isArray(data.servicios) && data.servicios.length > 0
     ? (data.servicios as Raw[])
     : [{
@@ -95,23 +96,52 @@ function normalizarServicios(data: Raw): Servicio[] {
         precioUSD: data.precioUSD,
         honorariosMedico: data.honorariosMedico,
       }];
+  const clave = (area: string, nombre: string) => `${area}|${nombre}`.toLowerCase();
+  const porClave = new Map(catalogo.map((f) => [clave(f.area, f.nombre), f]));
+
   return lista.map((s, idx) => {
     const precio = toCents(s.precioUSD ?? s.precio_usd);
     if (precio < 0) throw new ApiError(400, 'El precio de un servicio no puede ser negativo.');
-    const honRaw = s.honorariosMedico ?? s.honorarios_medico;
-    const honorarios = honRaw === undefined || honRaw === null || honRaw === ''
-      ? Math.round((precio * HONORARIOS_DEFECTO_PCT) / 100)
-      : toCents(honRaw);
+    const nombre = str(s.estudio);
+    const cat = porClave.get(clave(str(s.area), nombre));
+
+    let honorarios: number;
+    let ganancia: number;
+    if (cat) {
+      // Estudio del catálogo: el precio y el reparto los fija el catálogo, no el cliente.
+      if (!cat.activo) throw new ApiError(400, `El estudio "${nombre}" está desactivado en el catálogo.`);
+      const r = repartoCents(cat);
+      if (precio !== r.precio) {
+        throw new ApiError(400, `El precio de "${nombre}" ($${centsToStr(precio)}) no coincide con el catálogo ($${centsToStr(r.precio)}). Recargue la pantalla.`);
+      }
+      honorarios = r.medico + r.eco + r.patologo;
+      ganancia = r.imagen;
+    } else if (s.dist && typeof s.dist === 'object') {
+      // Fuera del catálogo (p. ej. consultas con tarifa por especialista): se acepta el reparto informado si cuadra.
+      const d = s.dist as Raw;
+      const parte = (k: string) => toCents(d[k]);
+      const suma = parte('imagen') + parte('medico') + parte('eco') + parte('patologo');
+      if (Math.abs(suma - precio) > 1) throw new ApiError(400, `El reparto de "${nombre}" no suma su precio.`);
+      honorarios = parte('medico') + parte('eco') + parte('patologo');
+      ganancia = precio - honorarios;
+    } else {
+      const honRaw = s.honorariosMedico ?? s.honorarios_medico;
+      honorarios = honRaw === undefined || honRaw === null || honRaw === ''
+        ? Math.round((precio * HONORARIOS_DEFECTO_PCT) / 100)
+        : toCents(honRaw);
+      ganancia = precio - honorarios;
+    }
     if (honorarios < 0 || honorarios > precio) throw new ApiError(400, 'Los honorarios de un servicio deben estar entre 0 y su precio.');
+
     return {
-      estudio: str(s.estudio),
+      estudio: nombre,
       medico: str(s.medico),
       area: str(s.area) || 'GENERAL',
       sala: str(s.sala) || 'SALA_ECO_GINE',
       estado: s.estado ? str(s.estado) : undefined,
       precio,
       honorarios,
-      ganancia: precio - honorarios,
+      ganancia,
       orden: idx + 1,
       raw: s,
     };
@@ -172,7 +202,8 @@ export async function POST(req: NextRequest) {
       throw new ApiError(503, 'No hay tasa BCV disponible (proveedores caídos y sin historial).');
     }
 
-    const servicios = normalizarServicios(data);
+    const { filas: catalogo } = await listarEstudios(false);
+    const servicios = normalizarServicios(data, catalogo);
     const totalPrecio = servicios.reduce((a, s) => a + s.precio, 0);
     const totalHonorarios = servicios.reduce((a, s) => a + s.honorarios, 0);
     const totalGanancia = totalPrecio - totalHonorarios;

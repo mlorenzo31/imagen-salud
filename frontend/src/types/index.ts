@@ -267,6 +267,10 @@ export interface DoctorCatalogo {
 export interface ServicioCatalogo {
   id: number | string;
   codigo?: string;
+  /** Área del catálogo (ECOGRAFIA_AM, RADIOLOGIA, ...). */
+  area?: string;
+  /** Reparto en USD (clínica, médico, ecografista, patólogo); suma el precio. */
+  dist?: { imagen: number; medico: number; eco: number; patologo: number };
   nombre: string;
   grupo_clinico: GrupoClinico;
   precio_usd: number;

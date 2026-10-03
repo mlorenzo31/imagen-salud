@@ -1,14 +1,12 @@
 'use client';
 
-import React, { useState, useMemo, useRef } from 'react';
-import { UserRole, PacienteCatalogo, DoctorCatalogo, ServicioCatalogo, GrupoClinico } from '@/types';
-import { Badge } from '@/components/ui/badge';
-import { Users, Stethoscope, Activity, FileSpreadsheet, Building2 } from 'lucide-react';import { mapearEstudioAGrupo } from '@/lib/gruposClinicos';import { normalizarCedulaRif, extraerDigitos, validarEstructuraCedulaRif } from '@/lib/cedulaRif';import { calcularEdadReal } from '@/lib/date';import { leerHojaComoObjetos } from '@/lib/excel';
-import { getErrorMessage } from '@/lib/utils';
+import React, { useState } from 'react';import { UserRole, PacienteCatalogo, DoctorCatalogo, ServicioCatalogo } from '@/types';import { Badge } from '@/components/ui/badge';
+import { Users, Stethoscope, Activity, FileSpreadsheet, Building2 } from 'lucide-react';import { normalizarCedulaRif, extraerDigitos, validarEstructuraCedulaRif } from '@/lib/cedulaRif';import { calcularEdadReal } from '@/lib/date';import { getErrorMessage } from '@/lib/utils';
 import { ModalEstudio } from '@/components/admincatalogos/ModalEstudio';
 import { ModalEspecialista } from '@/components/admincatalogos/ModalEspecialista';
 import { ModalPaciente } from '@/components/admincatalogos/ModalPaciente';
 import { TabCargaMasiva } from '@/components/admincatalogos/TabCargaMasiva';
+import { ModalCargaMasivaExcel } from '@/components/ModalCargaMasivaExcel';
 import { TabEstudios } from '@/components/admincatalogos/TabEstudios';
 import { TabEspecialistas } from '@/components/admincatalogos/TabEspecialistas';
 import { TabPacientes } from '@/components/admincatalogos/TabPacientes';
@@ -17,195 +15,15 @@ interface ModuloAdminCatalogosProps {
   currentRole: UserRole;
 }
 
-// Catálogo Inicial de Pacientes
-const PACIENTES_INICIALES: PacienteCatalogo[] = [
-  {
-    id: 1,
-    cedula: 'V14589230',
-    nombres: 'María Elena Rodríguez',
-    telefono: '0414-1234567',
-    fecha_nacimiento: '1984-05-12',
-    direccion: 'Av. Las Delicias, Maracay',
-    historial_visitas: 8,
-    saldo_pendiente_usd: 0,
-    saldo_pendiente_bs: 0,
-    activo: true
-  },
-  {
-    id: 2,
-    cedula: 'V18754120',
-    nombres: 'Carlos Alberto Gómez',
-    telefono: '0424-9876543',
-    fecha_nacimiento: '1988-08-20',
-    direccion: 'El Castaño, Maracay',
-    historial_visitas: 3,
-    saldo_pendiente_usd: 15,
-    saldo_pendiente_bs: 600,
-    activo: true
-  },
-  {
-    id: 3,
-    cedula: 'V22345678',
-    nombres: 'Daniela Sofía Mendoza',
-    telefono: '0412-5554321',
-    fecha_nacimiento: '1997-03-15',
-    direccion: 'Turmero, Edo. Aragua',
-    historial_visitas: 12,
-    saldo_pendiente_usd: 0,
-    saldo_pendiente_bs: 0,
-    activo: true
-  },
-  {
-    id: 4,
-    cedula: 'V11234890',
-    nombres: 'Roberto José Colmenares',
-    telefono: '0416-3332211',
-    fecha_nacimiento: '1970-11-04',
-    direccion: 'La Victoria, Aragua',
-    historial_visitas: 5,
-    saldo_pendiente_usd: 0,
-    saldo_pendiente_bs: 0,
-    activo: true
-  }
-];
+const SALA_POR_AREA: Record<string, string> = {
+  ECOGRAFIA_AM: 'SALA_ECO_AM', ECOGRAFIA_PM: 'SALA_ECO_PM', RADIOLOGIA: 'SALA_RAYOS_X',
+  MAMOGRAFIA: 'SALA_MAMOGRAFIA', GINECOLOGIA: 'CONSULTORIO_GINECO', CONSULTAS: 'CONSULTORIO_GENERAL',
+};
 
-// Catálogo Inicial de Especialistas Médicos
-const DOCTORES_INICIALES: DoctorCatalogo[] = [
-  {
-    id: 1,
-    nombre: 'Dra. Carmen Teresa Velásquez',
-    especialidad: 'Ginecología y Obstetricia',
-    turno: 'AM',
-    comision_pct: 70,
-    activo: true,
-    telefono: '0414-9988771',
-    consultorio_defecto: 'Consultorio Ginecológico'
-  },
-  {
-    id: 2,
-    nombre: 'Dr. Leonardo Parra',
-    especialidad: 'Radiología e Imagenología',
-    turno: 'COMPLETO',
-    comision_pct: 60,
-    activo: true,
-    telefono: '0424-7766554',
-    consultorio_defecto: 'Sala Mamografía / Rayos X'
-  },
-  {
-    id: 3,
-    nombre: 'Dr. Miguel Ángel Rivas',
-    especialidad: 'Medicina Interna',
-    turno: 'PM',
-    comision_pct: 65,
-    activo: true,
-    telefono: '0412-4433221',
-    consultorio_defecto: 'Consultorio 2'
-  },
-  {
-    id: 4,
-    nombre: 'Dra. Andrea Morales',
-    especialidad: 'Cardiología',
-    turno: 'AM',
-    comision_pct: 70,
-    activo: true,
-    telefono: '0416-1122334',
-    consultorio_defecto: 'Consultorio 3'
-  }
-];
-
-// Catálogo Inicial de Estudios Médicos y Tarifas
-const SERVICIOS_INICIALES: ServicioCatalogo[] = [
-  {
-    id: 1,
-    codigo: 'ECO-01',
-    nombre: 'Ecografía Abdominal Completa',
-    grupo_clinico: 'A',
-    precio_usd: 35,
-    reparto_clinica_pct: 35,
-    reparto_medico_pct: 50,
-    reparto_eco_pct: 15,
-    reparto_patologo_pct: 0,
-    activo: true,
-    sala_defecto: 'Box Ecografía 1'
-  },
-  {
-    id: 2,
-    codigo: 'ECO-02',
-    nombre: 'Ecografía Pélvica / Transvaginal',
-    grupo_clinico: 'A',
-    precio_usd: 30,
-    reparto_clinica_pct: 35,
-    reparto_medico_pct: 50,
-    reparto_eco_pct: 15,
-    reparto_patologo_pct: 0,
-    activo: true,
-    sala_defecto: 'Box Ecografía 1'
-  },
-  {
-    id: 3,
-    codigo: 'MAMO-01',
-    nombre: 'Mamografía Digital Bilateral',
-    grupo_clinico: 'B',
-    precio_usd: 45,
-    reparto_clinica_pct: 50,
-    reparto_medico_pct: 50,
-    reparto_eco_pct: 0,
-    reparto_patologo_pct: 0,
-    activo: true,
-    sala_defecto: 'Sala de Mamografía Digital'
-  },
-  {
-    id: 4,
-    codigo: 'RX-01',
-    nombre: 'Radiografía de Tórax PA / Lateral',
-    grupo_clinico: 'B',
-    precio_usd: 25,
-    reparto_clinica_pct: 50,
-    reparto_medico_pct: 50,
-    reparto_eco_pct: 0,
-    reparto_patologo_pct: 0,
-    activo: true,
-    sala_defecto: 'Sala de Rayos X'
-  },
-  {
-    id: 5,
-    codigo: 'MED-01',
-    nombre: 'Consulta de Medicina Interna',
-    grupo_clinico: 'C',
-    precio_usd: 40,
-    reparto_clinica_pct: 30,
-    reparto_medico_pct: 70,
-    reparto_eco_pct: 0,
-    reparto_patologo_pct: 0,
-    activo: true,
-    sala_defecto: 'Consultorio 2'
-  },
-  {
-    id: 6,
-    codigo: 'BIO-01',
-    nombre: 'Biopsia con Estudio Histopatológico',
-    grupo_clinico: 'A',
-    precio_usd: 80,
-    reparto_clinica_pct: 30,
-    reparto_medico_pct: 40,
-    reparto_eco_pct: 0,
-    reparto_patologo_pct: 30,
-    activo: true,
-    sala_defecto: 'Consultorio Ginecológico'
-  }
-];
-
-export interface FilaDryRun {
-  fila: number;
-  cedula: string;
-  paciente: string;
-  estudio: string;
-  doctor: string;
-  precio_usd: number;
-  grupo_clinico: GrupoClinico;
-  estadoFila: 'VALIDO' | 'ADVERTENCIA' | 'ERROR';
-  errores: string[];
-  advertencias: string[];
+/** Fila de /api/pacientes (con visitas y saldo calculados en el servidor). */
+interface PacienteApi {
+  id: number; cedula: string; nombre: string; telefono?: string | null; fecha_nacimiento?: string | null;
+  direccion?: string | null; activo?: boolean; visitas?: number; saldo_pendiente_usd?: string | number;
 }
 
 export const ModuloAdminCatalogos: React.FC<ModuloAdminCatalogosProps> = ({ currentRole }) => {
@@ -213,9 +31,9 @@ export const ModuloAdminCatalogos: React.FC<ModuloAdminCatalogosProps> = ({ curr
   const [busqueda, setBusqueda] = useState('');
 
   // Estados de Catálogos
-  const [pacientes, setPacientes] = useState<PacienteCatalogo[]>(PACIENTES_INICIALES);
-  const [doctores, setDoctores] = useState<DoctorCatalogo[]>(DOCTORES_INICIALES);
-  const [servicios, setServicios] = useState<ServicioCatalogo[]>(SERVICIOS_INICIALES);
+  const [pacientes, setPacientes] = useState<PacienteCatalogo[]>([]);
+  const [doctores, setDoctores] = useState<DoctorCatalogo[]>([]);
+  const [servicios, setServicios] = useState<ServicioCatalogo[]>([]);
 
   // Estados de Modales de Edición/Creación
   const [modalPaciente, setModalPaciente] = useState<{ visible: boolean; item?: PacienteCatalogo }>({ visible: false });
@@ -230,32 +48,59 @@ export const ModuloAdminCatalogos: React.FC<ModuloAdminCatalogosProps> = ({ curr
   const [errorDuplicadoPaciente, setErrorDuplicadoPaciente] = useState<string | null>(null);
   const [guardandoDoctor, setGuardandoDoctor] = useState(false);
 
-  // Cargar Especialistas Médicos desde la Base de Datos
+  // Datos reales desde la base de datos (sin datos de muestra)
   const cargarDoctores = async () => {
     try {
       const res = await fetch('/api/medicos');
       if (res.ok) {
         const data = await res.json();
-        if (Array.isArray(data) && data.length > 0) {
-          setDoctores(data);
-        }
+        if (Array.isArray(data)) setDoctores(data);
       }
     } catch (err) {
       console.error('Error cargando especialistas:', err);
     }
   };
 
+  const cargarPacientes = async () => {
+    try {
+      const res = await fetch('/api/pacientes');
+      if (!res.ok) return;
+      const data: PacienteApi[] = await res.json();
+      if (!Array.isArray(data)) return;
+      setPacientes(data.map((p): PacienteCatalogo => {
+        const fecha = p.fecha_nacimiento ? String(p.fecha_nacimiento).slice(0, 10) : '';
+        return {
+          id: p.id, cedula: p.cedula, nombres: p.nombre, telefono: p.telefono || '', fecha_nacimiento: fecha,
+          edad: fecha ? calcularEdadReal(fecha) : undefined, direccion: p.direccion || '',
+          historial_visitas: p.visitas ?? 0, saldo_pendiente_usd: Number(p.saldo_pendiente_usd) || 0, saldo_pendiente_bs: 0,
+          activo: p.activo !== false,
+        };
+      }));
+    } catch (err) {
+      console.error('Error cargando pacientes:', err);
+    }
+  };
+
+  const cargarServicios = async () => {
+    try {
+      const res = await fetch('/api/catalogo/estudios?lista=1');
+      if (!res.ok) return;
+      const data: { estudios: ServicioCatalogo[] } = await res.json();
+      if (Array.isArray(data.estudios)) setServicios(data.estudios);
+    } catch (err) {
+      console.error('Error cargando estudios:', err);
+    }
+  };
+
+  const cargarTodo = () => { cargarDoctores(); cargarPacientes(); cargarServicios(); };
+
   React.useEffect(() => {
-    cargarDoctores();
+    const t = setTimeout(cargarTodo, 0);
+    return () => clearTimeout(t);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  // Estados de Carga Masiva Inteligente (Dry-Run)
-  const [archivoCargado, setArchivoCargado] = useState<File | null>(null);
-  const [filasDryRun, setFilasDryRun] = useState<FilaDryRun[]>([]);
-  const [procesandoDryRun, setProcesandoDryRun] = useState(false);
-  const [progresoImportacion, setProgresoImportacion] = useState<number | null>(null);
-  const [importacionExitosa, setImportacionExitosa] = useState(false);
-  const fileInputRef = useRef<HTMLInputElement>(null);
+  const [openCarga, setOpenCarga] = useState(false);
 
   const isReadOnly = currentRole !== 'admin';
 
@@ -271,7 +116,7 @@ export const ModuloAdminCatalogos: React.FC<ModuloAdminCatalogosProps> = ({ curr
         cedula: '',
         nombres: '',
         telefono: '',
-        fecha_nacimiento: '1995-01-01',
+        fecha_nacimiento: '',
         direccion: '',
         historial_visitas: 0,
         saldo_pendiente_usd: 0,
@@ -282,72 +127,63 @@ export const ModuloAdminCatalogos: React.FC<ModuloAdminCatalogosProps> = ({ curr
     }
   };
 
-  const handleGuardarPaciente = () => {
+  const handleGuardarPaciente = async () => {
     setErrorDuplicadoPaciente(null);
     if (!formPaciente.cedula || !formPaciente.nombres) {
       setErrorDuplicadoPaciente('Cédula y Nombres son obligatorios.');
       return;
     }
-
     if (/\d/.test(formPaciente.nombres)) {
       setErrorDuplicadoPaciente('El nombre solo puede contener letras (sin números).');
       return;
     }
-
     if (formPaciente.telefono && /[a-zA-Z]/.test(formPaciente.telefono)) {
       setErrorDuplicadoPaciente('El teléfono solo puede contener números.');
       return;
     }
 
-    const cedulaCanonica = normalizarCedulaRif(formPaciente.cedula);
     const digitos = extraerDigitos(formPaciente.cedula);
-
-    // Validación preventiva anti-duplicidad por cédula
-    const duplicado = pacientes.find(p => 
-      extraerDigitos(p.cedula) === digitos && 
-      String(p.id) !== String(modalPaciente.item?.id)
-    );
-
+    const duplicado = pacientes.find(p => extraerDigitos(p.cedula) === digitos && String(p.id) !== String(modalPaciente.item?.id));
     if (duplicado) {
       setErrorDuplicadoPaciente(`⚠️ Ya existe el paciente "${duplicado.nombres}" con la Cédula ${duplicado.cedula}. No se permiten duplicados.`);
       return;
     }
 
-    const edadCalculada = formPaciente.fecha_nacimiento ? calcularEdadReal(formPaciente.fecha_nacimiento) : undefined;
-
-    if (modalPaciente.item) {
-      // Editar
-      setPacientes(prev => prev.map(p => p.id === modalPaciente.item!.id ? { 
-        ...p, 
-        ...formPaciente, 
-        cedula: cedulaCanonica,
-        nombres: formPaciente.nombres!.trim().toUpperCase(),
-        direccion: (formPaciente.direccion || '').trim().toUpperCase(),
-        edad: edadCalculada
-      } as PacienteCatalogo : p));
-    } else {
-      // Crear nuevo
-      const nuevo: PacienteCatalogo = {
-        id: Date.now(),
-        cedula: cedulaCanonica,
-        nombres: formPaciente.nombres.trim().toUpperCase(),
-        telefono: formPaciente.telefono || '',
-        fecha_nacimiento: formPaciente.fecha_nacimiento || '',
-        edad: edadCalculada,
-        direccion: (formPaciente.direccion || '').trim().toUpperCase(),
-        historial_visitas: 1,
-        saldo_pendiente_usd: Number(formPaciente.saldo_pendiente_usd) || 0,
-        saldo_pendiente_bs: Number(formPaciente.saldo_pendiente_bs) || 0,
-        activo: true
-      };
-      setPacientes([nuevo, ...pacientes]);
+    try {
+      const res = await fetch('/api/pacientes', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          cedula: normalizarCedulaRif(formPaciente.cedula),
+          nombre: formPaciente.nombres.trim(),
+          fecha_nacimiento: formPaciente.fecha_nacimiento || null,
+          direccion: (formPaciente.direccion || '').trim(),
+          telefono: (formPaciente.telefono || '').trim(),
+        }),
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        setErrorDuplicadoPaciente(data.error || 'No se pudo guardar el paciente.');
+        return;
+      }
+      await cargarPacientes();
+      setModalPaciente({ visible: false });
+    } catch (err) {
+      setErrorDuplicadoPaciente(getErrorMessage(err));
     }
-    setModalPaciente({ visible: false });
   };
 
-  const handleToggleEstadoPaciente = (id: number | string) => {
+  const handleToggleEstadoPaciente = async (id: number | string) => {
     if (isReadOnly) return alert('Acción exclusiva para administradores.');
-    setPacientes(prev => prev.map(p => p.id === id ? { ...p, activo: !p.activo } : p));
+    const p = pacientes.find(x => x.id === id);
+    if (!p) return;
+    const res = await fetch('/api/pacientes', {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ id: Number(id), activo: !p.activo }),
+    });
+    if (!res.ok) return alert((await res.json().catch(() => ({}))).error || 'No se pudo cambiar el estado.');
+    await cargarPacientes();
   };
 
   // --- 2. ACCIONES ESPECIALISTAS (CON BLINDAJE ESTRICTO ANTI-DUPLICIDAD POR CÉDULA/RIF) ---
@@ -456,173 +292,81 @@ export const ModuloAdminCatalogos: React.FC<ModuloAdminCatalogosProps> = ({ curr
       setFormServicio({
         codigo: '',
         nombre: '',
-        grupo_clinico: 'A',
-        precio_usd: 30,
-        reparto_clinica_pct: 35,
-        reparto_medico_pct: 50,
-        reparto_eco_pct: 15,
+        area: 'ECOGRAFIA_AM',
+        precio_usd: 0,
+        reparto_clinica_pct: 30,
+        reparto_medico_pct: 30,
+        reparto_eco_pct: 40,
         reparto_patologo_pct: 0,
         activo: true,
-        sala_defecto: 'Box Ecografía 1'
       });
       setModalServicio({ visible: true });
     }
   };
 
-  const handleGuardarServicio = () => {
-    if (!formServicio.nombre || !formServicio.precio_usd) {
+  const enviarServicio = async (id: number | string | null, body: Record<string, unknown>) => {
+    const res = await fetch(id === null ? '/api/catalogo/estudios' : `/api/catalogo/estudios/${id}`, {
+      method: id === null ? 'POST' : 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(body),
+    });
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok) throw new Error(data.error || 'No se pudo guardar el estudio.');
+  };
+
+  const handleGuardarServicio = async () => {
+    const precio = Number(formServicio.precio_usd) || 0;
+    if (!formServicio.nombre?.trim() || precio <= 0) {
       alert('Nombre y Precio Base son obligatorios.');
       return;
     }
-    const grupo = formServicio.grupo_clinico || mapearEstudioAGrupo(formServicio.nombre);
-    if (modalServicio.item) {
-      setServicios(prev => prev.map(s => s.id === modalServicio.item!.id ? { 
-        ...s, 
-        ...formServicio, 
-        nombre: formServicio.nombre!.trim().toUpperCase(),
-        grupo_clinico: grupo 
-      } as ServicioCatalogo : s));
-    } else {
-      const nuevo: ServicioCatalogo = {
-        id: Date.now(),
-        codigo: formServicio.codigo || `EST-${Math.floor(Math.random() * 900 + 100)}`,
-        nombre: formServicio.nombre.trim().toUpperCase(),
-        grupo_clinico: grupo,
-        precio_usd: Number(formServicio.precio_usd),
-        reparto_clinica_pct: Number(formServicio.reparto_clinica_pct) || 35,
-        reparto_medico_pct: Number(formServicio.reparto_medico_pct) || 50,
-        reparto_eco_pct: Number(formServicio.reparto_eco_pct) || 0,
-        reparto_patologo_pct: Number(formServicio.reparto_patologo_pct) || 0,
-        activo: true,
-        sala_defecto: (formServicio.sala_defecto || 'Consultorio General').toUpperCase()
-      };
-      setServicios([...servicios, nuevo]);
-    }
-    setModalServicio({ visible: false });
-  };
-
-  const handleToggleEstadoServicio = (id: number | string) => {
-    if (isReadOnly) return alert('Acción exclusiva para administradores.');
-    setServicios(prev => prev.map(s => s.id === id ? { ...s, activo: !s.activo } : s));
-  };
-
-  // --- 4. CARGA MASIVA INTELIGENTE (.xlsx / .csv) CON DRY-RUN ---
-  const handleSubirArchivo = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-    setArchivoCargado(file);
-    procesarArchivoDryRun(file);
-  };
-
-  const procesarArchivoDryRun = (file: File) => {
-    setProcesandoDryRun(true);
-    setImportacionExitosa(false);
-    (async () => {
-      try {
-        const rows = await leerHojaComoObjetos(await file.arrayBuffer(), file.name);
-
-        // Pre-validaciones por fila (Dry-Run)
-        const cedulasVistas = new Set<string>();
-        const analizadas = rows.map((r, idx) => {
-          const cedula = String(r.cedula || r.Cedula || r.identificacion || '').trim().toUpperCase();
-          const paciente = String(r.paciente || r.nombre || r.Paciente || '').trim();
-          const estudio = String(r.estudio || r.servicio || r.Estudio || '').trim();
-          const doctor = String(r.medico || r.doctor || r.Doctor || '').trim();
-          const precio = Number(r.precio || r.monto || r.precio_usd || 0);
-
-          const errores: string[] = [];
-          const advertencias: string[] = [];
-
-          // 1. Detección de duplicados en el lote
-          if (cedula && cedulasVistas.has(cedula)) {
-            advertencias.push('Cédula repetida dentro del archivo');
-          }
-          if (cedula) cedulasVistas.add(cedula);
-
-          // 2. Detección de estudio sin precio
-          if (!precio || precio <= 0) {
-            errores.push('Estudio sin tarifa / Precio 0');
-          }
-
-          // 3. Detección de datos mínimos faltantes
-          if (!paciente) errores.push('Nombre del paciente vacío');
-          if (!estudio) errores.push('Nombre del estudio vacío');
-
-          // 4. Detección de médico no registrado
-          const doctorExiste = doctores.some(d => d.nombre.toLowerCase().includes(doctor.toLowerCase()));
-          if (doctor && !doctorExiste) {
-            advertencias.push(`Médico "${doctor}" no figura en catálogo`);
-          }
-
-          const estadoFila: 'VALIDO' | 'ADVERTENCIA' | 'ERROR' =
-            errores.length > 0 ? 'ERROR' : advertencias.length > 0 ? 'ADVERTENCIA' : 'VALIDO';
-
-          return {
-            fila: idx + 2,
-            cedula: cedula || 'S/C',
-            paciente: paciente || 'DESCONOCIDO',
-            estudio: estudio || 'ESTUDIO NO ESPECIFICADO',
-            doctor: doctor || 'De Guardia',
-            precio_usd: precio,
-            grupo_clinico: mapearEstudioAGrupo(estudio),
-            estadoFila,
-            errores,
-            advertencias
-          };
-        });
-
-        setFilasDryRun(analizadas);
-      } catch (err) {
-        console.error('Error parseando archivo:', err);
-        alert('Error al leer el archivo. Asegúrese de que sea un formato .xlsx o .csv válido.');
-      } finally {
-        setProcesandoDryRun(false);
-      }
-    })();
-  };
-
-  const handleConfirmarImportacion = async () => {
-    if (filasDryRun.length === 0) return;
-    const filasValidas = filasDryRun.filter(f => f.estadoFila !== 'ERROR');
-    if (filasValidas.length === 0) {
-      alert('No hay filas válidas para importar. Por favor corrija los errores.');
+    const pct = (v?: number) => Math.max(0, Number(v) || 0);
+    const pctClinica = pct(formServicio.reparto_clinica_pct), pctMedico = pct(formServicio.reparto_medico_pct);
+    const pctEco = pct(formServicio.reparto_eco_pct), pctPatologo = pct(formServicio.reparto_patologo_pct);
+    if (Math.abs(pctClinica + pctMedico + pctEco + pctPatologo - 100) > 0.01) {
+      alert('Las reglas de reparto deben sumar exactamente 100%.');
       return;
     }
-
-    setProgresoImportacion(10);
-    // Simulación de procesamiento por lotes con barra de progreso
-    for (let p = 25; p <= 100; p += 25) {
-      await new Promise(res => setTimeout(res, 200));
-      setProgresoImportacion(p);
+    // Reparto en centavos; la parte de la clínica es el resto para que la suma sea exactamente el precio.
+    const precioC = Math.round(precio * 100);
+    const medico = Math.round((precioC * pctMedico) / 100), eco = Math.round((precioC * pctEco) / 100), patologo = Math.round((precioC * pctPatologo) / 100);
+    const imagen = precioC - medico - eco - patologo;
+    if (imagen < 0) {
+      alert('El reparto supera el precio del estudio.');
+      return;
     }
-
-    // Persistencia en memoria
-    const nuevosPacientes: PacienteCatalogo[] = filasValidas.map((f, idx) => ({
-      id: Date.now() + idx,
-      cedula: f.cedula,
-      nombres: f.paciente,
-      telefono: '0414-0000000',
-      fecha_nacimiento: '1990-01-01',
-      direccion: 'Importado por Lote',
-      historial_visitas: 1,
-      saldo_pendiente_usd: 0,
-      saldo_pendiente_bs: 0,
-      activo: true
-    }));
-
-    setPacientes(prev => [...nuevosPacientes, ...prev]);
-    setProgresoImportacion(null);
-    setImportacionExitosa(true);
+    const area = formServicio.area || 'ECOGRAFIA_AM';
+    try {
+      await enviarServicio(modalServicio.item ? modalServicio.item.id : null, {
+        codigo: formServicio.codigo?.trim() || null,
+        area,
+        nombre: formServicio.nombre.trim(),
+        precio_usd: precioC / 100,
+        sala: modalServicio.item?.sala_defecto || SALA_POR_AREA[area] || 'SALA_ECO_GINE',
+        dist_imagen: imagen / 100, dist_medico: medico / 100, dist_eco: eco / 100, dist_patologo: patologo / 100,
+        activo: formServicio.activo ?? true,
+      });
+      await cargarServicios();
+      setModalServicio({ visible: false });
+    } catch (err) {
+      alert(getErrorMessage(err));
+    }
   };
 
-  // Contadores de Dry-Run
-  const statsDryRun = useMemo(() => {
-    const total = filasDryRun.length;
-    const validas = filasDryRun.filter(f => f.estadoFila === 'VALIDO').length;
-    const advertencias = filasDryRun.filter(f => f.estadoFila === 'ADVERTENCIA').length;
-    const errores = filasDryRun.filter(f => f.estadoFila === 'ERROR').length;
-    return { total, validas, advertencias, errores };
-  }, [filasDryRun]);
+  const handleToggleEstadoServicio = async (id: number | string) => {
+    if (isReadOnly) return alert('Acción exclusiva para administradores.');
+    const s = servicios.find(x => x.id === id);
+    if (!s || !s.dist || !s.area) return;
+    try {
+      await enviarServicio(s.id, {
+        codigo: s.codigo || null, area: s.area, nombre: s.nombre, precio_usd: s.precio_usd, sala: s.sala_defecto || 'SALA_ECO_GINE',
+        dist_imagen: s.dist.imagen, dist_medico: s.dist.medico, dist_eco: s.dist.eco, dist_patologo: s.dist.patologo, activo: !s.activo,
+      });
+      await cargarServicios();
+    } catch (err) {
+      alert(getErrorMessage(err));
+    }
+  };
 
   return (
     <div className="space-y-6">
@@ -714,7 +458,7 @@ export const ModuloAdminCatalogos: React.FC<ModuloAdminCatalogosProps> = ({ curr
 
       {/* 4. PESTAÑA: CARGA MASIVA INTELIGENTE (.xlsx / .csv) CON DRY-RUN */}
       {tabActiva === 'carga_masiva' && (
-        <TabCargaMasiva handleSubirArchivo={handleSubirArchivo} fileInputRef={fileInputRef} progresoImportacion={progresoImportacion} importacionExitosa={importacionExitosa} setFilasDryRun={setFilasDryRun} setImportacionExitosa={setImportacionExitosa} filasDryRun={filasDryRun} statsDryRun={statsDryRun} handleConfirmarImportacion={handleConfirmarImportacion} />
+        <TabCargaMasiva onAbrir={() => setOpenCarga(true)} />
       )}
 
       {/* MODAL: EDITAR / CREAR PACIENTE */}
@@ -731,6 +475,8 @@ export const ModuloAdminCatalogos: React.FC<ModuloAdminCatalogosProps> = ({ curr
       {modalServicio.visible && (
         <ModalEstudio modalServicio={modalServicio} formServicio={formServicio} setFormServicio={setFormServicio} setModalServicio={setModalServicio} handleGuardarServicio={handleGuardarServicio} />
       )}
+
+      <ModalCargaMasivaExcel open={openCarga} onOpenChange={setOpenCarga} onSuccess={cargarTodo} />
     </div>
   );
 };
