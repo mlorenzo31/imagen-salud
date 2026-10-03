@@ -1,3 +1,4 @@
+require('dotenv').config();
 const express = require('express');
 const { Pool } = require('pg');
 const cors = require('cors');
@@ -6,10 +7,16 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 
-// Conexión oficial a base de datos de Supabase
+// Conexión a base de datos (credenciales solo por variables de entorno)
+const connectionString = process.env.DATABASE_URL;
+if (!connectionString) {
+  console.error('DATABASE_URL no está definida. Configúrala en backend/.env (ver .env.example).');
+  process.exit(1);
+}
+const sslCa = process.env.DATABASE_SSL_CA && process.env.DATABASE_SSL_CA.replace(/\\n/g, '\n');
 const pool = new Pool({
-  connectionString: 'postgresql://postgres.zjboatbvefmtuvnabowf:JJ6qoD8kU0ucagpS@aws-0-us-west-2.pooler.supabase.com:5432/postgres',
-  ssl: { rejectUnauthorized: false }
+  connectionString,
+  ssl: sslCa ? { ca: sslCa, rejectUnauthorized: true } : { rejectUnauthorized: false }
 });
 
 // Middleware de protección para rol Administrador

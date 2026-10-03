@@ -1,35 +1,42 @@
-import { Pool } from 'pg';
+import { Pool, type PoolConfig } from 'pg';
 
-const connectionString = 
-  process.env.DATABASE_URL || 
-  'postgresql://postgres.zjboatbvefmtuvnabowf:JJ6qoD8kU0ucagpS@aws-0-us-west-2.pooler.supabase.com:5432/postgres';
-
-// Singleton pool pattern for Next.js App Router to avoid connection exhaustion in development
 declare global {
   var _pgPool: Pool | undefined;
 }
 
-let pool: Pool;
+function buildConfig(): PoolConfig {
+  const connectionString = process.env.DATABASE_URL;
+  if (!connectionString) {
+    throw new Error('DATABASE_URL no está definida. Configúrala en .env.local (ver .env.example).');
+  }
 
-if (process.env.NODE_ENV === 'production') {
-  pool = new Pool({
+  // Verificación de certificado activa si se aporta la CA; si no, se mantiene el modo previo con aviso.
+  const ca = process.env.DATABASE_SSL_CA?.replace(/\\n/g, '\n');
+  const ssl = ca ? { ca, rejectUnauthorized: true } : { rejectUnauthorized: false };
+
+  return {
     connectionString,
-    ssl: { rejectUnauthorized: false },
+    ssl,
     max: 10,
     idleTimeoutMillis: 30000,
     connectionTimeoutMillis: 5000,
-  });
-} else {
-  if (!global._pgPool) {
-    global._pgPool = new Pool({
-      connectionString,
-      ssl: { rejectUnauthorized: false },
-      max: 10,
-      idleTimeoutMillis: 30000,
-      connectionTimeoutMillis: 5000,
-    });
-  }
-  pool = global._pgPool;
+  };
 }
+
+// Pool perezoso: no exige DATABASE_URL al importar (p. ej. durante `next build`), solo al primer uso.
+function getPool(): Pool {
+  if (!global._pgPool) {
+    global._pgPool = new Pool(buildConfig());
+  }
+  return global._pgPool;
+}
+
+const pool = new Proxy({} as Pool, {
+  get(_target, prop) {
+    const real = getPool();
+    const value = Reflect.get(real, prop, real);
+    return typeof value === 'function' ? value.bind(real) : value;
+  },
+});
 
 export default pool;
