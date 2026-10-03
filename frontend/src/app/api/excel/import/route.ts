@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
-import { ApiError, errorResponse, parseBody, sesionUsuario, withTransaction } from '@/lib/apiHelpers';
+import { ApiError, errorResponse, fechaHoraLocal, parseBody, sesionUsuario, withTransaction } from '@/lib/apiHelpers';
+import { consolidarCierre } from '@/lib/cierre';
 import { centsToStr } from '@/lib/money';
 import type { RegistroAtencion } from '@/lib/cargaMasiva';
 
@@ -27,6 +28,11 @@ export async function POST(req: NextRequest) {
     const insertados = await withTransaction(async (client) => {
       await client.query('SELECT pg_advisory_xact_lock(hashtext($1))', ['carga-masiva']);
       const turnos = new Map<string, number>();
+      const fechasCarga = Array.from(new Set(registros.map((r) => r.fecha)));
+      // Días que ya tenían actividad antes de la carga: no se cierran automáticamente.
+      const previas = await client.query("SELECT to_char(fecha, 'YYYY-MM-DD') AS f FROM facturas_caja WHERE fecha = ANY($1::date[]) GROUP BY 1", [fechasCarga]);
+      const conActividad = new Set<string>(previas.rows.map((r) => r.f));
+      const fechasNuevas = new Set<string>();
       let n = 0;
       for (const r of registros) {
         const dup = await client.query(
@@ -63,7 +69,14 @@ export async function POST(req: NextRequest) {
            ON CONFLICT (cedula) DO UPDATE SET telefono = COALESCE(EXCLUDED.telefono, pacientes.telefono)`,
           [r.cedula, r.nombre, r.telefono]
         );
+        fechasNuevas.add(r.fecha);
         n++;
+      }
+
+      // Una carga histórica no debe obligar a cerrar la caja de días pasados: esos días quedan cerrados.
+      const hoy = fechaHoraLocal().fecha;
+      for (const f of fechasNuevas) {
+        if (!conActividad.has(f) && f < hoy) await consolidarCierre(client, f, usuario, 'Cierre automático por carga histórica');
       }
       return n;
     });

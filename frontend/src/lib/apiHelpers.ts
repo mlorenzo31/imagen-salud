@@ -23,7 +23,7 @@ export function fechaHoraLocal(): { fecha: string; hora: string } {
 }
 
 export class ApiError extends Error {
-  constructor(public status: number, message: string) {
+  constructor(public status: number, message: string, public codigo?: string, public extra?: Record<string, unknown>) {
     super(message);
   }
 }
@@ -60,7 +60,7 @@ export async function withTransaction<T>(fn: (client: PoolClient) => Promise<T>)
 }
 
 export function errorResponse(err: unknown): NextResponse {
-  if (err instanceof ApiError) return NextResponse.json({ error: err.message }, { status: err.status });
+  if (err instanceof ApiError) return NextResponse.json({ error: err.message, ...(err.codigo ? { codigo: err.codigo } : {}), ...err.extra }, { status: err.status });
   console.error(err);
   return NextResponse.json({ error: 'Error interno del servidor.' }, { status: 500 });
 }

@@ -62,7 +62,7 @@ export async function verifySession(token: string | undefined): Promise<SessionP
 }
 
 /** Prefijos de API por rol. El admin tiene acceso total. */
-const CAJERO_API = ['/api/facturas', '/api/pacientes', '/api/medicos', '/api/bcv', '/api/cierres/verificar-estado-diario', '/api/auth'];
+const CAJERO_API = ['/api/facturas', '/api/pacientes', '/api/medicos', '/api/bcv', '/api/cierres/verificar-estado-diario', '/api/cierres/estado-jornada', '/api/auth'];
 const SOLO_ADMIN = [
   '/api/tesoreria/cambio-divisa',
   '/api/tesoreria/conciliacion/ejecutar',

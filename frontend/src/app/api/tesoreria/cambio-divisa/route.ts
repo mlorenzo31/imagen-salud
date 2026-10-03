@@ -2,6 +2,7 @@ import { NextResponse, type NextRequest } from 'next/server';
 import { z } from 'zod';
 import { ApiError, errorResponse, fechaHoraLocal, parseBody, sesionUsuario, withTransaction } from '@/lib/apiHelpers';
 import { centsToNumber, centsToStr, toCents } from '@/lib/money';
+import { exigirJornadaAlDia } from '@/lib/cierre';
 
 const num = z.union([z.string(), z.number()]);
 const schema = z.object({
@@ -15,6 +16,7 @@ const schema = z.object({
 
 export async function POST(req: NextRequest) {
   try {
+    await exigirJornadaAlDia();
     const b = await parseBody(req, schema);
     const usuario = sesionUsuario(req);
     const { fecha, hora } = fechaHoraLocal();

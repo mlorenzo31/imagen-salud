@@ -4,6 +4,7 @@ import pool from '@/lib/db';
 import { ApiError, errorResponse, fechaHoraLocal, sesionUsuario, withTransaction } from '@/lib/apiHelpers';
 import { centsToStr, toCents } from '@/lib/money';
 import { obtenerTasaBcv } from '@/lib/tasaBcv';
+import { exigirJornadaAlDia, ultimaFechaCerrada } from '@/lib/cierre';
 
 export async function GET(req: NextRequest) {
   try {
@@ -12,6 +13,7 @@ export async function GET(req: NextRequest) {
     const estado = searchParams.get('estado');
     const cedula = searchParams.get('cedula');
     const busqueda = searchParams.get('q');
+    const soloAbiertas = searchParams.get('abiertas') === '1';
     const limitParam = parseInt(searchParams.get('limit') || '500', 10);
     const limit = Number.isFinite(limitParam) ? Math.min(Math.max(limitParam, 1), 1000) : 500;
 
@@ -45,6 +47,15 @@ export async function GET(req: NextRequest) {
     } else if (busqueda) {
       params.push(`%${busqueda}%`);
       q += ` AND (fc.cedula_paciente ILIKE $${params.length} OR fc.nombre_paciente ILIKE $${params.length} OR fc.estudio ILIKE $${params.length})`;
+    }
+
+    if (soloAbiertas) {
+      // Sala de espera/TV: solo la jornada abierta. Lo ya cerrado desaparece; los pacientes activos nunca se ocultan.
+      const cierre = await ultimaFechaCerrada();
+      if (cierre) {
+        params.push(cierre);
+        q += ` AND (fc.fecha > $${params.length}::date OR fc.estado IN ('ESPERA', 'ATENCION'))`;
+      }
     }
 
     q += ` ORDER BY fc.id DESC LIMIT ${limit}`;
@@ -137,6 +148,7 @@ export async function POST(req: NextRequest) {
     } catch {
       throw new ApiError(400, 'Cuerpo JSON inválido.');
     }
+    await exigirJornadaAlDia();
     const usuario = sesionUsuario(req);
     const esAdmin = req.headers.get('x-session-role') === 'admin';
     const ahora = fechaHoraLocal();

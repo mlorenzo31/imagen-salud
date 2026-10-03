@@ -125,7 +125,7 @@ export const ModuloKanbanSalaEspera: React.FC<ModuloKanbanSalaEsperaProps> = ({
   const cargarPacientes = async () => {
     setLoading(true);
     try {
-      const res = await fetch('/api/facturas');
+      const res = await fetch('/api/facturas?abiertas=1');
       if (res.ok) {
         const data: FacturaApi[] = await res.json();
         const parseados: PacienteTurno[] = data

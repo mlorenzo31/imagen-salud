@@ -3,6 +3,7 @@ import { z } from 'zod';
 import pool from '@/lib/db';
 import { ApiError, errorResponse, fechaHoraLocal, parseBody, sesionUsuario, withTransaction } from '@/lib/apiHelpers';
 import { centsToStr, centsToNumber, toCents } from '@/lib/money';
+import { exigirJornadaAlDia } from '@/lib/cierre';
 
 export async function GET() {
   try {
@@ -33,6 +34,7 @@ const schema = z.object({
 
 export async function POST(req: NextRequest) {
   try {
+    await exigirJornadaAlDia();
     const b = await parseBody(req, schema);
     const usuario = sesionUsuario(req);
     const neto = toCents(b.monto_neto);

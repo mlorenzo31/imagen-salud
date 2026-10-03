@@ -6,6 +6,7 @@ import { TreasuryCards } from '@/components/TreasuryCards';
 import { ModalEgreso } from '@/components/ModalEgreso';
 import { ModalCambioDivisa } from '@/components/ModalCambioDivisa';
 import { BloqueoCierrePendiente } from '@/components/BloqueoCierrePendiente';
+import { CierreObligatorio } from '@/components/CierreObligatorio';
 import { TablaHonorarios } from '@/components/TablaHonorarios';
 import { DashboardFinanciero } from '@/components/DashboardFinanciero';
 import { TremorDashboard } from '@/components/TremorDashboard';
@@ -135,14 +136,13 @@ export default function Home() {
         setTransacciones(dataTx);
       }
 
-      // 3. Auditoría de Cierre
-      const resCierre = await fetch('/api/cierres/verificar-estado-diario');
+      // 3. Auditoría de cierre: solo cuentan días anteriores (los pacientes de hoy son operación normal)
+      const resCierre = await fetch('/api/cierres/estado-jornada');
       if (resCierre.ok) {
         const dataCierre = await resCierre.json();
-        if (!dataCierre.puedeCerrar && dataCierre.pacientesPendientes?.length > 0) {
-          setPacientesPendientes(dataCierre.pacientesPendientes);
-          setFechaPendiente(dataCierre.fecha_evaluada || hoyLocal());
-        }
+        const pendientes: PacientePendiente[] = dataCierre.pacientesPendientes ?? [];
+        setPacientesPendientes(dataCierre.requiereCierre ? pendientes : []);
+        setFechaPendiente(dataCierre.fecha || hoyLocal());
       }
 
       // 4. Honorarios pendientes por médico (datos reales con trazabilidad por forma de cobro)
@@ -613,6 +613,8 @@ export default function Home() {
         onOpenChange={setOpenExcel}
         onSuccess={loadInitialData}
       />
+
+      <CierreObligatorio role={role} onResuelto={loadInitialData} />
 
       {openBloqueo && (
         <BloqueoCierrePendiente
