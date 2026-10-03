@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import pool from '@/lib/db';
-import { errorResponse } from '@/lib/apiHelpers';
+import { errorResponse, fechaHoraLocal } from '@/lib/apiHelpers';
 
 export async function GET(req: NextRequest) {
   try {
@@ -85,7 +85,7 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({
       puedeCerrar,
       cierre_pendiente: !puedeCerrar,
-      fecha_evaluada: fechaParam || new Date().toISOString().split('T')[0],
+      fecha_evaluada: fechaParam || fechaHoraLocal().fecha,
       pacientesPendientes: resultSala.rows,
       pacientesWhatsAppPendientes: resultWhatsApp.rows,
       totalWhatsAppPendientes: resultWhatsApp.rows.length,

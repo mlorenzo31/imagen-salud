@@ -33,6 +33,8 @@ import {
 } from 'lucide-react';
 import { exportarAExcel, exportarAPDF } from '@/lib/exportUtils';
 import { CuentaBancaria } from '@/types';
+import { getErrorMessage } from '@/lib/utils';
+import { hoyLocal, sumarDias } from '@/lib/date';
 
 export interface IngresoExtraordinario {
   id: number;
@@ -177,8 +179,8 @@ export const ModuloIngresosExtraordinarios: React.FC<ModuloIngresosExtraordinari
       await cargarIngresos();
       if (onIngresoRegistrado) onIngresoRegistrado();
       alert('✓ Ingreso extraordinario registrado exitosamente con asiento contable.');
-    } catch (err: any) {
-      alert('Error: ' + err.message);
+    } catch (err) {
+      alert('Error: ' + getErrorMessage(err));
     } finally {
       setSubmitting(false);
     }
@@ -186,10 +188,8 @@ export const ModuloIngresosExtraordinarios: React.FC<ModuloIngresosExtraordinari
 
   // Filtrado de lista
   const ingresosFiltrados = useMemo(() => {
-    const hoyStr = new Date().toISOString().slice(0, 10);
-    const hace7Dias = new Date();
-    hace7Dias.setDate(hace7Dias.getDate() - 7);
-    const hace7DiasStr = hace7Dias.toISOString().slice(0, 10);
+    const hoyStr = hoyLocal();
+    const hace7DiasStr = sumarDias(hoyStr, -7);
     const inicioMesStr = hoyStr.slice(0, 7) + '-01';
 
     return ingresos.filter(item => {
@@ -428,7 +428,7 @@ export const ModuloIngresosExtraordinarios: React.FC<ModuloIngresosExtraordinari
               ].map(p => (
                 <button
                   key={p.id}
-                  onClick={() => setFiltroPeriodo(p.id as any)}
+                  onClick={() => setFiltroPeriodo(p.id as Parameters<typeof setFiltroPeriodo>[0])}
                   className={`px-3 py-1 text-xs font-bold rounded-lg transition-all ${
                     filtroPeriodo === p.id ? 'bg-white text-slate-900 shadow-sm' : 'text-slate-500 hover:text-slate-800'
                   }`}
@@ -444,7 +444,7 @@ export const ModuloIngresosExtraordinarios: React.FC<ModuloIngresosExtraordinari
               <span className="font-bold text-slate-600 text-[11px]">Agrupar:</span>
               <select
                 value={agruparPor}
-                onChange={(e) => setAgruparPor(e.target.value as any)}
+                onChange={(e) => setAgruparPor(e.target.value as Parameters<typeof setAgruparPor>[0])}
                 className="bg-transparent font-medium text-slate-800 focus:outline-none cursor-pointer text-xs"
               >
                 <option value="NINGUNO">Sin agrupar</option>

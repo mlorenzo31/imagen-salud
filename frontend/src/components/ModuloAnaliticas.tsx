@@ -31,6 +31,7 @@ import {
 import { FacturaCaja, DataPoint } from '@/types';
 import { UniversalDataView } from '@/components/analytics/UniversalDataView';
 import { exportarAExcel, exportarAPDF } from '@/lib/exportUtils';
+import { hoyLocal } from '@/lib/date';
 
 type GrupoAnalitica = 'NINGUNO' | 'AREA' | 'MEDICO' | 'METODO_PAGO' | 'FECHA';
 
@@ -104,7 +105,7 @@ export const ModuloAnaliticas: React.FC = () => {
 
       // 3. Filtro de Período
       if (filtroPeriodo !== 'TODOS' && f.fecha) {
-        const hoyStr = new Date().toISOString().slice(0, 10);
+        const hoyStr = hoyLocal();
         if (filtroPeriodo === 'HOY' && f.fecha !== hoyStr) return false;
         
         if (filtroPeriodo === 'SEMANA') {
@@ -115,7 +116,7 @@ export const ModuloAnaliticas: React.FC = () => {
         }
 
         if (filtroPeriodo === 'MES') {
-          const esteMes = new Date().toISOString().slice(0, 7);
+          const esteMes = hoyLocal().slice(0, 7);
           if (!f.fecha.startsWith(esteMes)) return false;
         }
       }
@@ -551,7 +552,7 @@ export const ModuloAnaliticas: React.FC = () => {
           </span>
           <select
             value={filtroMetodo}
-            onChange={e => setFiltroMetodo(e.target.value as any)}
+            onChange={e => setFiltroMetodo(e.target.value as Parameters<typeof setFiltroMetodo>[0])}
             className="text-xs py-1 px-2 rounded-lg bg-slate-100 border border-slate-200 text-slate-700 font-bold focus:outline-none"
           >
             <option value="TODOS">Todos los Métodos</option>

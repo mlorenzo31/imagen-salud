@@ -146,7 +146,7 @@ export const TremorDashboard: React.FC<TremorDashboardProps> = ({
               <Tooltip 
                 cursor={{ fill: '#F8FAFC' }}
                 contentStyle={{ borderRadius: '12px', border: '1px solid #E2E8F0', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }}
-                formatter={(value: any) => [`Bs ${Number(value).toLocaleString('es-VE')}`, '']}
+                formatter={(value) => [`Bs ${Number(value).toLocaleString('es-VE')}`, '']}
               />
               <Legend iconType="circle" wrapperStyle={{ fontSize: '12px', fontWeight: 600, color: '#475569', paddingTop: '20px' }} />
               <Bar dataKey="ingresos" name="Ingresos" fill="#1D7A70" radius={[4, 4, 0, 0]} barSize={24} />

@@ -5,7 +5,7 @@
 export function reproducirChimeClinico(): Promise<void> {
   return new Promise((resolve) => {
     try {
-      const AudioCtxClass = window.AudioContext || (window as any).webkitAudioContext;
+      const AudioCtxClass = window.AudioContext || (window as unknown as { webkitAudioContext?: typeof AudioContext }).webkitAudioContext;
       if (!AudioCtxClass) {
         resolve();
         return;

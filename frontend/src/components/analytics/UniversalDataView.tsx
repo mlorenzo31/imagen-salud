@@ -40,6 +40,7 @@ import * as XLSX from 'xlsx';
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
 import html2canvas from 'html2canvas';
+import { hoyLocal } from '@/lib/date';
 
 export interface ColumnDef {
   key: string;
@@ -140,7 +141,7 @@ export const UniversalDataView: React.FC<UniversalDataViewProps> = ({
     try {
       setIsExporting(true);
       const rowsToExport = data.map((item, idx) => {
-        const obj: Record<string, any> = { '#': idx + 1 };
+        const obj: Record<string, string | number | boolean | null | undefined> = { '#': idx + 1 };
         cols.forEach(c => {
           const val = item[c.key];
           obj[c.header] = typeof val === 'number' ? Number(val.toFixed(2)) : val;
@@ -149,7 +150,7 @@ export const UniversalDataView: React.FC<UniversalDataViewProps> = ({
       });
 
       // Agregar fila de totales
-      const filaTotal: Record<string, any> = { '#': 'TOTAL GENERAL' };
+      const filaTotal: Record<string, string | number | boolean | null | undefined> = { '#': 'TOTAL GENERAL' };
       cols.forEach(c => {
         if (c.key === dataKey) filaTotal[c.header] = Number(sumPrincipal.toFixed(2));
         else if (c.key === secondaryDataKey) filaTotal[c.header] = Number(sumSecundario.toFixed(2));
@@ -167,7 +168,7 @@ export const UniversalDataView: React.FC<UniversalDataViewProps> = ({
       ws['!cols'] = colWidths;
 
       XLSX.utils.book_append_sheet(wb, ws, 'Datos');
-      const timestamp = new Date().toISOString().slice(0, 10);
+      const timestamp = hoyLocal();
       XLSX.writeFile(wb, `${nombreArchivoExport}_${timestamp}.xlsx`);
     } catch (err) {
       console.error('Error al exportar Excel:', err);
@@ -194,9 +195,9 @@ export const UniversalDataView: React.FC<UniversalDataViewProps> = ({
               const el = elements[i] as HTMLElement;
               if (el.style) {
                 ['color', 'backgroundColor', 'borderColor', 'fill', 'stroke'].forEach(prop => {
-                  const val = (el.style as any)[prop];
+                  const val = (el.style as unknown as Record<string, string>)[prop];
                   if (typeof val === 'string' && (val.includes('lab') || val.includes('oklch') || val.includes('oklab'))) {
-                    (el.style as any)[prop] = '#2EA89B';
+                    (el.style as unknown as Record<string, string>)[prop] = '#2EA89B';
                   }
                 });
               }
@@ -274,7 +275,7 @@ export const UniversalDataView: React.FC<UniversalDataViewProps> = ({
         { align: 'center' }
       );
 
-      const timestamp = new Date().toISOString().slice(0, 10);
+      const timestamp = hoyLocal();
       doc.save(`${nombreArchivoExport}_${timestamp}.pdf`);
     } catch (err) {
       console.error('Error al exportar PDF:', err);
@@ -443,7 +444,7 @@ export const UniversalDataView: React.FC<UniversalDataViewProps> = ({
                         boxShadow: '0 10px 15px -3px rgba(0, 0, 0, 0.2)'
                       }}
                       itemStyle={{ color: '#F8FAFC' }}
-                      formatter={(value: any, name: any) => [formatUSD(Number(value)), name]}
+                      formatter={(value, name) => [formatUSD(Number(value)), name]}
                     />
                     <Legend wrapperStyle={{ fontSize: '11px', paddingTop: '10px' }} />
                     <Bar
@@ -509,7 +510,7 @@ export const UniversalDataView: React.FC<UniversalDataViewProps> = ({
                         boxShadow: '0 10px 15px -3px rgba(0, 0, 0, 0.2)'
                       }}
                       itemStyle={{ color: '#F8FAFC' }}
-                      formatter={(value: any, name: any) => [formatUSD(Number(value)), name]}
+                      formatter={(value, name) => [formatUSD(Number(value)), name]}
                     />
                     <Legend wrapperStyle={{ fontSize: '11px', paddingTop: '10px' }} />
                     <Area
@@ -550,7 +551,7 @@ export const UniversalDataView: React.FC<UniversalDataViewProps> = ({
                         color: '#F8FAFC',
                         fontSize: '11px'
                       }}
-                      formatter={(val: any) => [formatUSD(Number(val)), 'Total']}
+                      formatter={(val) => [formatUSD(Number(val)), 'Total']}
                     />
                     <Legend wrapperStyle={{ fontSize: '11px', paddingTop: '10px' }} />
                     <Pie

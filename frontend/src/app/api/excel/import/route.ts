@@ -1,10 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server';
 import pool from '@/lib/db';
-import { errorResponse } from '@/lib/apiHelpers';
+import { errorResponse, fechaHoraLocal, sesionUsuario } from '@/lib/apiHelpers';
 
 export async function POST(req: NextRequest) {
   try {
-    const { filas, usuario } = await req.json();
+    const { filas } = await req.json();
 
     if (!Array.isArray(filas) || filas.length === 0) {
       return NextResponse.json({ error: 'No se recibieron filas válidas para procesar.' }, { status: 400 });
@@ -22,14 +22,16 @@ export async function POST(req: NextRequest) {
           INSERT INTO atenciones_cola 
             (numero_turno, paciente_nombre, doctor_nombre, especialidad, total_usd, estado, fecha, hora, usuario)
           VALUES 
-            ($1, $2, $3, $4, $5, 'FINALIZADO', CURRENT_DATE, TO_CHAR(NOW(), 'HH:MI AM'), $6)
+            ($1, $2, $3, $4, $5, 'FINALIZADO', $7, $8, $6)
         `, [
           `EXC-${Date.now().toString().slice(-4)}-${insertados + 1}`,
           item.paciente,
           item.medico,
           item.servicio,
           item.monto_usd,
-          usuario || 'Administrador Carga Masiva'
+          sesionUsuario(req),
+          fechaHoraLocal().fecha,
+          fechaHoraLocal().hora
         ]);
         insertados++;
       }

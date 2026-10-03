@@ -6,6 +6,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { ArrowLeftRight, AlertCircle } from 'lucide-react';
+import { getErrorMessage } from '@/lib/utils';
 
 interface ModalCambioDivisaProps {
   open: boolean;
@@ -78,8 +79,8 @@ export const ModalCambioDivisa: React.FC<ModalCambioDivisaProps> = ({
       setComisionBs('0.00');
       setReferencia('');
       setNotas('');
-    } catch (err: any) {
-      setErrorMsg(err.message || 'Error al ejecutar cambio de divisa.');
+    } catch (err) {
+      setErrorMsg(getErrorMessage(err) || 'Error al ejecutar cambio de divisa.');
     } finally {
       setLoading(false);
     }

@@ -45,15 +45,16 @@ import {
   Phone 
 } from 'lucide-react';
 import { ejecutarLlamadoCompleto } from '@/lib/audioLlamado';
-import { UserRole, ModoOperacion, ReembolsoPendiente } from '@/types';
+import { UserRole, ModoOperacion, ReembolsoPendiente, ServicioFactura } from '@/types';
 import { 
   GrupoClinico, 
   GRUPOS_CLINICOS, 
   mapearEstudioAGrupo, 
   inferirBoxConsultorio 
 } from '@/lib/gruposClinicos';
-import { calcularEdadReal } from '@/lib/date';
+import { calcularEdadReal, hoyLocal } from '@/lib/date';
 import { normalizarCedulaRif } from '@/lib/cedulaRif';
+import { getErrorMessage } from '@/lib/utils';
 
 interface PacienteTurno {
   id: number;
@@ -76,7 +77,7 @@ interface PacienteTurno {
   prioridad?: 'ALTA' | 'NORMAL' | 'BAJA';
   retorno_sala?: boolean;
   sala_anterior?: string;
-  servicios?: any;
+  servicios?: ServicioFactura[];
   estudio_principal_id?: string;
   adjunto_nombre?: string;
   adjunto_url?: string;
@@ -91,6 +92,11 @@ interface ModuloKanbanSalaEsperaProps {
 }
 
 export const getCleanCedula = (ced?: string) => (ced || '').replace(/\D/g, '');
+
+type FacturaApi = Omit<PacienteTurno, 'estado' | 'grupo_clinico' | 'box_asignado'> & {
+  estado: string;
+  grupo_clinico?: PacienteTurno['grupo_clinico'];
+};
 
 export const ModuloKanbanSalaEspera: React.FC<ModuloKanbanSalaEsperaProps> = ({
   currentRole = 'admin',
@@ -160,13 +166,14 @@ export const ModuloKanbanSalaEspera: React.FC<ModuloKanbanSalaEsperaProps> = ({
     try {
       const res = await fetch('/api/facturas');
       if (res.ok) {
-        const data = await res.json();
+        const data: FacturaApi[] = await res.json();
         const parseados: PacienteTurno[] = data
-          .filter((f: any) => f.estado !== 'ANULADA' && f.estado !== 'ANULADA_SALA')
-          .map((f: any) => {
-            const grupo = f.grupo_clinico || mapearEstudioAGrupo(f.estudio, f.servicios);
+          .filter((f) => f.estado !== 'ANULADA' && f.estado !== 'ANULADA_SALA')
+          .map((f): PacienteTurno => {
+            const grupo = f.grupo_clinico || mapearEstudioAGrupo(f.estudio);
             return {
               ...f,
+              estado: f.estado as PacienteTurno['estado'],
               grupo_clinico: grupo,
               box_asignado: inferirBoxConsultorio(grupo, f.estudio, f.medico),
               whatsapp_enviado: Boolean(f.whatsapp_enviado),
@@ -212,7 +219,7 @@ export const ModuloKanbanSalaEspera: React.FC<ModuloKanbanSalaEsperaProps> = ({
   // 3. Extraer lista de sub-estudios para gestión multi-estudio
   const extraerSubEstudios = (p: PacienteTurno): Array<{ id: string; nombre: string; area?: string; medico?: string }> => {
     if (Array.isArray(p.servicios) && p.servicios.length > 1) {
-      return p.servicios.map((s: any, idx: number) => ({
+      return p.servicios.map((s, idx) => ({
         id: String(s.id || idx),
         nombre: s.estudio || s.nombre || ('Estudio #' + (idx + 1)),
         area: s.area || '',
@@ -575,7 +582,7 @@ export const ModuloKanbanSalaEspera: React.FC<ModuloKanbanSalaEsperaProps> = ({
         metodo_origen: 'Bancos / Por Determinar',
         cuenta_id: 4,
         motivo_anulacion: motivoAnulacion.trim(),
-        fecha: new Date().toISOString().slice(0, 10),
+        fecha: hoyLocal(),
         hora: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
         estado: 'PENDIENTE_BANCO',
         usuario_autoriza: 'Director Médico (Admin)'
@@ -586,8 +593,8 @@ export const ModuloKanbanSalaEspera: React.FC<ModuloKanbanSalaEsperaProps> = ({
       setPacienteAAnular(null);
       setMotivoAnulacion('');
       alert('Atención anulada en sala. Turno liberado de TV y fondos trasladados a reversiones bancarias pendientes.');
-    } catch (err: any) {
-      alert('Error anulando atención: ' + err.message);
+    } catch (err) {
+      alert('Error anulando atención: ' + getErrorMessage(err));
     } finally {
       setSubmittingAnulacion(false);
     }

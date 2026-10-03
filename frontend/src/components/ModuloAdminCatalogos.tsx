@@ -32,13 +32,14 @@ import {
 } from 'lucide-react';
 import { GRUPOS_CLINICOS, mapearEstudioAGrupo } from '@/lib/gruposClinicos';
 import { normalizarCedulaRif, extraerDigitos, sonMismoDocumento, validarEstructuraCedulaRif } from '@/lib/cedulaRif';
-import { calcularEdadReal, aFormatoInputDate, formatearFechaNacimiento } from '@/lib/date';
+import { aFormatoInputDate, calcularEdadReal, formatearFechaNacimiento, hoyLocal } from '@/lib/date';
 import {
   limpiarCedulaInput,
   limpiarNombreInput,
   limpiarTelefonoInput
 } from '@/lib/pacienteValidation';
 import * as XLSX from 'xlsx';
+import { getErrorMessage } from '@/lib/utils';
 
 interface ModuloAdminCatalogosProps {
   currentRole: UserRole;
@@ -222,6 +223,19 @@ const SERVICIOS_INICIALES: ServicioCatalogo[] = [
   }
 ];
 
+interface FilaDryRun {
+  fila: number;
+  cedula: string;
+  paciente: string;
+  estudio: string;
+  doctor: string;
+  precio_usd: number;
+  grupo_clinico: GrupoClinico;
+  estadoFila: 'VALIDO' | 'ADVERTENCIA' | 'ERROR';
+  errores: string[];
+  advertencias: string[];
+}
+
 export const ModuloAdminCatalogos: React.FC<ModuloAdminCatalogosProps> = ({ currentRole }) => {
   const [tabActiva, setTabActiva] = useState<'pacientes' | 'doctores' | 'servicios' | 'carga_masiva'>('pacientes');
   const [busqueda, setBusqueda] = useState('');
@@ -265,7 +279,7 @@ export const ModuloAdminCatalogos: React.FC<ModuloAdminCatalogosProps> = ({ curr
 
   // Estados de Carga Masiva Inteligente (Dry-Run)
   const [archivoCargado, setArchivoCargado] = useState<File | null>(null);
-  const [filasDryRun, setFilasDryRun] = useState<any[]>([]);
+  const [filasDryRun, setFilasDryRun] = useState<FilaDryRun[]>([]);
   const [procesandoDryRun, setProcesandoDryRun] = useState(false);
   const [progresoImportacion, setProgresoImportacion] = useState<number | null>(null);
   const [importacionExitosa, setImportacionExitosa] = useState(false);
@@ -448,8 +462,8 @@ export const ModuloAdminCatalogos: React.FC<ModuloAdminCatalogosProps> = ({ curr
 
       await cargarDoctores();
       setModalDoctor({ visible: false });
-    } catch (err: any) {
-      setErrorDuplicadoDoctor(err.message || 'Error de conexión.');
+    } catch (err) {
+      setErrorDuplicadoDoctor(getErrorMessage(err) || 'Error de conexión.');
     } finally {
       setGuardandoDoctor(false);
     }
@@ -539,7 +553,7 @@ export const ModuloAdminCatalogos: React.FC<ModuloAdminCatalogosProps> = ({ curr
         const wb = XLSX.read(bstr, { type: 'binary' });
         const wsname = wb.SheetNames[0];
         const ws = wb.Sheets[wsname];
-        const rows: any[] = XLSX.utils.sheet_to_json(ws);
+        const rows = XLSX.utils.sheet_to_json<Record<string, string | number | undefined>>(ws);
 
         // Pre-validaciones por fila (Dry-Run)
         const cedulasVistas = new Set<string>();
@@ -1302,7 +1316,7 @@ export const ModuloAdminCatalogos: React.FC<ModuloAdminCatalogosProps> = ({ curr
                     type="date"
                     value={aFormatoInputDate(formPaciente.fecha_nacimiento)}
                     onChange={e => setFormPaciente({ ...formPaciente, fecha_nacimiento: e.target.value })}
-                    max={new Date().toISOString().split('T')[0]}
+                    max={hoyLocal()}
                     className="h-8 text-xs rounded-xl font-medium"
                   />
                 </div>
@@ -1405,7 +1419,7 @@ export const ModuloAdminCatalogos: React.FC<ModuloAdminCatalogosProps> = ({ curr
                   <label className="text-[11px] font-bold text-slate-600 block mb-1">Turno Asignado</label>
                   <select
                     value={formDoctor.turno || 'AM'}
-                    onChange={e => setFormDoctor({ ...formDoctor, turno: e.target.value as any })}
+                    onChange={e => setFormDoctor({ ...formDoctor, turno: e.target.value as DoctorCatalogo['turno'] })}
                     className="w-full h-8 px-2.5 rounded-xl border border-slate-200 bg-white text-xs"
                   >
                     <option value="AM">Mañana (AM)</option>
@@ -1477,7 +1491,7 @@ export const ModuloAdminCatalogos: React.FC<ModuloAdminCatalogosProps> = ({ curr
                   <label className="text-[11px] font-bold text-slate-600 block mb-1">Grupo Clínico</label>
                   <select
                     value={formServicio.grupo_clinico || 'A'}
-                    onChange={e => setFormServicio({ ...formServicio, grupo_clinico: e.target.value as any })}
+                    onChange={e => setFormServicio({ ...formServicio, grupo_clinico: e.target.value as ServicioCatalogo['grupo_clinico'] })}
                     className="w-full h-8 px-2.5 rounded-xl border border-slate-200 bg-white text-xs"
                   >
                     <option value="A">Grupo A: Ginecología & Eco</option>

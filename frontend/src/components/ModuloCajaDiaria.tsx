@@ -38,6 +38,7 @@ import {
 } from 'lucide-react';
 import { FacturaCaja, UserRole } from '@/types';
 import { exportarAExcel, exportarAPDF } from '@/lib/exportUtils';
+import { hoyLocal, sumarDias } from '@/lib/date';
 
 interface ModuloCajaDiariaProps {
   currentRole: UserRole;
@@ -103,8 +104,8 @@ export const ModuloCajaDiaria: React.FC<ModuloCajaDiariaProps> = ({ currentRole 
   }, []);
 
   // Helper de fechas para filtros
-  const hoyStr = new Date().toISOString().split('T')[0];
-  const fechaUnaSemanaAtras = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
+  const hoyStr = hoyLocal();
+  const fechaUnaSemanaAtras = sumarDias(hoyLocal(), -7);
   const mesActualStr = hoyStr.slice(0, 7);
 
   // Filtrado estilo Clinico
@@ -581,7 +582,7 @@ export const ModuloCajaDiaria: React.FC<ModuloCajaDiariaProps> = ({ currentRole 
                   ].map(p => (
                     <button
                       key={p.id}
-                      onClick={() => setFiltroPeriodo(p.id as any)}
+                      onClick={() => setFiltroPeriodo(p.id as Parameters<typeof setFiltroPeriodo>[0])}
                       className={`w-full text-left px-2.5 py-1.5 rounded-lg text-xs font-semibold flex items-center justify-between transition-colors ${
                         filtroPeriodo === p.id 
                           ? 'bg-cyan-600 text-white font-bold' 

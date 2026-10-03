@@ -1,11 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server';
 import pool from '@/lib/db';
-import { ApiError, errorResponse } from '@/lib/apiHelpers';
+import { ApiError, errorResponse, fechaHoraLocal } from '@/lib/apiHelpers';
 
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json();
-    const fecha = body.fecha || body.fecha_cierre || new Date().toISOString().split('T')[0];
+    const fecha = body.fecha || body.fecha_cierre || fechaHoraLocal().fecha;
     const usuario = body.usuario_responsable || body.usuario || 'Administrador';
     const observaciones = body.observaciones || 'Cierre auditado conforme';
 

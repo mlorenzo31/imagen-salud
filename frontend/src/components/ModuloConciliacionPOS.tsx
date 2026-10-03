@@ -35,6 +35,7 @@ import {
 } from 'lucide-react';
 import { exportarAExcel, exportarAPDF } from '@/lib/exportUtils';
 import { ConciliacionPOS, UserRole, ModoOperacion, CuentaBancaria } from '@/types';
+import { hoyLocal } from '@/lib/date';
 
 interface ModuloConciliacionPOSProps {
   currentRole: UserRole;
@@ -200,7 +201,7 @@ export const ModuloConciliacionPOS: React.FC<ModuloConciliacionPOSProps> = ({
   // Formulario de Conciliación Bancaria de Lote
   const [cuentaConciliacion, setCuentaConciliacion] = useState('Banco de Venezuela - Cta Cte Principal');
   const [refBancaria, setRefBancaria] = useState('');
-  const [fechaAbono, setFechaAbono] = useState(new Date().toISOString().slice(0, 10));
+  const [fechaAbono, setFechaAbono] = useState(hoyLocal());
   const [montoRealAcreditado, setMontoRealAcreditado] = useState<string>('');
   const [notasConciliacion, setNotasConciliacion] = useState('');
 
@@ -208,7 +209,7 @@ export const ModuloConciliacionPOS: React.FC<ModuloConciliacionPOSProps> = ({
   const [formLote, setFormLote] = useState('');
   const [formTipo, setFormTipo] = useState<'TDD' | 'TDC'>('TDD');
   const [formBanco, setFormBanco] = useState('Banco Banesco (Punto 01 - Admisión)');
-  const [formFechaOperacion, setFormFechaOperacion] = useState(new Date().toISOString().slice(0, 10));
+  const [formFechaOperacion, setFormFechaOperacion] = useState(hoyLocal());
   const [formMontoBruto, setFormMontoBruto] = useState<number | ''>('');
   const [formComisionBs, setFormComisionBs] = useState<number | ''>('');
   const [formComisionPct, setFormComisionPct] = useState<number>(1.5);
@@ -218,7 +219,7 @@ export const ModuloConciliacionPOS: React.FC<ModuloConciliacionPOSProps> = ({
 
   // Alerta de lotes pendientes de días anteriores
   const lotesPendientesDiasPrevios = useMemo(() => {
-    const fechaHoy = new Date().toISOString().slice(0, 10);
+    const fechaHoy = hoyLocal();
     return lotes.filter(l => l.estado !== 'CONCILIADO' && l.fecha_operacion < fechaHoy);
   }, [lotes]);
 
@@ -247,7 +248,7 @@ export const ModuloConciliacionPOS: React.FC<ModuloConciliacionPOSProps> = ({
     setLoteAConciliar(lote);
     setMontoRealAcreditado(lote.monto_neto_liquidado_bs.toFixed(2));
     setRefBancaria(`ABONO-LOTE-${lote.lote_numero}`);
-    setFechaAbono(new Date().toISOString().slice(0, 10));
+    setFechaAbono(hoyLocal());
     setNotasConciliacion(`Abono validado en cuenta ${lote.banco}`);
     setOpenModalConciliar(true);
   };
@@ -300,7 +301,7 @@ export const ModuloConciliacionPOS: React.FC<ModuloConciliacionPOSProps> = ({
         return {
           ...p,
           estado: 'CONCILIADO',
-          fecha_conciliado: new Date().toISOString().slice(0, 10),
+          fecha_conciliado: hoyLocal(),
           referencia_extracto: `EXT-${Math.floor(Math.random() * 89999 + 10000)}`
         };
       }
@@ -321,7 +322,7 @@ export const ModuloConciliacionPOS: React.FC<ModuloConciliacionPOSProps> = ({
     setPagosCaja(prev => prev.map(p => ({
       ...p,
       estado: 'CONCILIADO',
-      fecha_conciliado: new Date().toISOString().slice(0, 10),
+      fecha_conciliado: hoyLocal(),
       referencia_extracto: p.referencia_extracto || `EXT-${Math.floor(Math.random() * 89999 + 10000)}`
     })));
   };
@@ -907,7 +908,7 @@ export const ModuloConciliacionPOS: React.FC<ModuloConciliacionPOSProps> = ({
                 <label className="text-xs font-bold text-slate-700">Tipo de Tarjeta</label>
                 <select
                   value={formTipo}
-                  onChange={(e) => handleTipoChange(e.target.value as any)}
+                  onChange={(e) => handleTipoChange(e.target.value as Parameters<typeof handleTipoChange>[0])}
                   className="w-full h-10 px-3 text-xs bg-slate-50 border border-slate-200 rounded-xl font-bold text-slate-800"
                 >
                   <option value="TDD">TDD (Tarjeta Débito - 1.5%)</option>

@@ -22,7 +22,7 @@ export interface PDFExportOptions {
 
 export interface ExcelSheetData {
   nombreHoja: string;
-  data: Record<string, any>[];
+  data: Record<string, string | number | boolean | null | undefined>[];
 }
 
 /**

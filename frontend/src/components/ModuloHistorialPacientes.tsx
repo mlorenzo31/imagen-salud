@@ -49,7 +49,7 @@ import {
 } from 'lucide-react';
 import { UserRole, FacturaCaja } from '@/types';
 import { normalizarCedulaRif, extraerDigitos, sonMismoDocumento } from '@/lib/cedulaRif';
-import { calcularEdadReal, formatearFechaNacimiento } from '@/lib/date';
+import { calcularEdadReal, formatearFechaNacimiento, hoyLocal, sumarDias } from '@/lib/date';
 
 interface ModuloHistorialPacientesProps {
   currentRole?: UserRole;
@@ -388,23 +388,20 @@ export const ModuloHistorialPacientes: React.FC<ModuloHistorialPacientesProps> =
   );
 
   const aplicarRangoRapido = (tipo: 'HOY' | '7DIAS' | 'ESTE_MES' | 'ANO' | 'TODO') => {
-    const hoy = new Date();
-    const hoyStr = hoy.toISOString().split('T')[0];
+    const hoyStr = hoyLocal();
+    const anio = hoyStr.slice(0, 4);
+    const mes = hoyStr.slice(0, 7);
     if (tipo === 'HOY') {
       setFechaDesde(hoyStr);
       setFechaHasta(hoyStr);
     } else if (tipo === '7DIAS') {
-      const hace7 = new Date();
-      hace7.setDate(hoy.getDate() - 7);
-      setFechaDesde(hace7.toISOString().split('T')[0]);
+      setFechaDesde(sumarDias(hoyStr, -7));
       setFechaHasta(hoyStr);
     } else if (tipo === 'ESTE_MES') {
-      const primerDia = new Date(hoy.getFullYear(), hoy.getMonth(), 1);
-      setFechaDesde(primerDia.toISOString().split('T')[0]);
+      setFechaDesde(`${mes}-01`);
       setFechaHasta(hoyStr);
     } else if (tipo === 'ANO') {
-      const primerDiaAno = new Date(hoy.getFullYear(), 0, 1);
-      setFechaDesde(primerDiaAno.toISOString().split('T')[0]);
+      setFechaDesde(`${anio}-01-01`);
       setFechaHasta(hoyStr);
     } else {
       setFechaDesde('');
@@ -731,7 +728,7 @@ export const ModuloHistorialPacientes: React.FC<ModuloHistorialPacientesProps> =
                       size="sm"
                       onClick={() => {
                         const tel = pacienteSeleccionado.telefono?.replace(/\D/g, '') || '';
-                        let telInt = tel.startsWith('0') ? '58' + tel.slice(1) : tel;
+                        const telInt = tel.startsWith('0') ? '58' + tel.slice(1) : tel;
                         window.open(`https://api.whatsapp.com/send?phone=${telInt}`, '_blank');
                       }}
                       className="bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-bold flex items-center gap-1.5 shadow-sm shadow-emerald-600/20"
@@ -864,7 +861,7 @@ export const ModuloHistorialPacientes: React.FC<ModuloHistorialPacientesProps> =
                     <span className="text-[10px] font-black text-slate-500 uppercase">Agrupar:</span>
                     <select
                       value={agrupacion}
-                      onChange={(e) => setAgrupacion(e.target.value as any)}
+                      onChange={(e) => setAgrupacion(e.target.value as Parameters<typeof setAgrupacion>[0])}
                       className="text-xs font-bold text-slate-800 bg-transparent border-none focus:outline-hidden cursor-pointer"
                     >
                       <option value="NINGUNA">Sin Agrupar (Lista)</option>

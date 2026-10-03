@@ -37,6 +37,7 @@ import {
 import { exportarAExcel, exportarAPDF } from '@/lib/exportUtils';
 import { HonorarioMedico, ModoOperacion, UserRole, DataPoint } from '@/types';
 import { UniversalDataView } from '@/components/analytics/UniversalDataView';
+import { getErrorMessage } from '@/lib/utils';
 
 interface TablaHonorariosProps {
   items: HonorarioMedico[];
@@ -184,8 +185,8 @@ export const TablaHonorarios: React.FC<TablaHonorariosProps> = ({
       setSelectedDoctor(null);
       if (onLiquidarSuccess) onLiquidarSuccess();
       alert(`✓ Honorarios de ${selectedDoctor.medico} liquidados exitosamente.`);
-    } catch (err: any) {
-      setErrorMsg(err.message);
+    } catch (err) {
+      setErrorMsg(getErrorMessage(err));
     } finally {
       setLoading(false);
     }

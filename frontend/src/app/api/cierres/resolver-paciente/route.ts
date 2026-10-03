@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import pool from '@/lib/db';
-import { errorResponse, sesionUsuario } from '@/lib/apiHelpers';
+import { errorResponse, fechaHoraLocal, sesionUsuario } from '@/lib/apiHelpers';
 
 export async function POST(req: NextRequest) {
   try {
@@ -23,7 +23,7 @@ export async function POST(req: NextRequest) {
           FROM facturas_caja WHERE id = $1
         `, [registro_id, usuario]);
       } else if (accion === 'REASIGNAR_HOY') {
-        await client.query("UPDATE facturas_caja SET fecha = CURRENT_DATE WHERE id = $1", [registro_id]);
+        await client.query("UPDATE facturas_caja SET fecha = $2 WHERE id = $1", [registro_id, fechaHoraLocal().fecha]);
       }
 
       await client.query('COMMIT');

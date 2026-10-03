@@ -1,3 +1,4 @@
+import { getErrorMessage } from '@/lib/utils';
 /**
  * Módulo de Imprenta Digital (SENIAT / Facturación Electrónica Fiscal)
  * Controlado mediante Feature Flag: NEXT_PUBLIC_FEATURE_IMPRENTA_DIGITAL
@@ -99,11 +100,11 @@ export class ClienteImprentaDigital {
       }
 
       return await res.json();
-    } catch (err: any) {
+    } catch (err) {
       console.warn('Fallo al conectar con Imprenta Digital, usando modo contingencia:', err);
       return {
         exito: false,
-        mensaje: `Error al emitir fiscalmente: ${err.message}`,
+        mensaje: `Error al emitir fiscalmente: ${getErrorMessage(err)}`,
         modo_simulacion: true
       };
     }

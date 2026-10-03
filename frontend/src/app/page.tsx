@@ -49,6 +49,7 @@ import {
 } from 'lucide-react';
 import { exportarAExcel, exportarAPDF } from '@/lib/exportUtils';
 import { CuentaBancaria, TransaccionBancaria, HonorarioMedico, PacientePendiente, UserRole, ModoOperacion } from '@/types';
+import { hoyLocal } from '@/lib/date';
 
 export default function Home() {
   const [isAuthenticated, setIsAuthenticated] = useState<boolean>(false);
@@ -137,7 +138,7 @@ export default function Home() {
         const dataCierre = await resCierre.json();
         if (!dataCierre.puedeCerrar && dataCierre.pacientesPendientes?.length > 0) {
           setPacientesPendientes(dataCierre.pacientesPendientes);
-          setFechaPendiente(dataCierre.fecha_evaluada || new Date().toISOString().split('T')[0]);
+          setFechaPendiente(dataCierre.fecha_evaluada || hoyLocal());
         }
       }
 
@@ -237,14 +238,14 @@ export default function Home() {
       alert('No hay movimientos registrados para exportar.');
       return;
     }
-    const data = transacciones.map((tx: any) => ({
+    const data = transacciones.map((tx) => ({
       'ID Asiento': `#${tx.id}`,
       'Referencia': tx.referencia || 'S/R',
       'Cuenta': tx.cuenta_nombre,
       'Concepto': tx.concepto,
-      'Débito (-)': parseFloat(tx.monto_debito) || 0,
-      'Crédito (+)': parseFloat(tx.monto_credito) || 0,
-      'Saldo Posterior': parseFloat(tx.saldo_posterior) || 0,
+      'Débito (-)': Number(tx.monto_debito) || 0,
+      'Crédito (+)': Number(tx.monto_credito) || 0,
+      'Saldo Posterior': Number(tx.saldo_posterior) || 0,
       'Moneda': tx.moneda,
       'Tipo': tx.es_comision ? 'Comisión Manual' : tx.tipo_transaccion
     }));
@@ -258,16 +259,16 @@ export default function Home() {
       alert('No hay movimientos registrados para exportar.');
       return;
     }
-    const totalDebitos = transacciones.reduce((acc: number, tx: any) => acc + (parseFloat(tx.monto_debito) || 0), 0);
-    const totalCreditos = transacciones.reduce((acc: number, tx: any) => acc + (parseFloat(tx.monto_credito) || 0), 0);
+    const totalDebitos = transacciones.reduce((acc: number, tx) => acc + (Number(tx.monto_debito) || 0), 0);
+    const totalCreditos = transacciones.reduce((acc: number, tx) => acc + (Number(tx.monto_credito) || 0), 0);
 
-    const filas = transacciones.map((tx: any) => [
+    const filas = transacciones.map((tx) => [
       `#${tx.id}`,
       (tx.cuenta_nombre || '').slice(0, 18),
       (tx.concepto || '').slice(0, 26),
-      parseFloat(tx.monto_debito) > 0 ? `-${parseFloat(tx.monto_debito).toFixed(2)}` : '-',
-      parseFloat(tx.monto_credito) > 0 ? `+${parseFloat(tx.monto_credito).toFixed(2)}` : '-',
-      `${parseFloat(tx.saldo_posterior).toFixed(2)} ${tx.moneda}`,
+      Number(tx.monto_debito) > 0 ? `-${Number(tx.monto_debito).toFixed(2)}` : '-',
+      Number(tx.monto_credito) > 0 ? `+${Number(tx.monto_credito).toFixed(2)}` : '-',
+      `${Number(tx.saldo_posterior).toFixed(2)} ${tx.moneda}`,
       tx.es_comision ? 'Comisión' : (tx.tipo_transaccion || 'General')
     ]);
 
@@ -499,7 +500,7 @@ export default function Home() {
                         </td>
                       </tr>
                     ) : (
-                      transacciones.map((tx: any) => (
+                      transacciones.map((tx) => (
                         <tr key={tx.id} className="hover:bg-slate-50/80">
                           <td className="p-3 font-mono font-bold text-slate-700">
                             #{tx.id} • {tx.referencia || 'S/R'}
@@ -507,13 +508,13 @@ export default function Home() {
                           <td className="p-3 font-bold text-slate-900">{tx.cuenta_nombre}</td>
                           <td className="p-3 text-slate-700 font-medium">{tx.concepto}</td>
                           <td className="p-3 text-right font-mono font-bold text-rose-600">
-                            {parseFloat(tx.monto_debito) > 0 ? `-${parseFloat(tx.monto_debito).toFixed(2)}` : '-'}
+                            {Number(tx.monto_debito) > 0 ? `-${Number(tx.monto_debito).toFixed(2)}` : '-'}
                           </td>
                           <td className="p-3 text-right font-mono font-bold text-emerald-600">
-                            {parseFloat(tx.monto_credito) > 0 ? `+${parseFloat(tx.monto_credito).toFixed(2)}` : '-'}
+                            {Number(tx.monto_credito) > 0 ? `+${Number(tx.monto_credito).toFixed(2)}` : '-'}
                           </td>
                           <td className="p-3 text-right font-mono font-black text-slate-900">
-                            {parseFloat(tx.saldo_posterior).toLocaleString('es-VE', { minimumFractionDigits: 2 })} {tx.moneda}
+                            {Number(tx.saldo_posterior).toLocaleString('es-VE', { minimumFractionDigits: 2 })} {tx.moneda}
                           </td>
                           <td className="p-3 text-center">
                             {tx.es_comision ? (

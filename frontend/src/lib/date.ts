@@ -76,3 +76,17 @@ export function aFormatoInputDate(fecha: string | Date | undefined | null): stri
     return '';
   }
 }
+
+const ZONA_CLINICA = 'America/Caracas';
+
+/** Fecha de hoy (YYYY-MM-DD) en la zona horaria de la clínica. `toISOString()` devuelve UTC y adelanta el día después de las 8 p. m. */
+export function hoyLocal(ahora: Date = new Date()): string {
+  return new Intl.DateTimeFormat('en-CA', { timeZone: ZONA_CLINICA }).format(ahora);
+}
+
+/** Suma (o resta, con negativos) días a una fecha YYYY-MM-DD sin depender de la zona horaria del navegador. */
+export function sumarDias(fecha: string, dias: number): string {
+  const [y, m, d] = fecha.split('-').map(Number);
+  const dt = new Date(Date.UTC(y, m - 1, d + dias));
+  return dt.toISOString().slice(0, 10);
+}

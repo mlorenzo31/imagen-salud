@@ -8,6 +8,7 @@ import html2canvas from 'html2canvas';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
+import { getErrorMessage } from '@/lib/utils';
 import {
   BarChart3,
   LineChart as LineChartIcon,
@@ -163,9 +164,9 @@ export const DashboardFinanciero: React.FC<DashboardFinancieroProps> = ({
                 const el = elements[i] as HTMLElement;
                 if (el.style) {
                   ['color', 'backgroundColor', 'borderColor'].forEach(prop => {
-                    const val = (el.style as any)[prop];
+                    const val = (el.style as unknown as Record<string, string>)[prop];
                     if (typeof val === 'string' && (val.includes('lab') || val.includes('oklch') || val.includes('oklab'))) {
-                      (el.style as any)[prop] = '#2EA89B';
+                      (el.style as unknown as Record<string, string>)[prop] = '#2EA89B';
                     }
                   });
                 }
@@ -176,7 +177,8 @@ export const DashboardFinanciero: React.FC<DashboardFinancieroProps> = ({
           console.warn('Dashboard canvas capture fallback:', err);
         }
         const imgData = canvas ? canvas.toDataURL('image/png') : null;
-        const finalY = (doc as any).lastAutoTable ? (doc as any).lastAutoTable.finalY + 8 : 95;
+        const lastTable = (doc as unknown as { lastAutoTable?: { finalY: number } }).lastAutoTable;
+        const finalY = lastTable ? lastTable.finalY + 8 : 95;
         if (imgData && finalY + 85 < 280) {
           doc.setFontSize(9);
           doc.setFont('helvetica', 'bold');
@@ -186,8 +188,8 @@ export const DashboardFinanciero: React.FC<DashboardFinancieroProps> = ({
       }
 
       doc.save(`Dashboard_Financiero_Imagen_Salud_${Date.now()}.pdf`);
-    } catch (err: any) {
-      alert('Error exportando PDF: ' + err.message);
+    } catch (err) {
+      alert('Error exportando PDF: ' + getErrorMessage(err));
     } finally {
       setExportandoPdf(false);
     }
@@ -291,7 +293,7 @@ export const DashboardFinanciero: React.FC<DashboardFinancieroProps> = ({
                 <YAxis stroke="#94A3B8" fontSize={11} tickFormatter={(val) => `$${val}`} />
                 <Tooltip
                   contentStyle={{ backgroundColor: '#0F172A', borderRadius: '12px', border: 'none', color: '#fff', fontSize: '11px' }}
-                  formatter={(val: any) => [`$${val} USD`, '']}
+                  formatter={(val) => [`$${val} USD`, '']}
                 />
                 <Legend wrapperStyle={{ fontSize: '11px' }} />
                 <Bar dataKey="IngresosUSD" name="Ingresos ($ USD)" fill="#2EA89B" radius={[6, 6, 0, 0]} />
@@ -312,7 +314,7 @@ export const DashboardFinanciero: React.FC<DashboardFinancieroProps> = ({
                 <YAxis stroke="#94A3B8" fontSize={11} tickFormatter={(val) => `$${val}`} />
                 <Tooltip
                   contentStyle={{ backgroundColor: '#0F172A', borderRadius: '12px', border: 'none', color: '#fff', fontSize: '11px' }}
-                  formatter={(val: any) => [`$${val} USD`, '']}
+                  formatter={(val) => [`$${val} USD`, '']}
                 />
                 <Legend wrapperStyle={{ fontSize: '11px' }} />
                 <Line type="monotone" dataKey="IngresosUSD" name="Ingresos ($ USD)" stroke="#2EA89B" strokeWidth={3} dot={{ r: 5 }} />
@@ -344,7 +346,7 @@ export const DashboardFinanciero: React.FC<DashboardFinancieroProps> = ({
                   </Pie>
                   <Tooltip
                     contentStyle={{ backgroundColor: '#0F172A', borderRadius: '12px', border: 'none', color: '#fff', fontSize: '11px' }}
-                    formatter={(val: any) => [`$${val} USD`, '']}
+                    formatter={(val) => [`$${val} USD`, '']}
                   />
                   <Legend wrapperStyle={{ fontSize: '11px' }} />
                 </PieChart>

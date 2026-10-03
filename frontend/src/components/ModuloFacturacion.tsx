@@ -40,7 +40,8 @@ import {
 import { facturaCreateSchema } from '@/lib/validations';
 import { mapearEstudioAGrupo, GrupoClinico, GRUPOS_CLINICOS } from '@/lib/gruposClinicos';
 import { normalizarCedulaRif, extraerDigitos } from '@/lib/cedulaRif';
-import { calcularEdadReal, aFormatoInputDate } from '@/lib/date';
+import { aFormatoInputDate, calcularEdadReal, hoyLocal } from '@/lib/date';
+import { getErrorMessage } from '@/lib/utils';
 import {
   limpiarCedulaInput,
   limpiarNombreInput,
@@ -173,7 +174,7 @@ export const ModuloFacturacion: React.FC<ModuloFacturacionProps> = ({ onFacturaE
   // Estados de Proceso
   const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
   const [erroresValidacion, setErroresValidacion] = useState<string[]>([]);
-  const [facturaEmitida, setFacturaEmitida] = useState<any>(null);
+  const [facturaEmitida, setFacturaEmitida] = useState<unknown>(null);
   // Impresión física desactivada según requerimiento corporativo
 
   // Sincronización Automática de Tasa Oficial BCV
@@ -460,7 +461,7 @@ export const ModuloFacturacion: React.FC<ModuloFacturacionProps> = ({ onFacturaE
     setIsSubmitting(true);
     try {
       const fullCedula = normalizarCedulaRif(`${tipoDoc}${cedula.trim()}`);
-      const fechaHoy = new Date().toISOString().split('T')[0];
+      const fechaHoy = hoyLocal();
       const horaActual = new Date().toLocaleTimeString('es-VE', { hour12: false });
 
       // Consolidar totales de honorarios y ganancia
@@ -528,9 +529,9 @@ export const ModuloFacturacion: React.FC<ModuloFacturacionProps> = ({ onFacturaE
       setPagoMovilBs('');
 
       if (onFacturaEmitida) onFacturaEmitida();
-    } catch (err: any) {
+    } catch (err) {
       console.error(err);
-      alert(`Error procesando cobro: ${err.message}`);
+      alert(`Error procesando cobro: ${getErrorMessage(err)}`);
     } finally {
       setIsSubmitting(false);
     }
@@ -620,7 +621,7 @@ export const ModuloFacturacion: React.FC<ModuloFacturacionProps> = ({ onFacturaE
                   </label>
                   <select
                     value={tipoDoc}
-                    onChange={(e) => handleTipoDocChange(e.target.value as any)}
+                    onChange={(e) => handleTipoDocChange(e.target.value as Parameters<typeof handleTipoDocChange>[0])}
                     className="w-full px-2.5 py-2 text-xs font-bold rounded-xl border border-slate-300 bg-white focus:ring-2 focus:ring-cyan-500"
                   >
                     <option value="V">V - Venezolano</option>
@@ -682,7 +683,7 @@ export const ModuloFacturacion: React.FC<ModuloFacturacionProps> = ({ onFacturaE
                     type="date"
                     value={fechaNacimiento}
                     onChange={(e) => handleFechaNacimientoChange(e.target.value)}
-                    max={new Date().toISOString().split('T')[0]}
+                    max={hoyLocal()}
                     className={`text-xs font-medium rounded-xl ${
                       erroresFicha.fecha_nacimiento ? 'border-rose-400 focus:ring-rose-400 bg-rose-50/20' : 'border-slate-300'
                     }`}
