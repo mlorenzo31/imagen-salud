@@ -1,5 +1,6 @@
 'use client';
 
+import { DevolucionesPendientes } from './DevolucionesPendientes';
 import React, { useState, useEffect, useMemo } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -415,6 +416,7 @@ export const ModuloEgresosOperativos: React.FC<ModuloEgresosOperativosProps> = (
 
   return (
     <div className="space-y-6">
+      <DevolucionesPendientes onPagada={onEgresoRegistrado} />
       {/* Header Corporativo */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 bg-white p-5 rounded-2xl border border-slate-200 shadow-sm">
         <div>

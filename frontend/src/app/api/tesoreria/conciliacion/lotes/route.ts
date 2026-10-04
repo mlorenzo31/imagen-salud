@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import pool from '@/lib/db';
 import { errorResponse } from '@/lib/apiHelpers';
+import { asegurarMedioTransito } from '@/lib/transito';
 import { centsToNumber, toCents } from '@/lib/money';
 
 /**
@@ -9,8 +10,9 @@ import { centsToNumber, toCents } from '@/lib/money';
  */
 export async function GET() {
   try {
+    await asegurarMedioTransito(pool);
     const r = await pool.query(`
-      SELECT to_char(fecha_transaccion, 'YYYY-MM-DD') AS fecha,
+      SELECT to_char(fecha_transaccion, 'YYYY-MM-DD') AS fecha, medio,
              COUNT(*)::int AS cantidad,
              COALESCE(SUM(monto_bruto_bs), 0) AS bruto,
              COUNT(*) FILTER (WHERE estado = 'PENDIENTE')::int AS pendientes,
@@ -23,10 +25,11 @@ export async function GET() {
       FROM transacciones_tarjetas_transito
       WHERE estado IN ('PENDIENTE', 'CONCILIADO')
         AND (estado = 'PENDIENTE' OR fecha_transaccion >= CURRENT_DATE - 90)
-      GROUP BY 1
-      ORDER BY 1 DESC`);
+      GROUP BY 1, 2
+      ORDER BY 1 DESC, 2`);
     const lotes = r.rows.map((x) => ({
       fecha: x.fecha as string,
+      medio: x.medio as string,
       cantidad: x.cantidad as number,
       bruto: centsToNumber(toCents(x.bruto)),
       pendientes: x.pendientes as number,

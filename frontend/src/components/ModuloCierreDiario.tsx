@@ -26,6 +26,13 @@ import { BloqueoCierrePendiente } from './BloqueoCierrePendiente';
 import { PinCierreDialog } from './PinCierreDialog';
 import { hoyLocal } from '@/lib/date';
 
+const METODOS = [
+  { clave: 'divisas_usd', etiqueta: 'Efectivo divisas', simbolo: '$' },
+  { clave: 'efectivo_bs', etiqueta: 'Efectivo bolívares', simbolo: 'Bs.' },
+  { clave: 'punto_bs', etiqueta: 'Punto de venta', simbolo: 'Bs.' },
+  { clave: 'pago_movil_bs', etiqueta: 'Pago móvil', simbolo: 'Bs.' },
+] as const;
+
 interface ModuloCierreDiarioProps {
   currentRole: UserRole;
 }
@@ -49,8 +56,16 @@ export const ModuloCierreDiario: React.FC<ModuloCierreDiarioProps> = ({ currentR
   const [mostrarModalBloqueo, setMostrarModalBloqueo] = useState(false);
 
   // Arqueo físico input para cuadre
-  const [arqueoDivisasFisico, setArqueoDivisasFisico] = useState('');
-  const [arqueoBsFisico, setArqueoBsFisico] = useState('');
+  const [conteo, setConteo] = useState<Record<string, string>>({ divisas_usd: '', efectivo_bs: '', punto_bs: '', pago_movil_bs: '' });
+  const [arqueoResultado, setArqueoResultado] = useState<{ metodo: string; esperado: string; contado: string; diferencia: string }[]>([]);
+  const esperado = (clave: string): number => {
+    const r = estadoDiario?.resumen ?? {};
+    const v = clave === 'divisas_usd' ? r.totalDivisasUSD : clave === 'efectivo_bs' ? r.totalEfectivoBs : clave === 'punto_bs' ? r.totalPuntoBs : r.totalPagoMovilBs;
+    return Math.round(Number(v || 0) * 100);
+  };
+  const contadoCents = (clave: string): number | null => (/^\d+(\.\d{1,2})?$/.test(conteo[clave].trim()) ? Math.round(Number(conteo[clave]) * 100) : null);
+  const conteoCompleto = METODOS.every((m) => contadoCents(m.clave) !== null);
+  const hayDif = conteoCompleto && METODOS.some((m) => (contadoCents(m.clave) ?? 0) !== esperado(m.clave));
   const [observacionesCierre, setObservacionesCierre] = useState('');
 
   const verificarEstado = async () => {
@@ -93,8 +108,7 @@ export const ModuloCierreDiario: React.FC<ModuloCierreDiarioProps> = ({ currentR
         body: JSON.stringify({
           fecha: fechaCierre,
           usuario_responsable: isAdmin ? 'Dr. Administrador' : 'Cajero de Turno',
-          arqueo_divisas_fisico: Number(arqueoDivisasFisico || 0),
-          arqueo_bs_fisico: Number(arqueoBsFisico || 0),
+          arqueo: conteo,
           observaciones: observacionesCierre,
           pin
         })
@@ -104,6 +118,7 @@ export const ModuloCierreDiario: React.FC<ModuloCierreDiarioProps> = ({ currentR
       if (res.ok) {
         setPidiendoPin(false);
         setCierreRealizado(data.cierre);
+        setArqueoResultado(data.arqueo ?? []);
         setMostrarCertificado(true);
         verificarEstado();
       } else {
@@ -256,36 +271,27 @@ export const ModuloCierreDiario: React.FC<ModuloCierreDiarioProps> = ({ currentR
         </CardHeader>
         <CardContent className="p-6 space-y-4">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div>
-              <label className="block text-xs font-bold text-slate-700 mb-1">
-                Conteo Físico Efectivo Divisas ($)
-              </label>
-              <Input 
-                type="number" 
-                step="0.01"
-                placeholder="Ej. 150.00"
-                value={arqueoDivisasFisico}
-                onChange={(e) => setArqueoDivisasFisico(e.target.value)}
-                className="rounded-xl text-sm font-mono"
-              />
-              <p className="text-[10px] text-slate-400 mt-1">Total de billetes contados físicamente en caja fuerte</p>
-            </div>
-
-            <div>
-              <label className="block text-xs font-bold text-slate-700 mb-1">
-                Conteo Físico Efectivo Bolívares (Bs)
-              </label>
-              <Input 
-                type="number" 
-                step="0.01"
-                placeholder="Ej. 2500.00"
-                value={arqueoBsFisico}
-                onChange={(e) => setArqueoBsFisico(e.target.value)}
-                className="rounded-xl text-sm font-mono"
-              />
-              <p className="text-[10px] text-slate-400 mt-1">Total de efectivo físico en Bolívares</p>
-            </div>
+            {METODOS.map((m) => {
+              const c = contadoCents(m.clave);
+              const dif = c === null ? null : c - esperado(m.clave);
+              return (
+                <div key={m.clave} className="rounded-xl border border-slate-200 p-3 space-y-1.5">
+                  <label className="block text-xs font-bold text-slate-700">Contado: {m.etiqueta} ({m.simbolo})</label>
+                  <Input type="number" min="0" step="0.01" placeholder="0.00 (obligatorio)" value={conteo[m.clave]}
+                    onChange={(e) => setConteo((p) => ({ ...p, [m.clave]: e.target.value }))} className="rounded-xl text-sm font-mono" />
+                  <div className="flex justify-between text-[11px]">
+                    <span className="text-slate-500">Sistema: <span className="font-mono font-bold">{m.simbolo} {(esperado(m.clave) / 100).toFixed(2)}</span></span>
+                    {dif !== null && (
+                      <span className={`font-bold ${dif === 0 ? 'text-emerald-600' : dif > 0 ? 'text-amber-600' : 'text-rose-600'}`}>
+                        {dif === 0 ? 'Cuadra' : dif > 0 ? `Sobrante ${m.simbolo} ${(dif / 100).toFixed(2)}` : `Faltante ${m.simbolo} ${(Math.abs(dif) / 100).toFixed(2)}`}
+                      </span>
+                    )}
+                  </div>
+                </div>
+              );
+            })}
           </div>
+          {hayDif && <p className="text-[11px] font-bold text-amber-700">Hay sobrante o faltante: explíquelo en observaciones para poder cerrar.</p>}
 
           <div>
             <label className="block text-xs font-bold text-slate-700 mb-1">
@@ -305,7 +311,7 @@ export const ModuloCierreDiario: React.FC<ModuloCierreDiarioProps> = ({ currentR
             </p>
 
             <Button 
-              disabled={!estadoDiario?.puedeCerrar || ejecutandoCierre}
+              disabled={!estadoDiario?.puedeCerrar || ejecutandoCierre || !conteoCompleto || (hayDif && !observacionesCierre.trim())}
               onClick={handleEjecutarCierre}
               className={`w-full md:w-auto px-6 py-2.5 rounded-xl font-bold text-xs flex items-center justify-center gap-2 shadow-md ${
                 estadoDiario?.puedeCerrar 
@@ -365,6 +371,24 @@ export const ModuloCierreDiario: React.FC<ModuloCierreDiarioProps> = ({ currentR
                 <span className="font-bold text-cyan-600 font-mono">Bs. {Number(cierreRealizado.total_pago_movil_bs || 0).toFixed(2)}</span>
               </div>
             </div>
+
+            {arqueoResultado.length > 0 && (
+              <div className="mt-3 text-xs">
+                <p className="font-bold text-slate-700 mb-1">Arqueo (contado vs sistema)</p>
+                {arqueoResultado.map((l) => {
+                  const m = METODOS.find((x) => x.clave === l.metodo);
+                  const d = Number(l.diferencia);
+                  return (
+                    <div key={l.metodo} className="flex justify-between py-1 border-b border-slate-100">
+                      <span className="text-slate-500">{m?.etiqueta}: {l.contado} / {l.esperado}</span>
+                      <span className={`font-bold font-mono ${d === 0 ? 'text-emerald-600' : d > 0 ? 'text-amber-600' : 'text-rose-600'}`}>
+                        {d === 0 ? 'Cuadra' : d > 0 ? `Sobrante +${l.diferencia}` : `Faltante ${l.diferencia}`}
+                      </span>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
 
             <div className="mt-6 pt-4 border-t border-slate-200 grid grid-cols-2 gap-4 text-center">
               <div className="border-t border-slate-400 pt-1">

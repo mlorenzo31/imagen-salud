@@ -15,6 +15,7 @@ import type { CuentaBancaria, ModoOperacion, UserRole } from '@/types';
 
 interface Lote {
   fecha: string;
+  medio: 'PUNTO' | 'PAGO_MOVIL';
   cantidad: number;
   bruto: number;
   pendientes: number;
@@ -34,6 +35,7 @@ interface TransaccionPendiente {
   nombre_paciente: string | null;
   cedula_paciente: string | null;
   monto_bruto_bs: string | number;
+  medio?: string;
 }
 
 interface Props {
@@ -43,6 +45,8 @@ interface Props {
   onConciliacionCompletada?: () => void;
 }
 
+const claveLote = (l: Lote) => `${l.fecha}|${l.medio}`;
+const etiquetaMedio = (m: string) => (m === 'PAGO_MOVIL' ? 'Pago móvil' : 'Punto de venta');
 const bs = (n: number) => `Bs. ${n.toLocaleString('es-VE', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
 
 /**
@@ -103,12 +107,12 @@ export const ModuloConciliacionPOS: React.FC<Props> = ({ currentRole, modoOperac
   }), [lotes]);
 
   const alternarDetalle = async (l: Lote) => {
-    if (expandido === l.fecha) { setExpandido(null); return; }
-    setExpandido(l.fecha);
+    if (expandido === claveLote(l)) { setExpandido(null); return; }
+    setExpandido(claveLote(l));
     try {
       const res = await fetch('/api/tesoreria/conciliacion/pendientes');
       const data: { transacciones: TransaccionPendiente[] } = await res.json();
-      setDetalle((data.transacciones ?? []).filter((t) => String(t.fecha_transaccion).slice(0, 10) === l.fecha));
+      setDetalle((data.transacciones ?? []).filter((t) => String(t.fecha_transaccion).slice(0, 10) === l.fecha && (t.medio ?? 'PUNTO') === l.medio));
     } catch {
       setDetalle([]);
     }
@@ -118,7 +122,7 @@ export const ModuloConciliacionPOS: React.FC<Props> = ({ currentRole, modoOperac
     if (soloLectura) return alert('Modo Vista activo.');
     setLoteActivo(l);
     setNeto('');
-    setReferencia(`ABONO-POS-${l.fecha.replaceAll('-', '')}`);
+    setReferencia(`ABONO-${l.medio === 'PAGO_MOVIL' ? 'PM' : 'POS'}-${l.fecha.replaceAll('-', '')}`);
     setFechaAbono(hoyLocal());
     setErrorModal(null);
   };
@@ -243,16 +247,16 @@ export const ModuloConciliacionPOS: React.FC<Props> = ({ currentRole, modoOperac
                   <tr><td colSpan={8} className="py-10 text-center text-slate-500">{cargando ? 'Cargando…' : 'No hay cobros con tarjeta para mostrar.'}</td></tr>
                 )}
                 {visibles.map((l) => (
-                  <React.Fragment key={l.fecha}>
+                  <React.Fragment key={claveLote(l)}>
                     <tr className="border-b border-slate-100 hover:bg-slate-50/60">
                       <td className="py-3 pr-3">
                         {l.estado === 'PENDIENTE' && (
                           <button onClick={() => alternarDetalle(l)} aria-label="Ver cobros del lote" className="text-slate-400 hover:text-slate-700">
-                            {expandido === l.fecha ? <ChevronDown className="w-4 h-4" /> : <ChevronRight className="w-4 h-4" />}
+                            {expandido === claveLote(l) ? <ChevronDown className="w-4 h-4" /> : <ChevronRight className="w-4 h-4" />}
                           </button>
                         )}
                       </td>
-                      <td className="py-3 pr-3 font-medium text-slate-800 tabular-nums">{l.fecha}</td>
+                      <td className="py-3 pr-3 font-medium text-slate-800 tabular-nums">{l.fecha} <span className="text-[10px] font-bold text-slate-500">· {etiquetaMedio(l.medio)}</span></td>
                       <td className="py-3 pr-3 text-right tabular-nums">{l.cantidad}</td>
                       <td className="py-3 pr-3 text-right tabular-nums">{bs(l.bruto)}</td>
                       <td className="py-3 pr-3 text-right tabular-nums text-clinica-coral">{l.estado === 'CONCILIADO' ? bs(l.comision) : '—'}</td>
@@ -270,7 +274,7 @@ export const ModuloConciliacionPOS: React.FC<Props> = ({ currentRole, modoOperac
                         {l.estado === 'PENDIENTE' && !esAdmin && <span className="text-xs text-slate-400">Solo administrador</span>}
                       </td>
                     </tr>
-                    {expandido === l.fecha && (
+                    {expandido === claveLote(l) && (
                       <tr className="bg-slate-50/70">
                         <td />
                         <td colSpan={7} className="py-3 pr-3">

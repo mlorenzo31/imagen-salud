@@ -6,6 +6,7 @@ import { ApiError, errorResponse, fechaHoraLocal, sesionUsuario, withTransaction
 import { centsToStr, toCents } from '@/lib/money';
 import { obtenerTasaBcv } from '@/lib/tasaBcv';
 import { exigirJornadaAlDia, ultimaFechaCerrada } from '@/lib/cierre';
+import { asegurarMedioTransito } from '@/lib/transito';
 import { listarEstudios, repartoCents, type EstudioFila } from '@/lib/catalogoDb';
 
 export async function GET(req: NextRequest) {
@@ -55,8 +56,9 @@ export async function GET(req: NextRequest) {
       // Sala de espera/TV: solo la jornada abierta. Lo ya cerrado desaparece; los pacientes activos nunca se ocultan.
       const cierre = await ultimaFechaCerrada();
       if (cierre) {
-        params.push(cierre);
-        q += ` AND (fc.fecha > $${params.length}::date OR fc.estado IN ('ESPERA', 'ATENCION'))`;
+        // El día en curso nunca se oculta (aunque ya tenga cierre): los culminados de hoy deben seguir visibles para enviar resultados.
+        params.push(cierre, fechaHoraLocal().fecha);
+        q += ` AND (fc.fecha > $${params.length - 1}::date OR fc.fecha >= $${params.length}::date OR fc.estado IN ('ESPERA', 'ATENCION'))`;
       }
     }
 
@@ -235,6 +237,7 @@ export async function POST(req: NextRequest) {
     const nombre = str(data.nombre || data.nombre_paciente).trim().toUpperCase();
     const fechaNac = str(data.fecha_nacimiento || data.fecha_nacimiento_paciente) || null;
 
+    await asegurarMedioTransito(pool);
     const factura = await withTransaction(async (client) => {
       let turnoNum = parseInt(str(data.turnoNum ?? data.turno_num), 10);
       if (!Number.isFinite(turnoNum) || turnoNum <= 0) {
@@ -311,7 +314,19 @@ export async function POST(req: NextRequest) {
           [centsToStr(punto)]
         );
       }
-      if (movil > 0) await acreditar(client, 'PAGO_MOVIL_BS', movil, 'BS', ctx, `Ingreso por factura ${f.id} (${f.nombre_paciente})`);
+      if (movil > 0) {
+        // Pago móvil: queda en tránsito y solo se abona a la cuenta al cerrar el día y conciliarlo con el banco.
+        await client.query(
+          `INSERT INTO transacciones_tarjetas_transito
+           (factura_id, fecha_transaccion, hora_transaccion, cedula_paciente, nombre_paciente, monto_bruto_bs, estado, medio)
+           VALUES ($1,$2,$3,$4,$5,$6,'PENDIENTE','PAGO_MOVIL')`,
+          [f.id, fecha, hora, f.cedula_paciente, f.nombre_paciente, centsToStr(movil)]
+        );
+        await client.query(
+          "UPDATE cuentas_bancarias SET saldo_transito = saldo_transito + $1::numeric, actualizado_en = NOW() WHERE codigo = 'PAGO_MOVIL_BS'",
+          [centsToStr(movil)]
+        );
+      }
       if (efBs > 0) await acreditar(client, 'EFECTIVO_BS', efBs, 'BS', ctx, `Ingreso efectivo Bs factura ${f.id} (${f.nombre_paciente})`);
       if (divisas > 0) await acreditar(client, 'EFECTIVO_USD', divisas, 'USD', ctx, `Ingreso efectivo USD factura ${f.id} (${f.nombre_paciente})`);
       return f;
