@@ -29,6 +29,10 @@ export const ESTUDIOS_CLINICOS: Record<string, EstudioItem[]> = {
     { nombre: "Tiroideo", precio: 20, area: "ECOGRAFIA_AM", sala: "SALA_ECO_AM", dist: { imagen: 0, medico: 6, eco: 14, patologo: 0 } }
   ],
   ECOGRAFIA_PM: [
+    { nombre: "Abdominal", precio: 20, area: "ECOGRAFIA_PM", sala: "SALA_ECO_PM", dist: { imagen: 0, medico: 6, eco: 14, patologo: 0 } },
+    { nombre: "Renal", precio: 20, area: "ECOGRAFIA_PM", sala: "SALA_ECO_PM", dist: { imagen: 0, medico: 6, eco: 14, patologo: 0 } },
+    { nombre: "Mamario", precio: 20, area: "ECOGRAFIA_PM", sala: "SALA_ECO_PM", dist: { imagen: 0, medico: 6, eco: 14, patologo: 0 } },
+    { nombre: "Tiroideo", precio: 20, area: "ECOGRAFIA_PM", sala: "SALA_ECO_PM", dist: { imagen: 0, medico: 6, eco: 14, patologo: 0 } },
     { nombre: "Prostático", precio: 20, area: "ECOGRAFIA_PM", sala: "SALA_ECO_PM", dist: { imagen: 0, medico: 6, eco: 14, patologo: 0 } },
     { nombre: "Renovesico Prostatico", precio: 40, area: "ECOGRAFIA_PM", sala: "SALA_ECO_PM", dist: { imagen: 0, medico: 12, eco: 28, patologo: 0 } },
     { nombre: "Renovesical Prostatico Con Medición De Residuos", precio: 45, area: "ECOGRAFIA_PM", sala: "SALA_ECO_PM", dist: { imagen: 0, medico: 13.5, eco: 31.5, patologo: 0 } },
@@ -42,6 +46,10 @@ export const ESTUDIOS_CLINICOS: Record<string, EstudioItem[]> = {
     { nombre: "Doppler Arterial Y Venoso 2 Miembros", precio: 50, area: "ECOGRAFIA_PM", sala: "SALA_ECO_PM", dist: { imagen: 0, medico: 20, eco: 30, patologo: 0 } },
     { nombre: "Doppler Arterial Y Venoso 1 Miembro", precio: 35, area: "ECOGRAFIA_PM", sala: "SALA_ECO_PM", dist: { imagen: 0, medico: 14, eco: 21, patologo: 0 } },
     { nombre: "Doppler Aorta Abdominal", precio: 35, area: "ECOGRAFIA_PM", sala: "SALA_ECO_PM", dist: { imagen: 0, medico: 14, eco: 21, patologo: 0 } },
+    { nombre: "Con Medición De Residuos", precio: 25, area: "ECOGRAFIA_PM", sala: "SALA_ECO_PM", dist: { imagen: 0, medico: 7.5, eco: 17.5, patologo: 0 } },
+    { nombre: "Partes Blandas", precio: 20, area: "ECOGRAFIA_PM", sala: "SALA_ECO_PM", dist: { imagen: 0, medico: 6, eco: 14, patologo: 0 } },
+    { nombre: "Cuello", precio: 25, area: "ECOGRAFIA_PM", sala: "SALA_ECO_PM", dist: { imagen: 0, medico: 7.5, eco: 17.5, patologo: 0 } },
+    { nombre: "Musculo Esqueletico", precio: 25, area: "ECOGRAFIA_PM", sala: "SALA_ECO_PM", dist: { imagen: 0, medico: 7.5, eco: 17.5, patologo: 0 } },
     { nombre: "SOLO ECO", precio: 20, area: "ECOGRAFIA_PM", sala: "SALA_ECO_PM", dist: { imagen: 0, medico: 6, eco: 14, patologo: 0 } },
     { nombre: "DOPPLER OBSTETRICO", precio: 35, area: "ECOGRAFIA_PM", sala: "SALA_ECO_PM", dist: { imagen: 0, medico: 14, eco: 21, patologo: 0 } }
   ],

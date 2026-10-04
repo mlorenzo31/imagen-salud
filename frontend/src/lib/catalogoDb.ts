@@ -79,6 +79,37 @@ export function asegurarCatalogo(): Promise<void> {
           client.release();
         }
       }
+      // Migración única: Ecografía AM solo conserva sus 4 estudios; el resto pasa a Ecografía PM (que además incluye esos 4).
+      await pool.query('CREATE TABLE IF NOT EXISTS catalogo_migraciones (id VARCHAR(60) PRIMARY KEY, aplicada_en TIMESTAMPTZ DEFAULT now())');
+      const mig = await pool.connect();
+      try {
+        await mig.query('BEGIN');
+        const ya = await mig.query("INSERT INTO catalogo_migraciones (id) VALUES ('eco_am_solo_4') ON CONFLICT DO NOTHING RETURNING id");
+        if (ya.rows.length > 0) {
+          await mig.query(`UPDATE catalogo_estudios c SET activo = FALSE, actualizado_en = now()
+            WHERE c.area = 'ECOGRAFIA_AM' AND LOWER(c.nombre) NOT IN ('abdominal','renal','mamario','tiroideo')
+              AND EXISTS (SELECT 1 FROM catalogo_estudios p WHERE p.area = 'ECOGRAFIA_PM' AND LOWER(p.nombre) = LOWER(c.nombre))`);
+          await mig.query(`UPDATE catalogo_estudios c SET area = 'ECOGRAFIA_PM', sala = 'SALA_ECO_PM', actualizado_en = now()
+            WHERE c.area = 'ECOGRAFIA_AM' AND LOWER(c.nombre) NOT IN ('abdominal','renal','mamario','tiroideo') AND c.activo`);
+          // Los 4 de AM también en PM, con el mismo precio y reparto que ya tienen.
+          await mig.query(`INSERT INTO catalogo_estudios (area, nombre, precio_usd, sala, dist_imagen, dist_medico, dist_eco, dist_patologo)
+            SELECT 'ECOGRAFIA_PM', nombre, precio_usd, 'SALA_ECO_PM', dist_imagen, dist_medico, dist_eco, dist_patologo
+            FROM catalogo_estudios WHERE area = 'ECOGRAFIA_AM' AND activo ON CONFLICT DO NOTHING`);
+          for (const e of ESTUDIOS_CLINICOS.ECOGRAFIA_PM) {
+            await mig.query(
+              `INSERT INTO catalogo_estudios (area, nombre, precio_usd, sala, dist_imagen, dist_medico, dist_eco, dist_patologo)
+               VALUES ($1,$2,$3,$4,$5,$6,$7,$8) ON CONFLICT DO NOTHING`,
+              [e.area, e.nombre, centsToStr(toCents(e.precio)), e.sala, centsToStr(toCents(e.dist.imagen)), centsToStr(toCents(e.dist.medico)), centsToStr(toCents(e.dist.eco)), centsToStr(toCents(e.dist.patologo))]
+            );
+          }
+        }
+        await mig.query('COMMIT');
+      } catch (err) {
+        await mig.query('ROLLBACK').catch(() => {});
+        throw err;
+      } finally {
+        mig.release();
+      }
     })().catch((err) => {
       listo = null; // reintentar en la próxima petición
       throw err;
