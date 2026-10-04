@@ -1,6 +1,7 @@
 import type { PoolClient } from 'pg';
 import { centsToStr, toCents } from '@/lib/money';
 import { fechaHoraLocal } from '@/lib/apiHelpers';
+import { MEDIOS_TRANSITO, asegurarMedioTransito, medioValido } from '@/lib/transito';
 
 export interface ResultadoAnulacion {
   revertida: boolean;
@@ -50,22 +51,25 @@ export async function revertirTesoreriaPorAnulacion(client: PoolClient, facturaI
   }
 
   // 2. Punto de venta: pendiente → sale del tránsito; ya conciliado → se debita lo acreditado por el banco.
-  const tarjetas = await client.query('SELECT id, estado, monto_bruto_bs, monto_neto_acreditado_bs FROM transacciones_tarjetas_transito WHERE factura_id = $1 FOR UPDATE', [facturaId]);
+  await asegurarMedioTransito(client);
+  const tarjetas = await client.query('SELECT id, estado, medio, monto_bruto_bs, monto_neto_acreditado_bs FROM transacciones_tarjetas_transito WHERE factura_id = $1 FOR UPDATE', [facturaId]);
+  const movilEnTransito = tarjetas.rows.some((t) => t.medio === 'PAGO_MOVIL');
   for (const t of tarjetas.rows) {
     if (t.estado === 'PENDIENTE') {
       await client.query("UPDATE transacciones_tarjetas_transito SET estado = 'ANULADO' WHERE id = $1", [t.id]);
       await client.query(
-        "UPDATE cuentas_bancarias SET saldo_transito = GREATEST(0, saldo_transito - $1::numeric), actualizado_en = NOW() WHERE codigo = 'PUNTO_VENTA_BS'",
-        [centsToStr(toCents(t.monto_bruto_bs))]
+        "UPDATE cuentas_bancarias SET saldo_transito = GREATEST(0, saldo_transito - $1::numeric), actualizado_en = NOW() WHERE codigo = $2",
+        [centsToStr(toCents(t.monto_bruto_bs)), MEDIOS_TRANSITO[medioValido(t.medio)].cuenta]
       );
     } else if (t.estado === 'CONCILIADO') {
       await client.query("UPDATE transacciones_tarjetas_transito SET estado = 'ANULADO' WHERE id = $1", [t.id]);
-      await movimiento(client, 'PUNTO_VENTA_BS', toCents(t.monto_neto_acreditado_bs), 'BS', c, `Reverso de cobro con tarjeta conciliado, ${quien}`);
+      await movimiento(client, MEDIOS_TRANSITO[medioValido(t.medio)].cuenta, toCents(t.monto_neto_acreditado_bs), 'BS', c, `Reverso de cobro conciliado (${MEDIOS_TRANSITO[medioValido(t.medio)].etiqueta}), ${quien}`);
     }
   }
 
   // 3. Cobros directos.
-  await movimiento(client, 'PAGO_MOVIL_BS', toCents(f.pago_movil), 'BS', c, `Reverso de pago móvil, ${quien}`);
+  // Pago móvil: si quedó en tránsito ya se revirtió arriba; las facturas anteriores a este esquema se acreditaron directo.
+  if (!movilEnTransito) await movimiento(client, 'PAGO_MOVIL_BS', toCents(f.pago_movil), 'BS', c, `Reverso de pago móvil, ${quien}`);
   await movimiento(client, 'EFECTIVO_BS', toCents(f.pago_efectivo_bs), 'BS', c, `Reverso de efectivo Bs, ${quien}`);
   await movimiento(client, 'EFECTIVO_USD', toCents(f.pago_divisas), 'USD', c, `Reverso de efectivo USD, ${quien}`);
 

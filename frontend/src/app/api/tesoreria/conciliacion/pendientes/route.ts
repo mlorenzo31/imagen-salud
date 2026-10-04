@@ -1,10 +1,12 @@
 import { NextResponse } from 'next/server';
 import pool from '@/lib/db';
 import { errorResponse } from '@/lib/apiHelpers';
+import { asegurarMedioTransito } from '@/lib/transito';
 import { centsToNumber, toCents } from '@/lib/money';
 
 export async function GET() {
   try {
+    await asegurarMedioTransito(pool);
     const result = await pool.query(`
       SELECT * FROM transacciones_tarjetas_transito
       WHERE estado = 'PENDIENTE'

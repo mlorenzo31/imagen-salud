@@ -48,7 +48,6 @@ export const ModuloCierreDiario: React.FC<ModuloCierreDiarioProps> = ({ currentR
     cierreExistente?: boolean;
     cierreData?: ResumenCierre;
     resumen: ResumenCierre;
-    movimientos?: Record<string, { egresos: number; ingresos: number }>;
   } | null>(null);
   const [loading, setLoading] = useState(true);
   const [ejecutandoCierre, setEjecutandoCierre] = useState(false);
@@ -62,8 +61,7 @@ export const ModuloCierreDiario: React.FC<ModuloCierreDiarioProps> = ({ currentR
   const esperado = (clave: string): number => {
     const r = estadoDiario?.resumen ?? {};
     const v = clave === 'divisas_usd' ? r.totalDivisasUSD : clave === 'efectivo_bs' ? r.totalEfectivoBs : clave === 'punto_bs' ? r.totalPuntoBs : r.totalPagoMovilBs;
-    const mov = estadoDiario?.movimientos?.[clave];
-    return Math.round(Number(v || 0) * 100) - (mov?.egresos ?? 0) + (mov?.ingresos ?? 0);
+    return Math.round(Number(v || 0) * 100);
   };
   const contadoCents = (clave: string): number | null => (/^\d+(\.\d{1,2})?$/.test(conteo[clave].trim()) ? Math.round(Number(conteo[clave]) * 100) : null);
   const conteoCompleto = METODOS.every((m) => contadoCents(m.clave) !== null);
@@ -282,7 +280,7 @@ export const ModuloCierreDiario: React.FC<ModuloCierreDiarioProps> = ({ currentR
                   <Input type="number" min="0" step="0.01" placeholder="0.00 (obligatorio)" value={conteo[m.clave]}
                     onChange={(e) => setConteo((p) => ({ ...p, [m.clave]: e.target.value }))} className="rounded-xl text-sm font-mono" />
                   <div className="flex justify-between text-[11px]">
-                    <span className="text-slate-500" title="Cobrado − egresos + ingresos extraordinarios del día">Esperado: <span className="font-mono font-bold">{m.simbolo} {(esperado(m.clave) / 100).toFixed(2)}</span></span>
+                    <span className="text-slate-500">Sistema: <span className="font-mono font-bold">{m.simbolo} {(esperado(m.clave) / 100).toFixed(2)}</span></span>
                     {dif !== null && (
                       <span className={`font-bold ${dif === 0 ? 'text-emerald-600' : dif > 0 ? 'text-amber-600' : 'text-rose-600'}`}>
                         {dif === 0 ? 'Cuadra' : dif > 0 ? `Sobrante ${m.simbolo} ${(dif / 100).toFixed(2)}` : `Faltante ${m.simbolo} ${(Math.abs(dif) / 100).toFixed(2)}`}

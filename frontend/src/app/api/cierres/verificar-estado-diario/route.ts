@@ -14,7 +14,6 @@ export async function GET(req: NextRequest) {
       pacientesWhatsAppPendientes: dia.pacientesWhatsAppPendientes,
       totalWhatsAppPendientes: dia.pacientesWhatsAppPendientes.length,
       resumen: dia.resumen,
-      movimientos: dia.movimientos,
     });
   } catch (err) {
     return errorResponse(err);
