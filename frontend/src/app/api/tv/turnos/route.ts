@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import pool from '@/lib/db';
 import { errorResponse } from '@/lib/apiHelpers';
+import { sincronizarSala } from '@/lib/salaDb';
 
 export const dynamic = 'force-dynamic';
 
@@ -14,12 +15,14 @@ const abreviar = (nombre: string | null): string => {
 /** Turnos activos para la TV de la sala de espera. Público por diseño (la pantalla no inicia sesión), con datos mínimos. */
 export async function GET() {
   try {
+    await sincronizarSala(pool);
     const r = await pool.query(`
-      SELECT id, turno_num, nombre_paciente, estudio, medico, estado, etapa_actual, hora, fecha, grupo_clinico
-      FROM facturas_caja
-      WHERE estado IN ('ESPERA', 'ATENCION')
-      ORDER BY id ASC
-      LIMIT 200`);
+      SELECT s.id, f.turno_num, f.nombre_paciente, s.estudio, s.medico, s.estado, f.hora, f.fecha,
+             s.grupo AS grupo_clinico, s.box AS box_asignado
+        FROM sala_servicios s JOIN facturas_caja f ON f.id = s.factura_id
+       WHERE f.estado IN ('ESPERA', 'ATENCION') AND s.estado IN ('ESPERA', 'ATENCION')
+       ORDER BY s.retorno DESC, s.orden_cola, s.idx
+       LIMIT 300`);
     return NextResponse.json(r.rows.map((t) => ({ ...t, nombre_paciente: abreviar(t.nombre_paciente) })));
   } catch (err) {
     return errorResponse(err);
