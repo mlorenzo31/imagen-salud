@@ -32,7 +32,7 @@ export const EncabezadoSalaEspera: React.FC<EncabezadoSalaEsperaProps> = ({ setM
             </Badge>
           </div>
           <p className="text-xs text-slate-500 mt-0.5">
-            Segmentación por grupos clínicos (A, B, C), multi-estudio priorizado y despacho de WhatsApp individual y masivo
+            Un turno por estudio, salas simultáneas por grupo (A, B, C), retorno prioritario y despacho de WhatsApp
           </p>
         </div>
       </div>

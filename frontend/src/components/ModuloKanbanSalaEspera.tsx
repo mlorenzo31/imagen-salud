@@ -11,10 +11,10 @@ import {
   mapearEstudioAGrupo, 
   inferirBoxConsultorio 
 } from '@/lib/gruposClinicos';
+import { RECURSOS, type FilaSala } from '@/lib/sala';
 import { hoyLocal } from '@/lib/date';import { getErrorMessage } from '@/lib/utils';
 import { AnularPacienteDialog } from '@/components/kanban/AnularPacienteDialog';
 import { WhatsAppMasivoDialog } from '@/components/kanban/WhatsAppMasivoDialog';
-import { MultiEstudioDialog } from '@/components/kanban/MultiEstudioDialog';
 import { TableroKanban } from '@/components/kanban/TableroKanban';
 import { BandejaReembolsos } from '@/components/kanban/BandejaReembolsos';
 import { EncabezadoSalaEspera } from '@/components/kanban/EncabezadoSalaEspera';
@@ -66,6 +66,7 @@ export const ModuloKanbanSalaEspera: React.FC<ModuloKanbanSalaEsperaProps> = ({
   modoOperacion = 'operador'
 }) => {
   const [pacientes, setPacientes] = useState<PacienteTurno[]>([]);
+  const [turnos, setTurnos] = useState<FilaSala[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
   const [filtroGrupo, setFiltroGrupo] = useState<'TODOS' | 'A' | 'B' | 'C'>('TODOS');
   const [llamandoId, setLlamandoId] = useState<number | null>(null);
@@ -79,19 +80,6 @@ export const ModuloKanbanSalaEspera: React.FC<ModuloKanbanSalaEsperaProps> = ({
   const [motivoAnulacion, setMotivoAnulacion] = useState('');
   const [submittingAnulacion, setSubmittingAnulacion] = useState(false);
   const [tabActiva, setTabActiva] = useState<'turnos' | 'reembolsos'>('turnos');
-
-  // Modal Multi-Estudio: Selección de Estudio Principal / Primer Llamado
-  const [modalMultiEstudio, setModalMultiEstudio] = useState<{
-    visible: boolean;
-    paciente: PacienteTurno | null;
-    estudiosDisponibles: Array<{ id: string; nombre: string; area?: string; medico?: string }>;
-    estudioSeleccionado: string;
-  }>({
-    visible: false,
-    paciente: null,
-    estudiosDisponibles: [],
-    estudioSeleccionado: ''
-  });
 
   // Modal de Despacho Masivo de WhatsApp para Cierre Diario
   const [modalMasivoWhatsApp, setModalMasivoWhatsApp] = useState<boolean>(false);
@@ -111,13 +99,16 @@ export const ModuloKanbanSalaEspera: React.FC<ModuloKanbanSalaEsperaProps> = ({
   const cargarPacientes = async () => {
     setLoading(true);
     try {
+      const resSala = await fetch('/api/sala', { cache: 'no-store' });
+      if (resSala.ok) setTurnos(((await resSala.json()) as { servicios: FilaSala[] }).servicios);
       const res = await fetch('/api/facturas?abiertas=1');
       if (res.ok) {
         const data: FacturaApi[] = await res.json();
         const parseados: PacienteTurno[] = data
           .filter((f) => f.estado !== 'ANULADA' && f.estado !== 'ANULADA_SALA')
           .map((f): PacienteTurno => {
-            const grupo = f.grupo_clinico || mapearEstudioAGrupo(f.estudio);
+            const primero = Array.isArray(f.servicios) ? f.servicios[0] : undefined;
+            const grupo = mapearEstudioAGrupo(primero?.estudio || f.estudio, primero?.area);
             return {
               ...f,
               estado: f.estado as PacienteTurno['estado'],
@@ -142,142 +133,35 @@ export const ModuloKanbanSalaEspera: React.FC<ModuloKanbanSalaEsperaProps> = ({
     return () => clearInterval(interval);
   }, []);
 
-  // 1. Detección de Concurrencia Crítica: Paciente activo en atención en OTRO grupo
-  const verificarConflictoConcurrencia = (p: PacienteTurno): PacienteTurno | undefined => {
-    if (!p.cedula_paciente) return undefined;
-    return pacientes.find(otro => 
-      otro.id !== p.id &&
-      otro.cedula_paciente === p.cedula_paciente &&
-      otro.estado === 'ATENCION' &&
-      otro.grupo_clinico !== p.grupo_clinico
-    );
-  };
-
-  // 2. Detección de Estudios en el MISMO grupo para LLAMADO UNIFICADO CONTINUO
-  const obtenerHermanosMismoGrupo = (p: PacienteTurno): PacienteTurno[] => {
-    if (!p.cedula_paciente) return [p];
-    return pacientes.filter(otro =>
-      otro.cedula_paciente === p.cedula_paciente &&
-      otro.grupo_clinico === p.grupo_clinico &&
-      (otro.estado === 'ESPERA' || otro.estado === 'ATENCION')
-    );
-  };
-
-  // 3. Extraer lista de sub-estudios para gestión multi-estudio
-  const extraerSubEstudios = (p: PacienteTurno): Array<{ id: string; nombre: string; area?: string; medico?: string }> => {
-    if (Array.isArray(p.servicios) && p.servicios.length > 1) {
-      return p.servicios.map((s, idx) => ({
-        id: String(s.id || idx),
-        nombre: s.estudio || s.nombre || ('Estudio #' + (idx + 1)),
-        area: s.area || '',
-        medico: s.medico || p.medico
-      }));
-    }
-    if (p.estudio && p.estudio.includes('+')) {
-      return p.estudio.split('+').map((item, idx) => ({
-        id: String(idx),
-        nombre: item.trim(),
-        area: '',
-        medico: p.medico
-      }));
-    }
-    return [{ id: '0', nombre: p.estudio, area: '', medico: p.medico }];
-  };
-
-  // 4. Abrir Modal de Prioridad de Multi-Estudio
-  const handleAbrirPrioridadEstudio = (p: PacienteTurno) => {
-    const lista = extraerSubEstudios(p);
-    if (lista.length <= 1) return;
-    setModalMultiEstudio({
-      visible: true,
-      paciente: p,
-      estudiosDisponibles: lista,
-      estudioSeleccionado: p.estudio_principal_id || lista[0].id
+  // Acciones de sala: el servidor valida (paciente en un solo grupo, sala libre, médico libre) y decide la sala.
+  const accionSala = async (accion: 'LLAMAR' | 'FINALIZAR' | 'AUSENTE', ids: number[], box?: string) => {
+    const res = await fetch('/api/sala/accion', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ accion, ids, box }),
     });
+    const json = (await res.json().catch(() => ({}))) as { error?: string; asignaciones?: { id: number; box: string }[] };
+    if (!res.ok) {
+      alert(json.error ?? 'No se pudo completar la acción.');
+      await cargarPacientes();
+      return null;
+    }
+    await cargarPacientes();
+    return json;
   };
 
-  // 5. Guardar Estudio Principal Seleccionado
-  const handleConfirmarEstudioPrincipal = async () => {
-    const { paciente, estudioSeleccionado, estudiosDisponibles } = modalMultiEstudio;
-    if (!paciente) return;
-
-    const estObj = estudiosDisponibles.find(e => e.id === estudioSeleccionado);
-    const nuevoGrupo = estObj ? mapearEstudioAGrupo(estObj.nombre) : paciente.grupo_clinico;
-
-    try {
-      await fetch('/api/facturas/' + paciente.id + '/estado', {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          estudio_principal_id: estudioSeleccionado,
-          grupo_clinico: nuevoGrupo,
-          prioridad: 'ALTA'
-        })
-      });
-
-      setPacientes(prev => prev.map(item => {
-        if (item.id === paciente.id) {
-          return {
-            ...item,
-            estudio_principal_id: estudioSeleccionado,
-            grupo_clinico: nuevoGrupo,
-            prioridad: 'ALTA',
-            box_asignado: inferirBoxConsultorio(nuevoGrupo, estObj ? estObj.nombre : item.estudio, item.medico)
-          };
-        }
-        return item;
-      }));
-
-      setModalMultiEstudio({ visible: false, paciente: null, estudiosDisponibles: [], estudioSeleccionado: '' });
-    } catch (err) {
-      console.error('Error guardando estudio principal:', err);
-    }
+  const anunciar = async (t: FilaSala, box: string | null) => {
+    const turnoTexto = t.grupo + '-' + String(t.turno_num ?? 0).padStart(2, '0');
+    await ejecutarLlamadoCompleto(turnoTexto, t.nombre_paciente ?? '', box ?? RECURSOS[t.recurso].boxes[0]);
   };
 
-  // 6. Ejecutar Llamado (Individual o Unificado Continuo)
-  const handleLlamarPaciente = async (p: PacienteTurno, forzarUnificado = false) => {
-    if (isReadOnly) {
-      alert('Acción restringida en Modo Vista (Read-Only).');
-      return;
-    }
-
-    // Regla de Bloqueo de Concurrencia
-    const conflicto = verificarConflictoConcurrencia(p);
-    if (conflicto) {
-      alert(
-        'PREVENCIÓN DE DOBLE LLAMADO SIMULTÁNEO:\n\n' +
-        'El paciente "' + p.nombre_paciente + '" (' + (p.cedula_paciente || 'S/C') + ') ya se encuentra actualmente en el consultorio de ' + conflicto.box_asignado + ' (' + GRUPOS_CLINICOS[conflicto.grupo_clinico].nombreCorto + ').\n\n' +
-        'El sistema bloquea este llamado hasta que el personal del Grupo ' + conflicto.grupo_clinico + ' culmine dicho procedimiento.'
-      );
-      return;
-    }
-
-    setLlamandoId(p.id);
+  const handleLlamar = async (ids: number[], box?: string) => {
+    if (isReadOnly) return alert('Acción restringida en Modo Vista (Read-Only).');
+    setLlamandoId(ids[0]);
     try {
-      const hermanosMismoGrupo = obtenerHermanosMismoGrupo(p);
-      const idsAActualizar = forzarUnificado || hermanosMismoGrupo.length > 1
-        ? hermanosMismoGrupo.map(h => h.id)
-        : [p.id];
-
-      for (const ticketId of idsAActualizar) {
-        await fetch('/api/facturas/' + ticketId + '/estado', {
-          method: 'PUT',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ estado: 'ATENCION', etapa_actual: 1 })
-        });
-      }
-
-      setPacientes(prev => prev.map(item => {
-        if (idsAActualizar.includes(item.id)) {
-          return { ...item, estado: 'ATENCION', etapa_actual: 1 };
-        }
-        return item;
-      }));
-
-      const turnoTexto = p.grupo_clinico + '-' + String(p.turno_num).padStart(2, '0');
-      const salaTexto = p.box_asignado || GRUPOS_CLINICOS[p.grupo_clinico].boxConsultorioDefecto;
-      await ejecutarLlamadoCompleto(turnoTexto, p.nombre_paciente, salaTexto);
-
+      const r = await accionSala('LLAMAR', ids, box);
+      const primero = turnos.find(t => t.id === ids[0]);
+      if (r && primero) await anunciar(primero, r.asignaciones?.find(a => a.id === ids[0])?.box ?? null);
     } catch (err) {
       console.error('Error al llamar:', err);
     } finally {
@@ -285,40 +169,25 @@ export const ModuloKanbanSalaEspera: React.FC<ModuloKanbanSalaEsperaProps> = ({
     }
   };
 
-  // 7. Finalizar Estudio con Retorno Priorizado a Sala
-  const handleFinalizarAtencion = async (p: PacienteTurno, finalizarTodosMismoGrupo = false) => {
+  const handleFinalizar = async (ids: number[]) => {
     if (isReadOnly) return alert('Modo Vista activo.');
-    try {
-      const hermanos = finalizarTodosMismoGrupo ? obtenerHermanosMismoGrupo(p) : [p];
-      const ids = hermanos.map(h => h.id);
+    await accionSala('FINALIZAR', ids);
+  };
 
-      for (const id of ids) {
-        await fetch('/api/facturas/' + id + '/estado', {
-          method: 'PUT',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ estado: 'FINALIZADO', etapa_actual: 2 })
-        });
-      }
+  const handleAusente = async (t: FilaSala) => {
+    if (isReadOnly) return alert('Modo Vista activo.');
+    if (!confirm('¿"' + (t.nombre_paciente ?? 'Paciente') + '" no se presentó al llamado? Volverá al final de la sala de espera.')) return;
+    await accionSala('AUSENTE', [t.id]);
+  };
 
-      const cedulaClean = getCleanCedula(p.cedula_paciente);
-      setPacientes(prev => prev.map(item => {
-        if (ids.includes(item.id)) {
-          return { ...item, estado: 'FINALIZADO', etapa_actual: 2 };
-        }
-        // Retorno a sala prioritario si tiene otro estudio pendiente en otro grupo
-        if (cedulaClean && getCleanCedula(item.cedula_paciente) === cedulaClean && item.estado === 'ESPERA') {
-          return {
-            ...item,
-            prioridad: 'ALTA',
-            retorno_sala: true,
-            sala_anterior: p.box_asignado || inferirBoxConsultorio(p.grupo_clinico, p.estudio, p.medico)
-          };
-        }
-        return item;
-      }));
-    } catch (err) {
-      console.error('Error al finalizar:', err);
-    }
+  const handleRellamar = async (t: FilaSala) => {
+    if (isReadOnly) return alert('Modo Vista activo.');
+    await anunciar(t, t.box);
+  };
+
+  const handleAnularTurno = (t: FilaSala) => {
+    const factura = pacientes.find(p => p.id === t.factura_id);
+    if (factura) setPacienteAAnular(factura);
   };
 
   // 8. Carga de Documento / Informe al Culminar Estudio
@@ -546,27 +415,18 @@ export const ModuloKanbanSalaEspera: React.FC<ModuloKanbanSalaEsperaProps> = ({
     }
   };
 
-  // Filtrado por Grupo Clínico
+  // Turnos por estudio (el servidor ya los entrega en orden de cola: retorno prioritario, prioridad, llegada).
+  const turnosFiltrados = useMemo(
+    () => (filtroGrupo === 'TODOS' ? turnos : turnos.filter(t => t.grupo === filtroGrupo)),
+    [turnos, filtroGrupo]
+  );
+  const turnosEspera = turnosFiltrados.filter(t => t.estado === 'ESPERA');
+  const turnosAtencion = turnosFiltrados.filter(t => t.estado === 'ATENCION');
+
   const pacientesFiltrados = useMemo(() => {
     if (filtroGrupo === 'TODOS') return pacientes;
     return pacientes.filter(p => p.grupo_clinico === filtroGrupo);
   }, [pacientes, filtroGrupo]);
-
-  const pacientesEspera = useMemo(() => {
-    return [...pacientesFiltrados.filter(p => p.estado === 'ESPERA')].sort((a, b) => {
-      if (a.retorno_sala && !b.retorno_sala) return -1;
-      if (!a.retorno_sala && b.retorno_sala) return 1;
-
-      const peso: Record<string, number> = { ALTA: 3, NORMAL: 2, BAJA: 1 };
-      const wA = peso[a.prioridad || 'NORMAL'] || 2;
-      const wB = peso[b.prioridad || 'NORMAL'] || 2;
-      if (wA !== wB) return wB - wA;
-
-      return a.id - b.id;
-    });
-  }, [pacientesFiltrados]);
-
-  const pacientesAtencion = pacientesFiltrados.filter(p => p.estado === 'ATENCION');
   const pacientesFinalizados = pacientesFiltrados.filter(p => p.estado === 'FINALIZADO' || p.estado === 'COMPLETADO');
 
   return (
@@ -599,7 +459,7 @@ export const ModuloKanbanSalaEspera: React.FC<ModuloKanbanSalaEsperaProps> = ({
                     filtroGrupo === 'TODOS' ? 'bg-white text-slate-900 shadow-sm' : 'text-slate-500 hover:text-slate-800'
                   )}
                 >
-                  Todos ({pacientes.length})
+                  Todos ({turnos.length})
                 </button>
                 <button
                   onClick={() => setFiltroGrupo('A')}
@@ -632,19 +492,16 @@ export const ModuloKanbanSalaEspera: React.FC<ModuloKanbanSalaEsperaProps> = ({
             </div>
 
             <div className="flex items-center gap-4 text-xs font-medium text-slate-500 pr-2">
-              <span>En Espera: <strong className="text-amber-600">{pacientesEspera.length}</strong></span>
-              <span>En Atención: <strong className="text-blue-600">{pacientesAtencion.length}</strong></span>
+              <span>En Espera: <strong className="text-amber-600">{turnosEspera.length}</strong></span>
+              <span>En Atención: <strong className="text-blue-600">{turnosAtencion.length}</strong></span>
               <span>Finalizados: <strong className="text-emerald-600">{pacientesFinalizados.length}</strong></span>
             </div>
           </div>
 
           {/* TABLERO KANBAN */}
-          <TableroKanban pacientesEspera={pacientesEspera} verificarConflictoConcurrencia={verificarConflictoConcurrencia} obtenerHermanosMismoGrupo={obtenerHermanosMismoGrupo} extraerSubEstudios={extraerSubEstudios} handleAbrirPrioridadEstudio={handleAbrirPrioridadEstudio} isReadOnly={isReadOnly} llamandoId={llamandoId} handleLlamarPaciente={handleLlamarPaciente} isAdmin={isAdmin} setPacienteAAnular={setPacienteAAnular} pacientesAtencion={pacientesAtencion} handleFinalizarAtencion={handleFinalizarAtencion} pacientesFinalizados={pacientesFinalizados} handleTriggerAdjunto={handleTriggerAdjunto} handleEnviarWhatsAppIndividual={handleEnviarWhatsAppIndividual} />
+          <TableroKanban turnosTodos={turnos} turnosEspera={turnosEspera} turnosAtencion={turnosAtencion} isReadOnly={isReadOnly} isAdmin={isAdmin} llamandoId={llamandoId} onLlamar={handleLlamar} onFinalizar={handleFinalizar} onAusente={handleAusente} onRellamar={handleRellamar} onAnular={handleAnularTurno} pacientesFinalizados={pacientesFinalizados} handleTriggerAdjunto={handleTriggerAdjunto} handleEnviarWhatsAppIndividual={handleEnviarWhatsAppIndividual} />
         </>
       )}
-
-      {/* Modal Multi-Estudio: Selección de Estudio Principal / Primer Llamado */}
-      <MultiEstudioDialog modalMultiEstudio={modalMultiEstudio} setModalMultiEstudio={setModalMultiEstudio} handleConfirmarEstudioPrincipal={handleConfirmarEstudioPrincipal} />
 
       {/* Modal Despacho Masivo de WhatsApp para Cierre Diario */}
       <WhatsAppMasivoDialog modalMasivoWhatsApp={modalMasivoWhatsApp} procesandoMasivo={procesandoMasivo} setModalMasivoWhatsApp={setModalMasivoWhatsApp} pacientesPendientesWhatsApp={pacientesPendientesWhatsApp} pacientesFinalizadosSinAdjunto={pacientesFinalizadosSinAdjunto} progresoMasivo={progresoMasivo} handleEjecutarDespachoMasivo={handleEjecutarDespachoMasivo} />

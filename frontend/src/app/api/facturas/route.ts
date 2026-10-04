@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import type { PoolClient } from 'pg';
+import { clasificarServicio } from '@/lib/sala';
 import pool from '@/lib/db';
 import { ApiError, errorResponse, fechaHoraLocal, sesionUsuario, withTransaction } from '@/lib/apiHelpers';
 import { centsToStr, toCents } from '@/lib/money';
@@ -262,7 +263,7 @@ export async function POST(req: NextRequest) {
           JSON.stringify(serviciosJson), centsToStr(totalHonorarios), centsToStr(totalGanancia), turnoNum,
           parseInt(str(data.etapaActual ?? data.etapa_actual), 10) || 0,
           str(data.telefono_paciente || data.telefono) || null, data.estudio_principal_id || null,
-          str(data.prioridad) || 'NORMAL', str(data.grupo_clinico) || 'A', fechaNac,
+          str(data.prioridad) || 'NORMAL', str(data.grupo_clinico) || clasificarServicio(servicios[0]?.estudio ?? '', servicios[0]?.area).grupo, fechaNac,
         ]
       );
       const f = resFactura.rows[0];

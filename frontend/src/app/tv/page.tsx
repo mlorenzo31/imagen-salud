@@ -40,11 +40,8 @@ export default function PantallaTVSalaEspera() {
     B: false,
     C: false
   });
-  const ultimoLlamadoPorGrupo = useRef<Record<GrupoClinico, number | null>>({
-    A: null,
-    B: null,
-    C: null
-  });
+  const anunciados = useRef<Set<number>>(new Set());
+  const cargaInicial = useRef(false);
 
   // Reloj digital en tiempo real
   useEffect(() => {
@@ -79,35 +76,29 @@ export default function PantallaTVSalaEspera() {
             return {
               ...t,
               grupo_clinico: grupo,
-              box_asignado: inferirBoxConsultorio(grupo, t.estudio, t.medico)
+              box_asignado: t.box_asignado || inferirBoxConsultorio(grupo, t.estudio, t.medico)
             };
           });
 
         setTurnos(mapeados);
 
-        // Detectar si algún grupo cambió a un nuevo turno en 'ATENCION' para activar voz y pulso
-        (['A', 'B', 'C'] as GrupoClinico[]).forEach(g => {
-          const enAtencionGrupo = mapeados.find(t => t.grupo_clinico === g && t.estado === 'ATENCION');
-          if (enAtencionGrupo && enAtencionGrupo.id !== ultimoLlamadoPorGrupo.current[g]) {
-            ultimoLlamadoPorGrupo.current[g] = enAtencionGrupo.id;
-
-            // Activar efecto de llamado activo coral en ese grupo durante 7 segundos
+        // Anunciar cada turno que pasa a ATENCIÓN (varios a la vez: p. ej. ecografía y ginecología).
+        const enAtencion = mapeados.filter(t => t.estado === 'ATENCION');
+        const nuevos = enAtencion.filter(t => !anunciados.current.has(t.id));
+        const primeraCarga = !cargaInicial.current;
+        cargaInicial.current = true;
+        anunciados.current = new Set(enAtencion.map(t => t.id));
+        if (!primeraCarga) {
+          for (const t of nuevos) {
+            const g = t.grupo_clinico as GrupoClinico;
             setLlamadosActivos(prev => ({ ...prev, [g]: true }));
-            setTimeout(() => {
-              setLlamadosActivos(prev => ({ ...prev, [g]: false }));
-            }, 7000);
-
-            // Locución por voz serena
+            setTimeout(() => setLlamadosActivos(prev => ({ ...prev, [g]: false })), 7000);
             if (audioHabilitado) {
-              const turnoCod = `${g}-${String(enAtencionGrupo.turno_num).padStart(2, '0')}`;
-              ejecutarLlamadoCompleto(
-                turnoCod,
-                enAtencionGrupo.nombre_paciente,
-                enAtencionGrupo.box_asignado || GRUPOS_CLINICOS[g].boxConsultorioDefecto
-              );
+              const turnoCod = `${g}-${String(t.turno_num).padStart(2, '0')}`;
+              void ejecutarLlamadoCompleto(turnoCod, t.nombre_paciente, t.box_asignado || GRUPOS_CLINICOS[g].boxConsultorioDefecto);
             }
           }
-        });
+        }
       }
     } catch (err) {
       console.error('Error cargando turnos TV:', err);
@@ -133,15 +124,15 @@ export default function PantallaTVSalaEspera() {
 
   // Turnos clasificados por grupo clínico
   const turnosPorGrupo = useMemo(() => {
-    const res: Record<GrupoClinico, { enAtencion: TurnoItem | null; enEspera: TurnoItem[]; totalEnCola: number }> = {
-      A: { enAtencion: null, enEspera: [], totalEnCola: 0 },
-      B: { enAtencion: null, enEspera: [], totalEnCola: 0 },
-      C: { enAtencion: null, enEspera: [], totalEnCola: 0 }
+    const res: Record<GrupoClinico, { enAtencion: TurnoItem[]; enEspera: TurnoItem[]; totalEnCola: number }> = {
+      A: { enAtencion: [], enEspera: [], totalEnCola: 0 },
+      B: { enAtencion: [], enEspera: [], totalEnCola: 0 },
+      C: { enAtencion: [], enEspera: [], totalEnCola: 0 }
     };
 
     (['A', 'B', 'C'] as GrupoClinico[]).forEach(g => {
       const delGrupo = turnos.filter(t => t.grupo_clinico === g);
-      const enAtencion = delGrupo.find(t => t.estado === 'ATENCION') || null;
+      const enAtencion = delGrupo.filter(t => t.estado === 'ATENCION');
       const enEspera = delGrupo.filter(t => t.estado === 'ESPERA');
       res[g] = {
         enAtencion,
@@ -217,7 +208,7 @@ export default function PantallaTVSalaEspera() {
           const info = GRUPOS_CLINICOS[codigoGrupo];
           const datos = turnosPorGrupo[codigoGrupo];
           const estaLlamando = llamadosActivos[codigoGrupo];
-          const enAtencion = datos.enAtencion;
+          const enAtencionLista = datos.enAtencion;
           const proximos = datos.enEspera;
 
           return (
@@ -255,8 +246,11 @@ export default function PantallaTVSalaEspera() {
 
               {/* 2. Tarjeta Gigante: TURNO EN ATENCIÓN */}
               <div className="my-auto py-6">
-                {enAtencion ? (
+                {enAtencionLista.length > 0 ? (
+                  <div className="space-y-4">
+                  {enAtencionLista.map((enAtencion) => (
                   <div 
+                    key={enAtencion.id}
                     className={`rounded-3xl p-6 border-2 transition-all duration-700 text-center space-y-4 ${
                       estaLlamando
                         ? 'bg-[#FDF2EC] border-[#E76F3D] shadow-xl shadow-[#E76F3D]/15 scale-[1.02]'
@@ -284,7 +278,7 @@ export default function PantallaTVSalaEspera() {
                         Turno Convocado
                       </p>
                       <div 
-                        className="font-mono font-black text-6xl lg:text-8xl tracking-tight leading-none"
+                        className="font-mono font-black text-5xl lg:text-7xl tracking-tight leading-none"
                         style={{ color: estaLlamando ? '#E76F3D' : '#1D7A70' }}
                       >
                         {codigoGrupo}-{String(enAtencion.turno_num).padStart(2, '0')}
@@ -313,6 +307,8 @@ export default function PantallaTVSalaEspera() {
                         {enAtencion.estudio}
                       </p>
                     </div>
+                  </div>
+                  ))}
                   </div>
                 ) : (
                   /* Box Disponible / En Espera de Llamado */
