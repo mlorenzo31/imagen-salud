@@ -1,6 +1,7 @@
 import type { PoolClient } from 'pg';
 import { centsToStr, toCents } from '@/lib/money';
 import { fechaHoraLocal } from '@/lib/apiHelpers';
+import { registrarDevolucion } from '@/lib/devoluciones';
 import { MEDIOS_TRANSITO, asegurarMedioTransito, medioValido } from '@/lib/transito';
 
 export interface ResultadoAnulacion {
@@ -54,22 +55,28 @@ export async function revertirTesoreriaPorAnulacion(client: PoolClient, facturaI
   await asegurarMedioTransito(client);
   const tarjetas = await client.query('SELECT id, estado, medio, monto_bruto_bs, monto_neto_acreditado_bs FROM transacciones_tarjetas_transito WHERE factura_id = $1 FOR UPDATE', [facturaId]);
   const movilEnTransito = tarjetas.rows.some((t) => t.medio === 'PAGO_MOVIL');
+  // El dinero cobrado con POS/pago móvil no se debita aquí: se registra una devolución pendiente que luego se paga como egreso validado.
   for (const t of tarjetas.rows) {
+    if (t.estado !== 'PENDIENTE' && t.estado !== 'CONCILIADO') continue;
+    const info = MEDIOS_TRANSITO[medioValido(t.medio)];
+    const bruto = centsToStr(toCents(t.monto_bruto_bs));
     if (t.estado === 'PENDIENTE') {
-      await client.query("UPDATE transacciones_tarjetas_transito SET estado = 'ANULADO' WHERE id = $1", [t.id]);
       await client.query(
         "UPDATE cuentas_bancarias SET saldo_transito = GREATEST(0, saldo_transito - $1::numeric), actualizado_en = NOW() WHERE codigo = $2",
-        [centsToStr(toCents(t.monto_bruto_bs)), MEDIOS_TRANSITO[medioValido(t.medio)].cuenta]
+        [bruto, info.cuenta]
       );
-    } else if (t.estado === 'CONCILIADO') {
-      await client.query("UPDATE transacciones_tarjetas_transito SET estado = 'ANULADO' WHERE id = $1", [t.id]);
-      await movimiento(client, MEDIOS_TRANSITO[medioValido(t.medio)].cuenta, toCents(t.monto_neto_acreditado_bs), 'BS', c, `Reverso de cobro conciliado (${MEDIOS_TRANSITO[medioValido(t.medio)].etiqueta}), ${quien}`);
     }
+    await client.query("UPDATE transacciones_tarjetas_transito SET estado = 'ANULADO' WHERE id = $1", [t.id]);
+    await registrarDevolucion(client, facturaId, medioValido(t.medio), info.cuenta, bruto, t.estado === 'CONCILIADO');
+    advertencias.push(`Pago con ${info.etiqueta} de Bs. ${bruto}: quedó registrada la devolución pendiente; debe pagarse como egreso en Tesorería.`);
   }
 
   // 3. Cobros directos.
   // Pago móvil: si quedó en tránsito ya se revirtió arriba; las facturas anteriores a este esquema se acreditaron directo.
-  if (!movilEnTransito) await movimiento(client, 'PAGO_MOVIL_BS', toCents(f.pago_movil), 'BS', c, `Reverso de pago móvil, ${quien}`);
+  if (!movilEnTransito && toCents(f.pago_movil) > 0) {
+    await registrarDevolucion(client, facturaId, 'PAGO_MOVIL', 'PAGO_MOVIL_BS', centsToStr(toCents(f.pago_movil)), true);
+    advertencias.push(`Pago móvil de Bs. ${centsToStr(toCents(f.pago_movil))}: quedó registrada la devolución pendiente; debe pagarse como egreso en Tesorería.`);
+  }
   await movimiento(client, 'EFECTIVO_BS', toCents(f.pago_efectivo_bs), 'BS', c, `Reverso de efectivo Bs, ${quien}`);
   await movimiento(client, 'EFECTIVO_USD', toCents(f.pago_divisas), 'USD', c, `Reverso de efectivo USD, ${quien}`);
 
