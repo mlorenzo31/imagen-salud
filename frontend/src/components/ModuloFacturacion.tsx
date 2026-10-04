@@ -306,8 +306,15 @@ export const ModuloFacturacion: React.FC<ModuloFacturacionProps> = ({ onFacturaE
   // Agregar Estudio al Carrito
   const handleAgregarEstudio = () => {
     const estudiosArea = catalogo[selectedArea] || [];
-    const estudioObj = estudiosArea.find(e => e.nombre === selectedEstudioNombre);
-    if (!estudioObj) return;
+    const espConsulta = selectedArea === 'CONSULTAS' ? ESPECIALISTAS_MEDICOS.CONSULTAS.find(d => d.nombre === selectedDoctor) : undefined;
+    // Consultas no tiene selector de estudio: se arma con la especialidad del médico elegido.
+    const estudioObj = selectedArea === 'CONSULTAS'
+      ? (espConsulta ? { nombre: `Consulta ${espConsulta.especialidad}`, precio: espConsulta.precio || 0, area: 'CONSULTAS', sala: estudiosArea[0]?.sala || 'CONSULTORIO_GENERAL', dist: { imagen: 0, medico: 0, eco: 0, patologo: 0 } } : undefined)
+      : estudiosArea.find(e => e.nombre === selectedEstudioNombre);
+    if (!estudioObj) {
+      if (selectedArea === 'CONSULTAS') alert('Seleccione al médico de la consulta.');
+      return;
+    }
 
     // Validación estricta de médico en Consultas y Ginecología
     if ((selectedArea === 'CONSULTAS' || selectedArea === 'GINECOLOGIA') && (!selectedDoctor || selectedDoctor === 'De Guardia')) {
