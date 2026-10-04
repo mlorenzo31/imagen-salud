@@ -55,8 +55,9 @@ export async function GET(req: NextRequest) {
       // Sala de espera/TV: solo la jornada abierta. Lo ya cerrado desaparece; los pacientes activos nunca se ocultan.
       const cierre = await ultimaFechaCerrada();
       if (cierre) {
-        params.push(cierre);
-        q += ` AND (fc.fecha > $${params.length}::date OR fc.estado IN ('ESPERA', 'ATENCION'))`;
+        // El día en curso nunca se oculta (aunque ya tenga cierre): los culminados de hoy deben seguir visibles para enviar resultados.
+        params.push(cierre, fechaHoraLocal().fecha);
+        q += ` AND (fc.fecha > $${params.length - 1}::date OR fc.fecha >= $${params.length}::date OR fc.estado IN ('ESPERA', 'ATENCION'))`;
       }
     }
 
