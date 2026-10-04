@@ -26,14 +26,7 @@ export const ESTUDIOS_CLINICOS: Record<string, EstudioItem[]> = {
     { nombre: "Abdominal", precio: 20, area: "ECOGRAFIA_AM", sala: "SALA_ECO_AM", dist: { imagen: 0, medico: 6, eco: 14, patologo: 0 } },
     { nombre: "Renal", precio: 20, area: "ECOGRAFIA_AM", sala: "SALA_ECO_AM", dist: { imagen: 0, medico: 6, eco: 14, patologo: 0 } },
     { nombre: "Mamario", precio: 20, area: "ECOGRAFIA_AM", sala: "SALA_ECO_AM", dist: { imagen: 0, medico: 6, eco: 14, patologo: 0 } },
-    { nombre: "Tiroideo", precio: 20, area: "ECOGRAFIA_AM", sala: "SALA_ECO_AM", dist: { imagen: 0, medico: 6, eco: 14, patologo: 0 } },
-    { nombre: "Con Medición De Residuos", precio: 25, area: "ECOGRAFIA_AM", sala: "SALA_ECO_AM", dist: { imagen: 0, medico: 7.5, eco: 17.5, patologo: 0 } },
-    { nombre: "Partes Blandas", precio: 20, area: "ECOGRAFIA_AM", sala: "SALA_ECO_AM", dist: { imagen: 0, medico: 6, eco: 14, patologo: 0 } },
-    { nombre: "Cuello", precio: 25, area: "ECOGRAFIA_AM", sala: "SALA_ECO_AM", dist: { imagen: 0, medico: 7.5, eco: 17.5, patologo: 0 } },
-    { nombre: "Musculo Esqueletico", precio: 25, area: "ECOGRAFIA_AM", sala: "SALA_ECO_AM", dist: { imagen: 0, medico: 7.5, eco: 17.5, patologo: 0 } },
-    { nombre: "Prostático", precio: 20, area: "ECOGRAFIA_AM", sala: "SALA_ECO_AM", dist: { imagen: 0, medico: 6, eco: 14, patologo: 0 } },
-    { nombre: "SOLO ECO", precio: 20, area: "ECOGRAFIA_AM", sala: "SALA_ECO_AM", dist: { imagen: 0, medico: 6, eco: 14, patologo: 0 } },
-    { nombre: "DOPPLER OBSTETRICO", precio: 35, area: "ECOGRAFIA_AM", sala: "SALA_ECO_AM", dist: { imagen: 5, medico: 9, eco: 21, patologo: 0 } }
+    { nombre: "Tiroideo", precio: 20, area: "ECOGRAFIA_AM", sala: "SALA_ECO_AM", dist: { imagen: 0, medico: 6, eco: 14, patologo: 0 } }
   ],
   ECOGRAFIA_PM: [
     { nombre: "Prostático", precio: 20, area: "ECOGRAFIA_PM", sala: "SALA_ECO_PM", dist: { imagen: 0, medico: 6, eco: 14, patologo: 0 } },
