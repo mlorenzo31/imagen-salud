@@ -2,6 +2,7 @@
 // Lee la cola wa_outbox, envía los resultados y marca facturas_caja.whatsapp_enviado.
 // Uso: DATABASE_URL=... APP_URL=https://tu-sistema.vercel.app node worker.mjs   (ver README.md)
 import makeWASocket, { useMultiFileAuthState, DisconnectReason, fetchLatestBaileysVersion } from '@whiskeysockets/baileys';
+import { rmSync } from 'node:fs';
 import pg from 'pg';
 import pino from 'pino';
 import QRCode from 'qrcode';
@@ -25,6 +26,7 @@ async function asegurarTablas() {
   await db.query(`ALTER TABLE wa_outbox ADD COLUMN IF NOT EXISTS token TEXT`);
   await db.query(`CREATE INDEX IF NOT EXISTS wa_outbox_pend_idx ON wa_outbox (estado, id)`);
   await db.query(`CREATE UNIQUE INDEX IF NOT EXISTS wa_outbox_factura_uk ON wa_outbox (factura_id) WHERE estado IN ('PENDIENTE','ENVIANDO','ENVIADO')`);
+  await db.query(`ALTER TABLE wa_estado ADD COLUMN IF NOT EXISTS comando TEXT`);
   await db.query(`INSERT INTO wa_estado (id) VALUES (1) ON CONFLICT DO NOTHING`);
 }
 
@@ -37,16 +39,33 @@ async function publicar() {
   await db.query(`UPDATE wa_estado SET estado = $1, qr = $2, numero = $3, latido = now() WHERE id = 1`, [estado, qr, numero]).catch((e) => console.error('latido', e.message));
 }
 
+let generacion = 0; // cada conexión nueva invalida los eventos de la anterior
+
+/** Borra la sesión guardada y abre una conexión limpia: genera un QR nuevo para vincular otro dispositivo. */
+async function reiniciarVinculo(cerrarSesion) {
+  generacion++;
+  estado = 'CONECTANDO'; qr = null; numero = null;
+  await publicar();
+  try {
+    if (cerrarSesion && sock) await sock.logout();
+  } catch (e) { console.error('logout', e.message); }
+  try { sock?.end?.(undefined); } catch { /* ya cerrado */ }
+  rmSync('./auth', { recursive: true, force: true });
+  await conectar();
+}
+
 async function conectar() {
+  const mia = ++generacion;
   const { state, saveCreds } = await useMultiFileAuthState('./auth');
   const { version } = await fetchLatestBaileysVersion();
   sock = makeWASocket({ version, auth: state, logger: log, browser: ['Imagen Salud', 'Chrome', '1.0'], markOnlineOnConnect: false });
   sock.ev.on('creds.update', saveCreds);
   sock.ev.on('connection.update', async (u) => {
+    if (mia !== generacion) return; // evento de una conexión ya reemplazada
     if (u.qr) {
       qr = await QRCode.toDataURL(u.qr, { width: 320, margin: 1 });
       estado = 'ESPERANDO_QR';
-      console.log('Escanea el QR desde el sistema (chip "Vincular WhatsApp").');
+      console.log('Escanea el QR desde el sistema (chip "WhatsApp").');
     }
     if (u.connection === 'open') {
       estado = 'CONECTADO'; qr = null; numero = sock.user?.id?.split(':')[0] ?? null;
@@ -54,17 +73,29 @@ async function conectar() {
     }
     if (u.connection === 'close') {
       const codigo = u.lastDisconnect?.error?.output?.statusCode;
-      const sesionCerrada = codigo === DisconnectReason.loggedOut;
-      estado = 'CONECTANDO'; qr = null;
       console.log('Conexión cerrada', codigo ?? '');
-      if (sesionCerrada) {
-        console.error('Sesión cerrada desde el teléfono. Borra la carpeta ./auth y reinicia para vincular de nuevo.');
-        estado = 'APAGADO'; await publicar(); process.exit(1);
+      if (codigo === DisconnectReason.loggedOut) {
+        // Se quitó la vinculación desde el teléfono: se limpia la sesión y se ofrece un QR nuevo, sin intervención manual.
+        console.log('Sesión cerrada desde el teléfono: generando un QR nuevo.');
+        await reiniciarVinculo(false).catch((e) => console.error(e));
+        return;
       }
-      setTimeout(() => conectar().catch((e) => console.error(e)), 3000);
+      estado = 'CONECTANDO'; qr = null;
+      await publicar();
+      setTimeout(() => { if (mia === generacion) conectar().catch((e) => console.error(e)); }, 3000);
+      return;
     }
     await publicar();
   });
+}
+
+/** Órdenes desde el sistema (administrador): DESVINCULAR cierra la sesión del teléfono; REVINCULAR pide un QR nuevo. */
+async function atenderComandos() {
+  const { rows } = await db.query(`WITH previo AS (SELECT comando FROM wa_estado WHERE id = 1 AND comando IS NOT NULL FOR UPDATE)
+     UPDATE wa_estado SET comando = NULL FROM previo WHERE wa_estado.id = 1 RETURNING previo.comando`);
+  const c = rows[0]?.comando;
+  if (c === 'DESVINCULAR') await reiniciarVinculo(true);
+  else if (c === 'REVINCULAR') await reiniciarVinculo(false);
 }
 
 const { APP_URL } = process.env;
@@ -131,6 +162,12 @@ await asegurarTablas();
 await db.query(`UPDATE wa_outbox SET estado = 'PENDIENTE' WHERE estado = 'ENVIANDO'`);
 await conectar();
 setInterval(() => { void publicar(); }, 20000);
+let atendiendo = false;
+setInterval(async () => {
+  if (atendiendo) return;
+  atendiendo = true;
+  try { await atenderComandos(); } catch (e) { console.error('comando', e.message); } finally { atendiendo = false; }
+}, 3000);
 let ocupado = false;
 setInterval(async () => {
   if (ocupado) return;

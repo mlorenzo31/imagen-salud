@@ -51,6 +51,8 @@ export async function asegurarTablasWhatsapp(db: Db): Promise<void> {
       creado TIMESTAMPTZ NOT NULL DEFAULT now(),
       enviado TIMESTAMPTZ
     )`);
+  await db.query(`ALTER TABLE wa_estado ADD COLUMN IF NOT EXISTS comando TEXT`);
+  await db.query(`INSERT INTO wa_estado (id) VALUES (1) ON CONFLICT DO NOTHING`);
   await db.query(`ALTER TABLE wa_outbox ADD COLUMN IF NOT EXISTS token TEXT`);
   await db.query(`CREATE INDEX IF NOT EXISTS wa_outbox_pend_idx ON wa_outbox (estado, id)`);
   await db.query(`
