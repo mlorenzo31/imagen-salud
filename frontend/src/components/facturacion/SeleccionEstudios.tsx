@@ -42,7 +42,8 @@ export const SeleccionEstudios: React.FC<SeleccionEstudiosProps> = ({ selectedAr
       </select>
     </div>
 
-    {/* 2. Selector de Estudio */}
+    {/* 2. Selector de Estudio (Consultas no lo usa: el precio depende del médico) */}
+    {selectedArea !== 'CONSULTAS' && (
     <div className="md:col-span-8">
       <label className="block text-[10px] font-black text-slate-600 uppercase mb-1">
         Estudio o Procedimiento
@@ -62,6 +63,7 @@ export const SeleccionEstudios: React.FC<SeleccionEstudiosProps> = ({ selectedAr
         })}
       </select>
     </div>
+    )}
 
     {/* 3. Selector / Reglas de Médico Tratante */}
     <div className="md:col-span-8">
