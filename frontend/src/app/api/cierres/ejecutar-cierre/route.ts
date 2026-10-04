@@ -1,10 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { ApiError, errorResponse, fechaHoraLocal, sesionUsuario, withTransaction } from '@/lib/apiHelpers';
 import { consolidarCierre, evaluarDia } from '@/lib/cierre';
+import { exigirPinSesion } from '@/lib/pin';
 
 export async function POST(req: NextRequest) {
   try {
     const body = (await req.json().catch(() => ({}))) as Record<string, unknown>;
+    exigirPinSesion(req, body.pin);
     const fechaIn = String(body.fecha || body.fecha_cierre || '');
     const fecha = /^\d{4}-\d{2}-\d{2}$/.test(fechaIn) ? fechaIn : fechaHoraLocal().fecha;
     const usuario = sesionUsuario(req);

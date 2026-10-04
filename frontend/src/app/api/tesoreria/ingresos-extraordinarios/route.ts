@@ -16,7 +16,7 @@ const schema = z.object({
 
 export async function POST(request: NextRequest) {
   try {
-    await exigirJornadaAlDia();
+    await exigirJornadaAlDia(request.headers.get('x-session-role') === 'admin');
     const b = await parseBody(request, schema);
     const usuario = sesionUsuario(request);
     const montoCents = toCents(b.monto);

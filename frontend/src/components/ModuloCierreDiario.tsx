@@ -23,6 +23,7 @@ import {
 } from 'lucide-react';
 import { UserRole, PacientePendiente, ResumenCierre } from '@/types';
 import { BloqueoCierrePendiente } from './BloqueoCierrePendiente';
+import { PinCierreDialog } from './PinCierreDialog';
 import { hoyLocal } from '@/lib/date';
 
 interface ModuloCierreDiarioProps {
@@ -71,13 +72,19 @@ export const ModuloCierreDiario: React.FC<ModuloCierreDiarioProps> = ({ currentR
     verificarEstado();
   }, [fechaCierre]);
 
-  const handleEjecutarCierre = async () => {
+  const [pidiendoPin, setPidiendoPin] = useState(false);
+  const [errorPin, setErrorPin] = useState<string | null>(null);
+
+  const handleEjecutarCierre = () => {
     if (!estadoDiario?.puedeCerrar) {
       setMostrarModalBloqueo(true);
       return;
     }
-    if (!confirm('¿Confirma la ejecución del Cierre Diario Oficial? Esta acción bloqueará la edición de operaciones de este día.')) return;
+    setErrorPin(null);
+    setPidiendoPin(true);
+  };
 
+  const confirmarCierre = async (pin: string) => {
     setEjecutandoCierre(true);
     try {
       const res = await fetch('/api/cierres/ejecutar-cierre', {
@@ -88,17 +95,19 @@ export const ModuloCierreDiario: React.FC<ModuloCierreDiarioProps> = ({ currentR
           usuario_responsable: isAdmin ? 'Dr. Administrador' : 'Cajero de Turno',
           arqueo_divisas_fisico: Number(arqueoDivisasFisico || 0),
           arqueo_bs_fisico: Number(arqueoBsFisico || 0),
-          observaciones: observacionesCierre
+          observaciones: observacionesCierre,
+          pin
         })
       });
 
       const data = await res.json();
       if (res.ok) {
+        setPidiendoPin(false);
         setCierreRealizado(data.cierre);
         setMostrarCertificado(true);
         verificarEstado();
       } else {
-        alert(data.error || 'Error al ejecutar cierre');
+        setErrorPin(data.error || 'Error al ejecutar cierre');
       }
     } catch (err) {
       console.error(err);
@@ -113,6 +122,7 @@ export const ModuloCierreDiario: React.FC<ModuloCierreDiarioProps> = ({ currentR
 
   return (
     <div className="space-y-6">
+      <PinCierreDialog open={pidiendoPin} cargando={ejecutandoCierre} error={errorPin} onCancelar={() => setPidiendoPin(false)} onConfirmar={confirmarCierre} />
       {/* Header */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 bg-white p-5 rounded-2xl border border-slate-200 shadow-sm">
         <div>

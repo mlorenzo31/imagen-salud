@@ -1,6 +1,6 @@
 import { NextResponse, type NextRequest } from 'next/server';
-import { timingSafeEqual } from 'node:crypto';
 import { SESSION_COOKIE, SESSION_TTL_SECONDS, signSession } from '@/lib/auth';
+import { PIN_ENV, pinCoincide } from '@/lib/pin';
 import type { ModoOperacion, UserRole } from '@/types';
 
 const NOMBRES: Record<UserRole, string> = {
@@ -8,22 +8,11 @@ const NOMBRES: Record<UserRole, string> = {
   asistente: 'Lcda. Asistente Administrativo',
   cajero: 'Cajero(a) de Turno',
 };
-const PIN_ENV: Record<UserRole, string> = {
-  admin: 'AUTH_PIN_ADMIN',
-  asistente: 'AUTH_PIN_ASISTENTE',
-  cajero: 'AUTH_PIN_CAJERO',
-};
 
 // Limitador en memoria por IP: 5 fallos / 15 min (suficiente para una instancia; usar Redis si se escala).
 const intentos = new Map<string, { n: number; hasta: number }>();
 const MAX_FALLOS = 5;
 const VENTANA_MS = 15 * 60 * 1000;
-
-function pinCoincide(a: string, b: string): boolean {
-  const ba = Buffer.from(a);
-  const bb = Buffer.from(b);
-  return ba.length === bb.length && timingSafeEqual(ba, bb);
-}
 
 export async function POST(request: NextRequest) {
   const ip = request.headers.get('x-forwarded-for')?.split(',')[0].trim() || 'local';

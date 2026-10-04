@@ -179,9 +179,9 @@ export async function POST(req: NextRequest) {
     } catch {
       throw new ApiError(400, 'Cuerpo JSON inválido.');
     }
-    await exigirJornadaAlDia();
-    const usuario = sesionUsuario(req);
     const esAdmin = req.headers.get('x-session-role') === 'admin';
+    await exigirJornadaAlDia(esAdmin);
+    const usuario = sesionUsuario(req);
     const ahora = fechaHoraLocal();
     // Solo el admin puede fijar una fecha distinta a la del servidor.
     const fecha = esAdmin && /^\d{4}-\d{2}-\d{2}$/.test(str(data.fecha)) ? str(data.fecha) : ahora.fecha;
@@ -290,11 +290,11 @@ export async function POST(req: NextRequest) {
           `INSERT INTO pacientes (cedula, nombre, fecha_nacimiento, direccion, telefono)
            VALUES ($1,$2,$3,$4,$5)
            ON CONFLICT (cedula) DO UPDATE
-           SET nombre = EXCLUDED.nombre,
+           SET nombre = COALESCE(NULLIF(EXCLUDED.nombre, ''), pacientes.nombre),
                fecha_nacimiento = COALESCE(EXCLUDED.fecha_nacimiento, pacientes.fecha_nacimiento),
                direccion = COALESCE(EXCLUDED.direccion, pacientes.direccion),
                telefono = COALESCE(EXCLUDED.telefono, pacientes.telefono)`,
-          [cedula, str(data.nombre), fechaNac, str(data.direccion) || null, str(data.telefono) || null]
+          [cedula, nombre, fechaNac, str(data.direccion || data.direccion_paciente).trim().toUpperCase() || null, str(data.telefono || data.telefono_paciente).trim() || null]
         );
       }
 

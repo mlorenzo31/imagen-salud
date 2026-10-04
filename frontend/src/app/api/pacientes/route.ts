@@ -14,7 +14,18 @@ export async function GET(req: NextRequest) {
       if (!digitos) return NextResponse.json(null);
 
       const result = await pool.query(
-        "SELECT id, cedula, nombre, fecha_nacimiento, direccion, telefono FROM pacientes WHERE regexp_replace(cedula, '[^0-9]', '', 'g') = $1 LIMIT 1",
+        `SELECT p.id, p.cedula, COALESCE(NULLIF(p.nombre, ''), u.nombre_paciente, '') AS nombre,
+                COALESCE(p.fecha_nacimiento, u.fecha_nacimiento_paciente) AS fecha_nacimiento,
+                COALESCE(NULLIF(p.direccion, ''), '') AS direccion,
+                COALESCE(NULLIF(p.telefono, ''), u.telefono_paciente, '') AS telefono
+         FROM pacientes p
+         LEFT JOIN LATERAL (
+           SELECT nombre_paciente, telefono_paciente, fecha_nacimiento_paciente FROM facturas_caja f
+           WHERE regexp_replace(f.cedula_paciente, '[^0-9]', '', 'g') = $1 AND COALESCE(f.nombre_paciente, '') <> ''
+           ORDER BY f.id DESC LIMIT 1
+         ) u ON TRUE
+         WHERE regexp_replace(p.cedula, '[^0-9]', '', 'g') = $1
+         ORDER BY (p.nombre <> '') DESC, p.id DESC LIMIT 1`,
         [digitos]
       );
       if (result.rows.length === 0) return NextResponse.json(null);
