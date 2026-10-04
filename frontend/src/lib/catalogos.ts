@@ -99,8 +99,7 @@ export const ESPECIALISTAS_MEDICOS: Record<string, EspecialistaItem[]> = {
     { nombre: "Rafael Bencomo", especialidad: "Ginecología & Obstetricia" },
     { nombre: "Iraima Macero", especialidad: "Ginecología & Obstetricia" },
     { nombre: "Oriana Armas", especialidad: "Ginecología & Obstetricia" },
-    { nombre: "Darel Palacios", especialidad: "Ginecología & Obstetricia" },
-    { nombre: "Dra. Silvia", especialidad: "Ginecología & Obstetricia" }
+    { nombre: "Darel Palacios", especialidad: "Ginecología & Obstetricia" }
   ],
   ECOGRAFIA_AM: [{ nombre: "Dra. Silvia", especialidad: "Ecografía Matutina" }],
   ECOGRAFIA_PM: [{ nombre: "Dra. Carmen", especialidad: "Ecografía Vespertina" }],
@@ -109,6 +108,6 @@ export const ESPECIALISTAS_MEDICOS: Record<string, EspecialistaItem[]> = {
 };
 
 export const PATOLOGO_OFICIAL = {
-  nombre: "Dra. Carmen Rodríguez",
+  nombre: "Patólogo",
   especialidad: "Patología y Citología Clínica"
 };
