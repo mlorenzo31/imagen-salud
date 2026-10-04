@@ -3,7 +3,6 @@
 import { despacharWhatsApp, resumenOmitidos } from '@/lib/despacharWhatsApp';
 import { subirAdjuntos } from '@/lib/subirAdjuntos';
 import React, { useState, useEffect, useMemo, useRef } from 'react';
-import { ejecutarLlamadoCompleto } from '@/lib/audioLlamado';
 import { UserRole, ModoOperacion, ReembolsoPendiente, ServicioFactura } from '@/types';
 import { 
   GrupoClinico, 
@@ -134,7 +133,7 @@ export const ModuloKanbanSalaEspera: React.FC<ModuloKanbanSalaEsperaProps> = ({
   }, []);
 
   // Acciones de sala: el servidor valida (paciente en un solo grupo, sala libre, médico libre) y decide la sala.
-  const accionSala = async (accion: 'LLAMAR' | 'FINALIZAR' | 'AUSENTE', ids: number[], box?: string) => {
+  const accionSala = async (accion: 'LLAMAR' | 'RELLAMAR' | 'FINALIZAR' | 'AUSENTE', ids: number[], box?: string) => {
     const res = await fetch('/api/sala/accion', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -150,18 +149,12 @@ export const ModuloKanbanSalaEspera: React.FC<ModuloKanbanSalaEsperaProps> = ({
     return json;
   };
 
-  const anunciar = async (t: FilaSala, box: string | null) => {
-    const turnoTexto = t.grupo + '-' + String(t.turno_num ?? 0).padStart(2, '0');
-    await ejecutarLlamadoCompleto(turnoTexto, t.nombre_paciente ?? '', box ?? RECURSOS[t.recurso].boxes[0]);
-  };
-
   const handleLlamar = async (ids: number[], box?: string) => {
     if (isReadOnly) return alert('Acción restringida en Modo Vista (Read-Only).');
     setLlamandoId(ids[0]);
     try {
-      const r = await accionSala('LLAMAR', ids, box);
-      const primero = turnos.find(t => t.id === ids[0]);
-      if (r && primero) await anunciar(primero, r.asignaciones?.find(a => a.id === ids[0])?.box ?? null);
+      // La voz se emite solo en la TV de la sala de espera, no en este puesto.
+      await accionSala('LLAMAR', ids, box);
     } catch (err) {
       console.error('Error al llamar:', err);
     } finally {
@@ -182,7 +175,7 @@ export const ModuloKanbanSalaEspera: React.FC<ModuloKanbanSalaEsperaProps> = ({
 
   const handleRellamar = async (t: FilaSala) => {
     if (isReadOnly) return alert('Modo Vista activo.');
-    await anunciar(t, t.box);
+    await accionSala('RELLAMAR', [t.id]);
   };
 
   const handleAnularTurno = (t: FilaSala) => {
