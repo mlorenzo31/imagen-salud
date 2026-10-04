@@ -5,7 +5,7 @@ import { planificarLlamado } from '@/lib/sala';
 import { SELECT_SALA, aTarea, recalcularFacturas, sincronizarSala, type FilaSala } from '@/lib/salaDb';
 
 const Schema = z.object({
-  accion: z.enum(['LLAMAR', 'FINALIZAR', 'AUSENTE']),
+  accion: z.enum(['LLAMAR', 'RELLAMAR', 'FINALIZAR', 'AUSENTE']),
   ids: z.array(z.number().int().positive()).min(1).max(20),
   box: z.string().max(60).optional(),
 });
@@ -38,6 +38,12 @@ export async function POST(req: NextRequest) {
       }
 
       if (filas.some((r) => r.estado !== 'ATENCION')) throw new ApiError(409, 'El paciente no está en atención.', 'ESTADO_INVALIDO');
+
+      // RELLAMAR: la TV de la sala detecta el cambio de llamado_en y vuelve a anunciar por voz.
+      if (accion === 'RELLAMAR') {
+        await c.query(`UPDATE sala_servicios SET llamado_en = now() WHERE id = ANY($1::int[])`, [ids]);
+        return { rellamados: ids };
+      }
 
       if (accion === 'FINALIZAR') {
         await c.query(`UPDATE sala_servicios SET estado = 'FINALIZADO', finalizado_en = now() WHERE id = ANY($1::int[])`, [ids]);

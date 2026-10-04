@@ -23,6 +23,7 @@ interface TurnoItem {
   fecha: string;
   grupo_clinico?: GrupoClinico;
   box_asignado?: string;
+  llamado_en?: string | null;
   es_unificado?: boolean;
   estudios_unificados?: string[];
 }
@@ -40,7 +41,7 @@ export default function PantallaTVSalaEspera() {
     B: false,
     C: false
   });
-  const anunciados = useRef<Set<number>>(new Set());
+  const anunciados = useRef<Map<number, string>>(new Map());
   const cargaInicial = useRef(false);
 
   // Reloj digital en tiempo real
@@ -84,10 +85,12 @@ export default function PantallaTVSalaEspera() {
 
         // Anunciar cada turno que pasa a ATENCIÓN (varios a la vez: p. ej. ecografía y ginecología).
         const enAtencion = mapeados.filter(t => t.estado === 'ATENCION');
-        const nuevos = enAtencion.filter(t => !anunciados.current.has(t.id));
+        // Nuevo llamado = turno que entra a ATENCIÓN o cuyo llamado_en cambió (re-llamado desde la sala).
+        const marca = (t: TurnoItem) => String(t.llamado_en ?? '');
+        const nuevos = enAtencion.filter(t => anunciados.current.get(t.id) !== marca(t));
         const primeraCarga = !cargaInicial.current;
         cargaInicial.current = true;
-        anunciados.current = new Set(enAtencion.map(t => t.id));
+        anunciados.current = new Map(enAtencion.map(t => [t.id, marca(t)]));
         if (!primeraCarga) {
           for (const t of nuevos) {
             const g = t.grupo_clinico as GrupoClinico;

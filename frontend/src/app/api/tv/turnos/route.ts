@@ -18,7 +18,7 @@ export async function GET() {
     await sincronizarSala(pool);
     const r = await pool.query(`
       SELECT s.id, f.turno_num, f.nombre_paciente, s.estudio, s.medico, s.estado, f.hora, f.fecha,
-             s.grupo AS grupo_clinico, s.box AS box_asignado
+             s.grupo AS grupo_clinico, s.box AS box_asignado, s.llamado_en
         FROM sala_servicios s JOIN facturas_caja f ON f.id = s.factura_id
        WHERE f.estado IN ('ESPERA', 'ATENCION') AND s.estado IN ('ESPERA', 'ATENCION')
        ORDER BY s.retorno DESC, s.orden_cola, s.idx
