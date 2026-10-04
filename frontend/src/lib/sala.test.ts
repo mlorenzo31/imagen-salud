@@ -8,6 +8,13 @@ describe('clasificarServicio', () => {
     expect(clasificarServicio('Mamografía Digital', 'MAMOGRAFIA').grupo).toBe('B');
     expect(clasificarServicio('Consulta', 'CONSULTAS').grupo).toBe('C');
   });
+  it('SOLO ECO y Doppler Obstétrico siguen el área elegida por el cajero', () => {
+    for (const e of ['SOLO ECO', 'DOPPLER OBSTETRICO']) {
+      expect(clasificarServicio(e, 'ECOGRAFIA_AM').recurso).toBe('ECO');
+      expect(clasificarServicio(e, 'ECOGRAFIA_PM').recurso).toBe('ECO');
+      expect(clasificarServicio(e, 'GINECOLOGIA').recurso).toBe('GINE');
+    }
+  });
   it('por nombre (con tildes) cuando no hay área', () => {
     expect(clasificarServicio('Tórax PA (1 Proyección)').recurso).toBe('RX');
     expect(clasificarServicio('Doppler Carotido').recurso).toBe('ECO');
