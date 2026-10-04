@@ -18,6 +18,23 @@ export const METODOS_ARQUEO = [
   { clave: 'pago_movil_bs', campo: 'total_pago_movil_bs', etiqueta: 'Pago móvil (Bs)' },
 ] as const;
 
+const CUENTA_A_METODO: Record<string, string> = { EFECTIVO_USD: 'divisas_usd', EFECTIVO_BS: 'efectivo_bs', PUNTO_VENTA_BS: 'punto_bs', PAGO_MOVIL_BS: 'pago_movil_bs' };
+
+/** Egresos e ingresos extraordinarios del día por medio de pago (centavos), según la cuenta afectada. */
+export async function movimientosCaja(db: Pick<PoolClient, 'query'>, fecha: string): Promise<Record<string, { egresos: number; ingresos: number }>> {
+  const out: Record<string, { egresos: number; ingresos: number }> = Object.fromEntries(METODOS_ARQUEO.map((m) => [m.clave, { egresos: 0, ingresos: 0 }]));
+  const acumular = async (sql: string, campo: 'egresos' | 'ingresos') => {
+    const r = await db.query(sql, [fecha]).catch(() => ({ rows: [] as { codigo: string; t: string }[] }));
+    for (const x of r.rows as { codigo: string; t: string }[]) {
+      const m = CUENTA_A_METODO[x.codigo];
+      if (m) out[m][campo] += toCents(x.t);
+    }
+  };
+  await acumular('SELECT c.codigo, COALESCE(SUM(e.total_debitado), 0) AS t FROM egresos_operativos e JOIN cuentas_bancarias c ON c.id = e.cuenta_id WHERE e.fecha = $1 GROUP BY c.codigo', 'egresos');
+  await acumular('SELECT c.codigo, COALESCE(SUM(i.monto), 0) AS t FROM ingresos_extraordinarios i JOIN cuentas_bancarias c ON c.id = i.cuenta_id WHERE i.fecha = $1 GROUP BY c.codigo', 'ingresos');
+  return out;
+}
+
 export interface LineaArqueo { metodo: string; esperado: number; contado: number; diferencia: number }
 
 /** Compara lo contado con lo esperado por método (centavos). diferencia > 0 = sobrante, < 0 = faltante. */
@@ -129,6 +146,7 @@ export async function evaluarDia(fecha: string | null) {
     pacientesWhatsAppPendientes: whatsapp.rows,
     puedeCerrar: sala.rows.length === 0 && whatsapp.rows.length === 0,
     resumen: resumen.rows[0] || {},
+    movimientos: fecha ? await movimientosCaja(pool, fecha) : {},
   };
 }
 
@@ -187,7 +205,9 @@ export async function consolidarCierre(client: PoolClient, fecha: string, usuari
   // Arqueo: lo contado por método frente a lo esperado según las facturas del día; queda registrado el sobrante/faltante.
   let arqueo: LineaArqueo[] = [];
   if (conteo) {
-    arqueo = calcularArqueo(Object.fromEntries(METODOS_ARQUEO.map((m) => [m.clave, toCents(tot[m.campo])])), conteo);
+    // Esperado = cobrado en facturas − egresos + ingresos extraordinarios del día, por medio de pago.
+    const mov = await movimientosCaja(client, fecha);
+    arqueo = calcularArqueo(Object.fromEntries(METODOS_ARQUEO.map((m) => [m.clave, toCents(tot[m.campo]) - mov[m.clave].egresos + mov[m.clave].ingresos])), conteo);
     await client.query(`CREATE TABLE IF NOT EXISTS cierre_arqueos (
       fecha DATE NOT NULL, metodo VARCHAR(30) NOT NULL, esperado_cents BIGINT NOT NULL, contado_cents BIGINT NOT NULL,
       diferencia_cents BIGINT NOT NULL, usuario VARCHAR(100), creado_en TIMESTAMPTZ DEFAULT now(), PRIMARY KEY (fecha, metodo))`);
