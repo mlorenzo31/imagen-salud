@@ -43,7 +43,7 @@ export const ESTUDIOS_CLINICOS: Record<string, EstudioItem[]> = {
     { nombre: "Doppler Arterial Y Venoso 1 Miembro", precio: 35, area: "ECOGRAFIA_PM", sala: "SALA_ECO_PM", dist: { imagen: 0, medico: 14, eco: 21, patologo: 0 } },
     { nombre: "Doppler Aorta Abdominal", precio: 35, area: "ECOGRAFIA_PM", sala: "SALA_ECO_PM", dist: { imagen: 0, medico: 14, eco: 21, patologo: 0 } },
     { nombre: "SOLO ECO", precio: 20, area: "ECOGRAFIA_PM", sala: "SALA_ECO_PM", dist: { imagen: 0, medico: 6, eco: 14, patologo: 0 } },
-    { nombre: "DOPPLER OBSTETRICO", precio: 35, area: "ECOGRAFIA_PM", sala: "SALA_ECO_PM", dist: { imagen: 5, medico: 9, eco: 21, patologo: 0 } }
+    { nombre: "DOPPLER OBSTETRICO", precio: 35, area: "ECOGRAFIA_PM", sala: "SALA_ECO_PM", dist: { imagen: 0, medico: 14, eco: 21, patologo: 0 } }
   ],
   RADIOLOGIA: [
     { nombre: "Tórax PA (1 Proyección)", precio: 25, area: "RADIOLOGIA", sala: "SALA_RAYOS_X", dist: { imagen: 25, medico: 0, eco: 0, patologo: 0 } },
@@ -71,8 +71,7 @@ export const ESTUDIOS_CLINICOS: Record<string, EstudioItem[]> = {
     { nombre: "CONSULTA +CITOLOGIA", precio: 35, area: "GINECOLOGIA", sala: "CONSULTORIO_GINECO", dist: { imagen: 16, medico: 14, eco: 0, patologo: 5 } },
     { nombre: "CITOLOGIA", precio: 25, area: "GINECOLOGIA", sala: "CONSULTORIO_GINECO", dist: { imagen: 12, medico: 8, eco: 0, patologo: 5 } },
     { nombre: "RETIRO DE APARATO", precio: 50, area: "GINECOLOGIA", sala: "CONSULTORIO_GINECO", dist: { imagen: 30, medico: 20, eco: 0, patologo: 0 } },
-    // El reparto original sumaba $30 de $35: los $5 faltantes se asignan a la clínica (confirmar con la dirección).
-    { nombre: "DOPPLER OBSTETRICO", precio: 35, area: "GINECOLOGIA", sala: "CONSULTORIO_GINECO", dist: { imagen: 5, medico: 9, eco: 21, patologo: 0 } },
+    { nombre: "DOPPLER OBSTETRICO", precio: 35, area: "GINECOLOGIA", sala: "CONSULTORIO_GINECO", dist: { imagen: 0, medico: 14, eco: 21, patologo: 0 } },
     { nombre: "MORFOLOGICO SABADO", precio: 45, area: "GINECOLOGIA", sala: "CONSULTORIO_GINECO", dist: { imagen: 0, medico: 13.5, eco: 31.5, patologo: 0 } },
     { nombre: "BIOPSIA", precio: 160, area: "GINECOLOGIA", sala: "CONSULTORIO_GINECO", dist: { imagen: 50, medico: 50, eco: 0, patologo: 60 } }
   ]
