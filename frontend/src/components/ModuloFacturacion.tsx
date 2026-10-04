@@ -240,13 +240,15 @@ export const ModuloFacturacion: React.FC<ModuloFacturacionProps> = ({ onFacturaE
             setPacienteExiste(false);
           }
         } else {
+          // Error del servidor: se muestra (no se confunde con "paciente nuevo") para poder reintentar.
+          const j = (await res.json().catch(() => ({}))) as { error?: string };
           limpiarDatosPaciente();
-          setPacienteExiste(false);
+          setErroresFicha({ cedula: `No se pudo buscar el paciente: ${j.error ?? `error ${res.status}`}. Reintente.` });
         }
       } catch (err) {
         console.error('Error buscando paciente:', err);
         limpiarDatosPaciente();
-        setPacienteExiste(false);
+        setErroresFicha({ cedula: 'Sin conexión con el servidor al buscar el paciente. Reintente.' });
       } finally {
         setBuscandoPaciente(false);
       }
