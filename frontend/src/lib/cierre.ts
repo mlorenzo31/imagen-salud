@@ -10,6 +10,35 @@ type Valor = string | number | boolean | null;
 /** Días anteriores sin cierre que aún obligan a cerrar (más antiguos se consideran historial heredado). */
 export const VENTANA_DIAS_CIERRE = 7;
 
+/** Medios de pago que se cuentan al cerrar: clave del arqueo y columna de totales del sistema. */
+export const METODOS_ARQUEO = [
+  { clave: 'divisas_usd', campo: 'total_divisas_usd', etiqueta: 'Efectivo divisas ($)' },
+  { clave: 'efectivo_bs', campo: 'total_efectivo_bs', etiqueta: 'Efectivo bolívares (Bs)' },
+  { clave: 'punto_bs', campo: 'total_punto_bs', etiqueta: 'Punto de venta (Bs)' },
+  { clave: 'pago_movil_bs', campo: 'total_pago_movil_bs', etiqueta: 'Pago móvil (Bs)' },
+] as const;
+
+export interface LineaArqueo { metodo: string; esperado: number; contado: number; diferencia: number }
+
+/** Compara lo contado con lo esperado por método (centavos). diferencia > 0 = sobrante, < 0 = faltante. */
+export function calcularArqueo(esperado: Record<string, number>, contado: Record<string, number>): LineaArqueo[] {
+  return METODOS_ARQUEO.map((m) => ({
+    metodo: m.clave, esperado: esperado[m.clave] ?? 0, contado: contado[m.clave] ?? 0, diferencia: (contado[m.clave] ?? 0) - (esperado[m.clave] ?? 0),
+  }));
+}
+
+/** Valida y convierte a centavos lo contado por método; todos son obligatorios (0 es un valor válido). */
+export function leerConteo(raw: unknown): Record<string, number> {
+  const o = (raw && typeof raw === 'object' ? raw : {}) as Record<string, unknown>;
+  const out: Record<string, number> = {};
+  for (const m of METODOS_ARQUEO) {
+    const v = String(o[m.clave] ?? '').trim();
+    if (!/^\d+(\.\d{1,2})?$/.test(v)) throw new ApiError(400, `Indique el monto contado de «${m.etiqueta}» (0 si no hubo).`);
+    out[m.clave] = toCents(v);
+  }
+  return out;
+}
+
 export interface FilaActividad { f: string; n: number; pend: number }
 
 /**
@@ -104,7 +133,7 @@ export async function evaluarDia(fecha: string | null) {
 }
 
 /** Escribe (o actualiza) el cierre de un día con totales completos. Compatible con ambas variantes del esquema. */
-export async function consolidarCierre(client: PoolClient, fecha: string, usuario: string, observaciones: string) {
+export async function consolidarCierre(client: PoolClient, fecha: string, usuario: string, observaciones: string, conteo?: Record<string, number>) {
   await client.query('SELECT pg_advisory_xact_lock(hashtext($1))', [`cierre:${fecha}`]);
   const ahora = fechaHoraLocal();
 
@@ -154,5 +183,21 @@ export async function consolidarCierre(client: PoolClient, fecha: string, usuari
     );
     fila = r.rows[0];
   }
-  return { fila, tot };
+
+  // Arqueo: lo contado por método frente a lo esperado según las facturas del día; queda registrado el sobrante/faltante.
+  let arqueo: LineaArqueo[] = [];
+  if (conteo) {
+    arqueo = calcularArqueo(Object.fromEntries(METODOS_ARQUEO.map((m) => [m.clave, toCents(tot[m.campo])])), conteo);
+    await client.query(`CREATE TABLE IF NOT EXISTS cierre_arqueos (
+      fecha DATE NOT NULL, metodo VARCHAR(30) NOT NULL, esperado_cents BIGINT NOT NULL, contado_cents BIGINT NOT NULL,
+      diferencia_cents BIGINT NOT NULL, usuario VARCHAR(100), creado_en TIMESTAMPTZ DEFAULT now(), PRIMARY KEY (fecha, metodo))`);
+    for (const l of arqueo) {
+      await client.query(
+        `INSERT INTO cierre_arqueos (fecha, metodo, esperado_cents, contado_cents, diferencia_cents, usuario) VALUES ($1,$2,$3,$4,$5,$6)
+         ON CONFLICT (fecha, metodo) DO UPDATE SET esperado_cents = $3, contado_cents = $4, diferencia_cents = $5, usuario = $6, creado_en = now()`,
+        [fecha, l.metodo, l.esperado, l.contado, l.diferencia, usuario],
+      );
+    }
+  }
+  return { fila, tot, arqueo };
 }
