@@ -122,7 +122,7 @@ export const SeleccionEstudios: React.FC<SeleccionEstudiosProps> = ({ selectedAr
           <div>
             <p className="text-xs font-black text-purple-950">Estudio con Análisis de Patología</p>
             <p className="text-[10px] text-purple-700">
-              Asignado automáticamente a: <span className="font-bold">{PATOLOGO_OFICIAL.nombre}</span> ({PATOLOGO_OFICIAL.especialidad})
+              Asignado automáticamente a: <span className="font-bold">{PATOLOGO_OFICIAL.nombre}</span>
             </p>
           </div>
         </div>
