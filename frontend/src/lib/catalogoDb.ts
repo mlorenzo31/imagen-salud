@@ -91,6 +91,10 @@ export function asegurarCatalogo(): Promise<void> {
               AND EXISTS (SELECT 1 FROM catalogo_estudios p WHERE p.area = 'ECOGRAFIA_PM' AND LOWER(p.nombre) = LOWER(c.nombre))`);
           await mig.query(`UPDATE catalogo_estudios c SET area = 'ECOGRAFIA_PM', sala = 'SALA_ECO_PM', actualizado_en = now()
             WHERE c.area = 'ECOGRAFIA_AM' AND LOWER(c.nombre) NOT IN ('abdominal','renal','mamario','tiroideo') AND c.activo`);
+          // Los 4 de AM también en PM, con el mismo precio y reparto que ya tienen.
+          await mig.query(`INSERT INTO catalogo_estudios (area, nombre, precio_usd, sala, dist_imagen, dist_medico, dist_eco, dist_patologo)
+            SELECT 'ECOGRAFIA_PM', nombre, precio_usd, 'SALA_ECO_PM', dist_imagen, dist_medico, dist_eco, dist_patologo
+            FROM catalogo_estudios WHERE area = 'ECOGRAFIA_AM' AND activo ON CONFLICT DO NOTHING`);
           for (const e of ESTUDIOS_CLINICOS.ECOGRAFIA_PM) {
             await mig.query(
               `INSERT INTO catalogo_estudios (area, nombre, precio_usd, sala, dist_imagen, dist_medico, dist_eco, dist_patologo)
