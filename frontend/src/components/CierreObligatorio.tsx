@@ -5,6 +5,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/u
 import { Button } from '@/components/ui/button';
 import { Lock, ShieldAlert } from 'lucide-react';
 import { BloqueoCierrePendiente } from '@/components/BloqueoCierrePendiente';
+import { PinCierreDialog } from '@/components/PinCierreDialog';
 import { getErrorMessage } from '@/lib/utils';
 import type { PacientePendiente, ResumenCierre, UserRole } from '@/types';
 
@@ -35,6 +36,8 @@ export const CierreObligatorio: React.FC<Props> = ({ role, onResuelto }) => {
   const [cerrando, setCerrando] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const esAdmin = role === 'admin';
+  const [abierto, setAbierto] = useState(false);
+  const [pidiendoPin, setPidiendoPin] = useState(false);
 
   const refrescar = useCallback(async () => {
     try {
@@ -52,7 +55,7 @@ export const CierreObligatorio: React.FC<Props> = ({ role, onResuelto }) => {
     return () => { clearTimeout(inicial); clearInterval(id); window.removeEventListener('focus', refrescar); };
   }, [refrescar]);
 
-  const cerrarCaja = async () => {
+  const cerrarCaja = async (pin: string) => {
     if (!estado?.fecha) return;
     setCerrando(true);
     setError(null);
@@ -60,10 +63,11 @@ export const CierreObligatorio: React.FC<Props> = ({ role, onResuelto }) => {
       const res = await fetch('/api/cierres/ejecutar-cierre', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ fecha: estado.fecha, observaciones: 'Cierre obligatorio de jornada anterior' }),
+        body: JSON.stringify({ fecha: estado.fecha, observaciones: 'Cierre obligatorio de jornada anterior', pin }),
       });
       const data = await res.json().catch(() => ({}));
       if (!res.ok) throw new Error(data.error || 'No se pudo cerrar la caja.');
+      setPidiendoPin(false);
       await refrescar();
       onResuelto();
     } catch (err) {
@@ -75,6 +79,20 @@ export const CierreObligatorio: React.FC<Props> = ({ role, onResuelto }) => {
 
   if (!estado?.requiereCierre || !estado.fecha) return null;
 
+  // El administrador no se bloquea: puede operar y cerrar la caja pendiente cuando decida.
+  if (esAdmin && !abierto) {
+    return (
+      <button
+        type="button"
+        onClick={() => setAbierto(true)}
+        className="fixed bottom-4 right-4 z-50 flex items-center gap-2 rounded-2xl bg-clinica-coral px-4 py-3 text-xs font-black text-white shadow-xl hover:opacity-90"
+      >
+        <ShieldAlert className="w-4 h-4" />
+        Caja del {estado.fecha} sin cerrar · Cerrar ahora
+      </button>
+    );
+  }
+
   const sala = estado.pacientesPendientes ?? [];
   const wa = estado.pacientesWhatsAppPendientes ?? [];
 
@@ -84,7 +102,7 @@ export const CierreObligatorio: React.FC<Props> = ({ role, onResuelto }) => {
       <BloqueoCierrePendiente
         key={[...sala, ...wa].map((p) => p.id).join(',')}
         open
-        onOpenChange={() => { /* no se puede descartar: el cierre es obligatorio */ }}
+        onOpenChange={(o) => { if (!o) setAbierto(false); }}
         fechaPendiente={estado.fecha}
         pacientesPendientes={sala}
         pacientesWhatsAppPendientes={wa}
@@ -98,11 +116,11 @@ export const CierreObligatorio: React.FC<Props> = ({ role, onResuelto }) => {
   const r = estado.resumen ?? {};
   const pendientesParaOtros = sala.length + wa.length;
   return (
-    <Dialog open onOpenChange={() => { /* obligatorio */ }}>
+    <Dialog open onOpenChange={(o) => { if (esAdmin && !o) setAbierto(false); }}>
       <DialogContent
-        showCloseButton={false}
-        onInteractOutside={(e) => e.preventDefault()}
-        onEscapeKeyDown={(e) => e.preventDefault()}
+        showCloseButton={esAdmin}
+        onInteractOutside={(e) => { if (!esAdmin) e.preventDefault(); }}
+        onEscapeKeyDown={(e) => { if (!esAdmin) e.preventDefault(); }}
         className="sm:max-w-lg rounded-3xl p-6 bg-white shadow-2xl border-2 border-clinica-coral/40"
       >
         <DialogHeader>
@@ -115,7 +133,7 @@ export const CierreObligatorio: React.FC<Props> = ({ role, onResuelto }) => {
         <div className="space-y-3 text-sm text-slate-700">
           <p>
             La caja del día <strong className="font-mono">{estado.fecha}</strong> no fue cerrada. Para llevar el orden de los pacientes y la
-            contabilidad, no se puede operar hasta cerrarla.
+            contabilidad, el personal no puede operar hasta cerrarla.
           </p>
 
           <div className="grid grid-cols-2 gap-2 text-xs">
@@ -129,7 +147,7 @@ export const CierreObligatorio: React.FC<Props> = ({ role, onResuelto }) => {
             <>
               <p className="text-xs text-slate-500">Al cerrar, la sala de espera queda vacía en sus tres columnas y comienza la nueva jornada.</p>
               {error && <p className="text-xs font-bold text-clinica-coral">{error}</p>}
-              <Button onClick={cerrarCaja} disabled={cerrando || estado.puedeCerrar === false} className="w-full rounded-xl font-bold bg-clinica-primary hover:bg-clinica-primary-dark text-white">
+              <Button onClick={() => { setError(null); setPidiendoPin(true); }} disabled={cerrando || estado.puedeCerrar === false} className="w-full rounded-xl font-bold bg-clinica-primary hover:bg-clinica-primary-dark text-white">
                 <Lock className="w-4 h-4 mr-2" />
                 {cerrando ? 'Cerrando caja…' : `Cerrar caja del ${estado.fecha}`}
               </Button>
@@ -144,6 +162,7 @@ export const CierreObligatorio: React.FC<Props> = ({ role, onResuelto }) => {
           )}
         </div>
       </DialogContent>
+      <PinCierreDialog open={pidiendoPin} cargando={cerrando} error={error} onCancelar={() => setPidiendoPin(false)} onConfirmar={cerrarCaja} />
     </Dialog>
   );
 };

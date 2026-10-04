@@ -62,8 +62,9 @@ export async function jornadaPendiente(): Promise<string | null> {
   return elegirJornadaPendiente(act.rows.map((r) => ({ f: r.f, n: Number(r.n), pend: Number(r.pend) })), cerradas, hoy);
 }
 
-/** Bloquea operaciones de caja mientras exista un día anterior sin cerrar. */
-export async function exigirJornadaAlDia(): Promise<void> {
+/** Bloquea operaciones de caja mientras exista un día anterior sin cerrar (el administrador no se bloquea). */
+export async function exigirJornadaAlDia(esAdmin = false): Promise<void> {
+  if (esAdmin) return;
   const fecha = await jornadaPendiente();
   if (fecha) {
     throw new ApiError(409, `Debe cerrar la caja del día ${fecha} antes de continuar operando. Solicite al administrador el cierre diario.`, 'CIERRE_PENDIENTE', { fecha });
