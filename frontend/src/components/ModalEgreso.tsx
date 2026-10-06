@@ -224,7 +224,7 @@ export const ModalEgreso: React.FC<ModalEgresoProps> = ({
             <div className="p-3 bg-white border border-slate-200 rounded-lg flex items-center justify-between">
               <div>
                 <p className="text-[10px] font-bold text-slate-500 uppercase">Total a Debitar de la Cuenta</p>
-                <p className="text-xs text-slate-400 font-mono">Neto + Comisión bancaria</p>
+                <p className="text-xs text-slate-500 font-mono">Neto + Comisión bancaria</p>
               </div>
               <div className="text-right">
                 <p className={`text-lg font-black font-mono ${isSaldoInsuficiente ? 'text-rose-600' : 'text-slate-900'}`}>

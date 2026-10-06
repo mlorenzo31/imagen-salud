@@ -28,7 +28,7 @@ export const PanelFiltrosAvanzados: React.FC<PanelFiltrosAvanzadosProps> = ({ fe
         </label>
         <div className="grid grid-cols-2 gap-2">
           <div>
-            <span className="text-[9px] text-slate-400 block mb-0.5">Desde:</span>
+            <span className="text-[9px] text-slate-500 block mb-0.5">Desde:</span>
             <Input
               type="date"
               value={fechaDesde}
@@ -37,7 +37,7 @@ export const PanelFiltrosAvanzados: React.FC<PanelFiltrosAvanzadosProps> = ({ fe
             />
           </div>
           <div>
-            <span className="text-[9px] text-slate-400 block mb-0.5">Hasta:</span>
+            <span className="text-[9px] text-slate-500 block mb-0.5">Hasta:</span>
             <Input
               type="date"
               value={fechaHasta}

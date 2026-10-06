@@ -526,7 +526,7 @@ export const ModuloEgresosOperativos: React.FC<ModuloEgresosOperativosProps> = (
               <div>
                 <label className="block text-xs font-bold text-slate-700 mb-1.5 flex items-center justify-between">
                   <span>Concepto Libre / Justificación del Gasto *</span>
-                  <span className="text-[10px] text-slate-400 font-normal">Texto descriptivo obligatorio para auditoría</span>
+                  <span className="text-[10px] text-slate-500 font-normal">Texto descriptivo obligatorio para auditoría</span>
                 </label>
                 <Input
                   value={egresoConceptoLibre}
@@ -544,7 +544,7 @@ export const ModuloEgresosOperativos: React.FC<ModuloEgresosOperativosProps> = (
                     Monto Neto del Egreso *
                   </label>
                   <div className="relative">
-                    <span className="absolute left-3 top-1/2 -translate-y-1/2 font-mono font-bold text-xs text-slate-400">
+                    <span className="absolute left-3 top-1/2 -translate-y-1/2 font-mono font-bold text-xs text-slate-500">
                       {cuentaEgresoSeleccionada?.moneda === 'USD' ? '$' : 'Bs.'}
                     </span>
                     <Input
@@ -625,7 +625,7 @@ export const ModuloEgresosOperativos: React.FC<ModuloEgresosOperativosProps> = (
                     <p className="text-base font-black font-mono text-rose-700 mt-0.5">
                       {totalDebitadoEgreso.toLocaleString('es-VE', { minimumFractionDigits: 2 })} {cuentaEgresoSeleccionada?.moneda || 'Bs'}
                     </p>
-                    <p className="text-[9px] text-slate-400">
+                    <p className="text-[9px] text-slate-500">
                       ({montoEgresoNum.toFixed(2)} Neto + {comisionPMNum.toFixed(2)} Comisión Manual)
                     </p>
                   </div>
@@ -701,7 +701,7 @@ export const ModuloEgresosOperativos: React.FC<ModuloEgresosOperativosProps> = (
               <div>
                 <label className="block text-xs font-bold text-slate-700 mb-1.5 flex items-center justify-between">
                   <span>Concepto Libre / Detalle de Entrada *</span>
-                  <span className="text-[10px] text-slate-400 font-normal">Justificación contable de la entrada</span>
+                  <span className="text-[10px] text-slate-500 font-normal">Justificación contable de la entrada</span>
                 </label>
                 <Input
                   value={ingresoConceptoLibre}
@@ -775,7 +775,7 @@ export const ModuloEgresosOperativos: React.FC<ModuloEgresosOperativosProps> = (
           {/* Barra de Filtros y Exportación */}
           <div className="bg-white p-4 rounded-2xl border border-slate-200 shadow-sm flex flex-col md:flex-row items-center justify-between gap-3">
             <div className="relative flex-1 w-full">
-              <Search className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
+              <Search className="w-4 h-4 text-slate-500 absolute left-3 top-1/2 -translate-y-1/2" />
               <Input
                 value={busqueda}
                 onChange={e => setBusqueda(e.target.value)}
@@ -783,7 +783,7 @@ export const ModuloEgresosOperativos: React.FC<ModuloEgresosOperativosProps> = (
                 className="pl-9 pr-8 text-xs bg-slate-50 border-slate-200 rounded-xl"
               />
               {busqueda && (
-                <button onClick={() => setBusqueda('')} className="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400">
+                <button onClick={() => setBusqueda('')} className="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-500">
                   <X className="w-3.5 h-3.5" />
                 </button>
               )}
@@ -841,7 +841,7 @@ export const ModuloEgresosOperativos: React.FC<ModuloEgresosOperativosProps> = (
                 <tbody className="divide-y divide-slate-100 font-sans">
                   {historialFiltrado.length === 0 ? (
                     <tr>
-                      <td colSpan={9} className="p-8 text-center text-slate-400 font-medium">
+                      <td colSpan={9} className="p-8 text-center text-slate-500 font-medium">
                         No hay movimientos que coincidan con la búsqueda.
                       </td>
                     </tr>
@@ -870,7 +870,7 @@ export const ModuloEgresosOperativos: React.FC<ModuloEgresosOperativosProps> = (
                         <td className="p-3 text-right font-mono font-black text-rose-600">
                           {item.tipo === 'EGRESO' ? `-${(item.total_debitado || item.monto).toLocaleString('es-VE', { minimumFractionDigits: 2 })}` : `+${item.monto.toLocaleString('es-VE', { minimumFractionDigits: 2 })}`} {item.moneda}
                         </td>
-                        <td className="p-3 text-center text-slate-400 font-mono text-[10px]">
+                        <td className="p-3 text-center text-slate-500 font-mono text-[10px]">
                           {item.fecha}
                         </td>
                       </tr>

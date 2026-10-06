@@ -577,7 +577,7 @@ export const ModuloFacturacion: React.FC<ModuloFacturacionProps> = ({ onFacturaE
                     <button
                       type="button"
                       onClick={limpiarFichaCompleta}
-                      className="ml-2 text-[10px] font-bold text-slate-400 hover:text-rose-600 hover:bg-rose-50 px-2 py-0.5 rounded-lg transition-colors flex items-center gap-1 border border-slate-200"
+                      className="ml-2 text-[10px] font-bold text-slate-500 hover:text-rose-600 hover:bg-rose-50 px-2 py-0.5 rounded-lg transition-colors flex items-center gap-1 border border-slate-200"
                       title="Borrar cédula y limpiar toda la información del paciente"
                     >
                       <RotateCcw className="w-3 h-3 text-rose-500" />
@@ -639,13 +639,13 @@ export const ModuloFacturacion: React.FC<ModuloFacturacionProps> = ({ onFacturaE
                       <button
                         type="button"
                         onClick={limpiarFichaCompleta}
-                        className="absolute right-7 top-2.5 text-slate-400 hover:text-rose-600 transition-colors p-0.5 rounded-full hover:bg-slate-100"
+                        className="absolute right-7 top-2.5 text-slate-500 hover:text-rose-600 transition-colors p-0.5 rounded-full hover:bg-slate-100"
                         title="Borrar cédula y limpiar datos"
                       >
                         <X className="w-3.5 h-3.5" />
                       </button>
                     )}
-                    <Search className="w-4 h-4 text-slate-400 absolute right-2.5 top-2.5" />
+                    <Search className="w-4 h-4 text-slate-500 absolute right-2.5 top-2.5" />
                   </div>
                   {erroresFicha.cedula ? (
                     <p className="text-[10px] text-rose-600 font-bold mt-1 flex items-center gap-1">
@@ -653,7 +653,7 @@ export const ModuloFacturacion: React.FC<ModuloFacturacionProps> = ({ onFacturaE
                       {erroresFicha.cedula}
                     </p>
                   ) : (
-                    <p className="text-[9px] text-slate-400 mt-0.5">
+                    <p className="text-[9px] text-slate-500 mt-0.5">
                       {tipoDoc === 'P' ? 'Alfanumérico sin espacios' : 'Solo números (5-9 dígitos, sin letras)'}
                     </p>
                   )}
@@ -706,7 +706,7 @@ export const ModuloFacturacion: React.FC<ModuloFacturacionProps> = ({ onFacturaE
                       {erroresFicha.nombre}
                     </p>
                   ) : (
-                    <p className="text-[9px] text-slate-400 mt-0.5">
+                    <p className="text-[9px] text-slate-500 mt-0.5">
                       Solo letras y apellidos (sin números)
                     </p>
                   )}
@@ -732,7 +732,7 @@ export const ModuloFacturacion: React.FC<ModuloFacturacionProps> = ({ onFacturaE
                       {erroresFicha.telefono}
                     </p>
                   ) : (
-                    <p className="text-[9px] text-slate-400 mt-0.5">
+                    <p className="text-[9px] text-slate-500 mt-0.5">
                       Solo números (10 a 11 dígitos, sin letras)
                     </p>
                   )}
@@ -834,7 +834,7 @@ export const ModuloFacturacion: React.FC<ModuloFacturacionProps> = ({ onFacturaE
                                   1er Llamado
                                 </span>
                               ) : (
-                                <span className="px-2 py-0.5 rounded-md bg-slate-100 text-slate-400 text-[9px] font-medium">
+                                <span className="px-2 py-0.5 rounded-md bg-slate-100 text-slate-500 text-[9px] font-medium">
                                   Secundario
                                 </span>
                               )}
@@ -859,7 +859,7 @@ export const ModuloFacturacion: React.FC<ModuloFacturacionProps> = ({ onFacturaE
                 </div>
 
                 {carrito.length === 0 ? (
-                  <div className="p-6 rounded-xl border border-dashed border-slate-200 text-center text-slate-400 text-xs">
+                  <div className="p-6 rounded-xl border border-dashed border-slate-200 text-center text-slate-500 text-xs">
                     No hay estudios en el carrito. Seleccione arriba y pulse &quot;Agregar al Carrito&quot;.
                   </div>
                 ) : (
@@ -882,7 +882,7 @@ export const ModuloFacturacion: React.FC<ModuloFacturacionProps> = ({ onFacturaE
                               Médico: <span className="font-bold text-slate-700">{item.medico}</span> • Sala: <span className="font-mono text-cyan-700">{item.sala}</span>
                             </p>
                             {/* Desglose de Liquidación Multimoneda */}
-                            <p className="text-[9px] text-slate-400 font-mono mt-0.5">
+                            <p className="text-[9px] text-slate-500 font-mono mt-0.5">
                               Clínica: ${item.dist.imagen.toFixed(2)} (Bs. {(item.dist.imagen * tasaBcv).toFixed(2)}) | Médico: ${item.dist.medico.toFixed(2)} (Bs. {(item.dist.medico * tasaBcv).toFixed(2)})
                               {item.dist.eco > 0 ? ` | Eco: $${item.dist.eco.toFixed(2)} (Bs. ${(item.dist.eco * tasaBcv).toFixed(2)})` : ''}
                               {item.dist.patologo > 0 ? ` | Patólogo: $${item.dist.patologo.toFixed(2)} (Bs. ${(item.dist.patologo * tasaBcv).toFixed(2)})` : ''}
@@ -900,7 +900,7 @@ export const ModuloFacturacion: React.FC<ModuloFacturacionProps> = ({ onFacturaE
                             <button
                               type="button"
                               onClick={() => handleEliminarItem(item.id)}
-                              className="p-1 rounded-lg text-slate-400 hover:text-rose-600 hover:bg-rose-50 transition-colors"
+                              className="p-1 rounded-lg text-slate-500 hover:text-rose-600 hover:bg-rose-50 transition-colors"
                             >
                               <Trash2 className="w-4 h-4" />
                             </button>
@@ -942,7 +942,7 @@ export const ModuloFacturacion: React.FC<ModuloFacturacionProps> = ({ onFacturaE
               
               {/* Resumen Total Multimoneda */}
               <div className="p-4 rounded-2xl bg-gradient-to-br from-slate-900 to-slate-800 text-white shadow-md">
-                <div className="flex justify-between items-center text-xs text-slate-400 mb-1">
+                <div className="flex justify-between items-center text-xs text-slate-500 mb-1">
                   <span>TOTAL A FACTURAR (MULTIMONEDA)</span>
                   <span className="text-[10px] text-cyan-400 font-medium">{fuenteTasaBcv}</span>
                 </div>
@@ -951,7 +951,7 @@ export const ModuloFacturacion: React.FC<ModuloFacturacionProps> = ({ onFacturaE
                     <p className="text-3xl font-black font-mono tracking-tight text-white">
                       ${totalUSD.toFixed(2)}
                     </p>
-                    <p className="text-xs text-slate-400 font-medium">Dólares ($)</p>
+                    <p className="text-xs text-slate-500 font-medium">Dólares ($)</p>
                   </div>
                   <div className="text-right">
                     <p className="text-xl font-mono text-cyan-300 font-black">
@@ -973,10 +973,10 @@ export const ModuloFacturacion: React.FC<ModuloFacturacionProps> = ({ onFacturaE
                       </span>
                     )}
                   </span>
-                  <p className="text-[9px] text-slate-400 mt-0.5">Automático vía API oficial BCV</p>
+                  <p className="text-[9px] text-slate-500 mt-0.5">Automático vía API oficial BCV</p>
                 </div>
                 <div className="flex items-center gap-1.5">
-                  <span className="text-[10px] text-slate-400 font-mono">Bs.</span>
+                  <span className="text-[10px] text-slate-500 font-mono">Bs.</span>
                   <input
                     type="number"
                     step="0.01"

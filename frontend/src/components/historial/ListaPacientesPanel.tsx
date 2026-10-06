@@ -34,7 +34,7 @@ export const ListaPacientesPanel: React.FC<ListaPacientesPanelProps> = ({ pacien
 
         {/* Input de Búsqueda de Pacientes */}
         <div className="relative mt-2.5">
-          <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+          <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-slate-500" />
           <Input
             type="text"
             placeholder="Buscar por Cédula o Nombre..."
@@ -84,7 +84,7 @@ export const ListaPacientesPanel: React.FC<ListaPacientesPanelProps> = ({ pacien
 
         {/* LISTA DE PACIENTES INDIVIDUALES */}
         {pacientesFiltrados.length === 0 ? (
-          <div className="p-6 text-center text-xs text-slate-400">
+          <div className="p-6 text-center text-xs text-slate-500">
             No se encontraron pacientes con el criterio ingresado.
           </div>
         ) : (

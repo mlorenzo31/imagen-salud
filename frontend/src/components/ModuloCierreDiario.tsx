@@ -151,7 +151,7 @@ export const ModuloCierreDiario: React.FC<ModuloCierreDiarioProps> = ({ currentR
         </div>
         <div className="flex items-center gap-3">
           <div className="flex items-center gap-1.5 bg-slate-50 p-1 rounded-xl border border-slate-200">
-            <Calendar className="w-4 h-4 text-slate-400 ml-2" />
+            <Calendar className="w-4 h-4 text-slate-500 ml-2" />
             <Input 
               type="date"
               value={fechaCierre}
@@ -222,7 +222,7 @@ export const ModuloCierreDiario: React.FC<ModuloCierreDiarioProps> = ({ currentR
       <div className="grid grid-cols-1 md:grid-cols-4 gap-3">
         <Card className="bg-white border-slate-200">
           <CardContent className="p-4">
-            <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Efectivo Divisas ($)</p>
+            <p className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">Efectivo Divisas ($)</p>
             <p className="text-2xl font-black text-emerald-600 mt-1">
               ${estadoDiario?.resumen?.totalDivisasUSD ? Number(estadoDiario.resumen.totalDivisasUSD).toFixed(2) : '0.00'}
             </p>
@@ -232,7 +232,7 @@ export const ModuloCierreDiario: React.FC<ModuloCierreDiarioProps> = ({ currentR
 
         <Card className="bg-white border-slate-200">
           <CardContent className="p-4">
-            <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Efectivo Bolívares</p>
+            <p className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">Efectivo Bolívares</p>
             <p className="text-2xl font-black text-blue-600 mt-1">
               Bs. {estadoDiario?.resumen?.totalEfectivoBs ? Number(estadoDiario.resumen.totalEfectivoBs).toFixed(2) : '0.00'}
             </p>
@@ -242,7 +242,7 @@ export const ModuloCierreDiario: React.FC<ModuloCierreDiarioProps> = ({ currentR
 
         <Card className="bg-white border-slate-200">
           <CardContent className="p-4">
-            <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Punto de Venta</p>
+            <p className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">Punto de Venta</p>
             <p className="text-2xl font-black text-indigo-600 mt-1">
               Bs. {estadoDiario?.resumen?.totalPuntoBs ? Number(estadoDiario.resumen.totalPuntoBs).toFixed(2) : '0.00'}
             </p>
@@ -252,7 +252,7 @@ export const ModuloCierreDiario: React.FC<ModuloCierreDiarioProps> = ({ currentR
 
         <Card className="bg-white border-slate-200">
           <CardContent className="p-4">
-            <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Pago Móvil</p>
+            <p className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">Pago Móvil</p>
             <p className="text-2xl font-black text-cyan-600 mt-1">
               Bs. {estadoDiario?.resumen?.totalPagoMovilBs ? Number(estadoDiario.resumen.totalPagoMovilBs).toFixed(2) : '0.00'}
             </p>

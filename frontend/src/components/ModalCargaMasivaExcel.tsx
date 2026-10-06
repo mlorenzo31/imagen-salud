@@ -145,11 +145,11 @@ export const ModalCargaMasivaExcel: React.FC<ModalCargaMasivaExcelProps> = ({
               className="hidden"
             />
             <label htmlFor="excelInputFile" className="cursor-pointer block">
-              <FileUp className="w-8 h-8 mx-auto text-slate-400 mb-2" />
+              <FileUp className="w-8 h-8 mx-auto text-slate-500 mb-2" />
               <span className="text-xs font-bold text-slate-700 block">
                 {file ? file.name : 'Haz clic para seleccionar o arrastra tu archivo Excel (.xlsx)'}
               </span>
-              <span className="text-[10px] text-slate-400">
+              <span className="text-[10px] text-slate-500">
                 Columnas requeridas: Paciente, Cedula, Servicio, Medico, Monto_USD, Monto_BS, Metodo_Pago
               </span>
             </label>

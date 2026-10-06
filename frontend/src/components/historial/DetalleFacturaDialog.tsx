@@ -43,7 +43,7 @@ export const DetalleFacturaDialog: React.FC<DetalleFacturaDialogProps> = ({ fact
               <Badge className="bg-slate-800 text-white font-mono text-xs">
                 {facturaDetalle.fecha ? parseFechaLocal(facturaDetalle.fecha).toLocaleDateString('es-VE') : ''}
               </Badge>
-              <p className="text-[10px] text-slate-400 mt-0.5">{facturaDetalle.hora || ''}</p>
+              <p className="text-[10px] text-slate-500 mt-0.5">{facturaDetalle.hora || ''}</p>
             </div>
           </div>
 
@@ -71,19 +71,19 @@ export const DetalleFacturaDialog: React.FC<DetalleFacturaDialogProps> = ({ fact
             </h5>
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
               <div className="p-2.5 rounded-xl bg-slate-50 border border-slate-200">
-                <p className="text-[10px] text-slate-400 font-bold">Divisas USD</p>
+                <p className="text-[10px] text-slate-500 font-bold">Divisas USD</p>
                 <p className="font-bold font-mono text-emerald-700">{formatUSD(facturaDetalle.pago_divisas)}</p>
               </div>
               <div className="p-2.5 rounded-xl bg-slate-50 border border-slate-200">
-                <p className="text-[10px] text-slate-400 font-bold">Pago Móvil</p>
+                <p className="text-[10px] text-slate-500 font-bold">Pago Móvil</p>
                 <p className="font-bold font-mono text-blue-700">{formatBs(facturaDetalle.pago_movil)}</p>
               </div>
               <div className="p-2.5 rounded-xl bg-slate-50 border border-slate-200">
-                <p className="text-[10px] text-slate-400 font-bold">Punto POS</p>
+                <p className="text-[10px] text-slate-500 font-bold">Punto POS</p>
                 <p className="font-bold font-mono text-blue-700">{formatBs(facturaDetalle.pago_punto)}</p>
               </div>
               <div className="p-2.5 rounded-xl bg-slate-50 border border-slate-200">
-                <p className="text-[10px] text-slate-400 font-bold">Efectivo Bs</p>
+                <p className="text-[10px] text-slate-500 font-bold">Efectivo Bs</p>
                 <p className="font-bold font-mono text-slate-700">{formatBs(facturaDetalle.pago_efectivo_bs)}</p>
               </div>
             </div>

@@ -61,9 +61,9 @@ export default function PaginaResultados() {
                   )}
                   <div className="flex items-center justify-between gap-3 p-3">
                     <span className="flex min-w-0 items-center gap-2 text-sm text-slate-700">
-                      {!a.tipo.startsWith('image/') && <FileText className="size-4 shrink-0 text-slate-400" />}
+                      {!a.tipo.startsWith('image/') && <FileText className="size-4 shrink-0 text-slate-500" />}
                       <span className="truncate">{a.nombre}</span>
-                      <span className="shrink-0 text-xs text-slate-400">{tamano(a.tamano)}</span>
+                      <span className="shrink-0 text-xs text-slate-500">{tamano(a.tamano)}</span>
                     </span>
                     <a href={ruta(a, true)} download={a.nombre} className="flex shrink-0 items-center gap-1.5 rounded-lg border border-slate-200 px-3 py-1.5 text-xs font-medium text-slate-700 hover:bg-slate-50">
                       <Download className="size-3.5" /> Descargar
@@ -74,7 +74,7 @@ export default function PaginaResultados() {
             </ul>
           </>
         )}
-        <p className="text-center text-xs text-slate-400">Centro Clínico Imagen Salud, C.A.</p>
+        <p className="text-center text-xs text-slate-500">Centro Clínico Imagen Salud, C.A.</p>
       </div>
     </main>
   );

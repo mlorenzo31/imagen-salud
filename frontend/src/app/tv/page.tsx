@@ -186,7 +186,7 @@ export default function PantallaTVSalaEspera() {
               className={`p-3 rounded-2xl border transition-all ${
                 audioHabilitado 
                   ? 'bg-[#EBF9F7] border-[#80DDD2] text-[#1D7A70] hover:bg-[#80DDD2]/20' 
-                  : 'bg-slate-100 border-slate-200 text-slate-400 hover:text-slate-600'
+                  : 'bg-slate-100 border-slate-200 text-slate-500 hover:text-slate-600'
               }`}
               title={audioHabilitado ? 'Llamado por Voz Activado' : 'Audio Silenciado'}
             >
@@ -235,7 +235,7 @@ export default function PantallaTVSalaEspera() {
                     {info.codigo === 'A' ? 'Grupo A' : info.codigo === 'B' ? 'Grupo B' : 'Grupo C'}
                   </span>
                   <div className="flex items-center gap-1.5 text-xs font-bold text-slate-500">
-                    <Users className="w-3.5 h-3.5 text-slate-400" />
+                    <Users className="w-3.5 h-3.5 text-slate-500" />
                     <span>{datos.totalEnCola} en espera</span>
                   </div>
                 </div>
@@ -300,7 +300,7 @@ export default function PantallaTVSalaEspera() {
 
                     {/* Consultorio / Box Asignado */}
                     <div className="p-3 bg-white rounded-2xl border border-slate-200/90 shadow-sm">
-                      <p className="text-[11px] font-bold text-slate-400 uppercase tracking-wider">
+                      <p className="text-[11px] font-bold text-slate-500 uppercase tracking-wider">
                         Pasar a Consultorio / Box
                       </p>
                       <p className="text-sm font-black text-slate-800 mt-0.5">
@@ -316,12 +316,12 @@ export default function PantallaTVSalaEspera() {
                 ) : (
                   /* Box Disponible / En Espera de Llamado */
                   <div className="rounded-3xl p-8 border-2 border-dashed border-slate-200 text-center space-y-3 bg-[#F8FAFC]">
-                    <div className="w-12 h-12 rounded-2xl bg-slate-100 flex items-center justify-center mx-auto text-slate-400">
+                    <div className="w-12 h-12 rounded-2xl bg-slate-100 flex items-center justify-center mx-auto text-slate-500">
                       <Stethoscope className="w-6 h-6" />
                     </div>
                     <div>
                       <h4 className="text-base font-bold text-slate-700">Área Disponible</h4>
-                      <p className="text-xs text-slate-400 mt-0.5">
+                      <p className="text-xs text-slate-500 mt-0.5">
                         {info.boxConsultorioDefecto}
                       </p>
                     </div>
@@ -336,11 +336,11 @@ export default function PantallaTVSalaEspera() {
               <div className="pt-4 border-t border-slate-100 space-y-2">
                 <div className="flex items-center justify-between text-xs font-bold text-slate-500">
                   <span>Próximos en Espera:</span>
-                  <span className="text-[11px] font-mono text-slate-400">Turno & Paciente</span>
+                  <span className="text-[11px] font-mono text-slate-500">Turno & Paciente</span>
                 </div>
 
                 {proximos.length === 0 ? (
-                  <div className="p-3 bg-slate-50 rounded-2xl text-center text-xs text-slate-400">
+                  <div className="p-3 bg-slate-50 rounded-2xl text-center text-xs text-slate-500">
                     No hay turnos pendientes en cola
                   </div>
                 ) : (
@@ -360,12 +360,12 @@ export default function PantallaTVSalaEspera() {
                           <p className="font-bold text-slate-800 text-xs leading-none">
                             {p.nombre_paciente}
                           </p>
-                          <p className="text-[10px] text-slate-400 truncate max-w-[150px] mt-0.5">
+                          <p className="text-[10px] text-slate-500 truncate max-w-[150px] mt-0.5">
                             {p.estudio}
                           </p>
                         </div>
                       </div>
-                      <span className="text-[10px] text-slate-400 font-mono font-semibold">
+                      <span className="text-[10px] text-slate-500 font-mono font-semibold">
                         Pos #{idx + 1}
                       </span>
                     </div>
@@ -390,7 +390,7 @@ export default function PantallaTVSalaEspera() {
           <span>• Por favor permanezca atento a su llamado en pantalla y altavoz</span>
         </div>
 
-        <div className="flex items-center gap-4 text-[11px] text-slate-400">
+        <div className="flex items-center gap-4 text-[11px] text-slate-500">
           <span>Centro Clínico Radiológico Imagen Salud, C.A.</span>
           <span>•</span>
           <span className="font-mono">Resolución TV 4K Ultra HD</span>

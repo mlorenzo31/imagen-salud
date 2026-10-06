@@ -21,7 +21,7 @@ export const TabEspecialistas: React.FC<TabEspecialistasProps> = ({ busqueda, se
   <div className="space-y-4">
     <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-white p-3.5 rounded-xl border border-slate-200/80">
       <div className="relative flex-1 max-w-sm">
-        <Search className="w-4 h-4 absolute left-3 top-2.5 text-slate-400" />
+        <Search className="w-4 h-4 absolute left-3 top-2.5 text-slate-500" />
         <Input
           placeholder="Buscar por médico o especialidad..."
           value={busqueda}
@@ -73,14 +73,14 @@ export const TabEspecialistas: React.FC<TabEspecialistasProps> = ({ busqueda, se
             <CardContent className="p-4 space-y-3">
               <div className="grid grid-cols-2 gap-2 text-xs">
                 <div className="p-2.5 rounded-xl bg-slate-50 border border-slate-100">
-                  <span className="text-[10px] text-slate-400 uppercase font-bold block">Turno Asignado</span>
+                  <span className="text-[10px] text-slate-500 uppercase font-bold block">Turno Asignado</span>
                   <div className="flex items-center gap-1 mt-0.5 font-bold text-slate-800">
                     <Clock className="w-3 h-3 text-[#1D7A70]" />
                     <span>{d.turno === 'AM' ? 'Mañana (AM)' : d.turno === 'PM' ? 'Tarde (PM)' : 'Jornada Completa'}</span>
                   </div>
                 </div>
                 <div className="p-2.5 rounded-xl bg-slate-50 border border-slate-100">
-                  <span className="text-[10px] text-slate-400 uppercase font-bold block">Honorario Pactado</span>
+                  <span className="text-[10px] text-slate-500 uppercase font-bold block">Honorario Pactado</span>
                   <div className="flex items-center gap-1 mt-0.5 font-mono font-black text-[#1D7A70]">
                     <Percent className="w-3 h-3 text-[#1D7A70]" />
                     <span>{d.comision_pct}% Comisión</span>

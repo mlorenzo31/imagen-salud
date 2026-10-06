@@ -79,7 +79,7 @@ export const WhatsAppMasivoDialog: React.FC<WhatsAppMasivoDialogProps> = ({ moda
 
         <div className="max-h-56 overflow-y-auto space-y-2 pr-1">
           {pacientesPendientesWhatsApp.length === 0 ? (
-            <div className="p-6 text-center text-slate-400 text-xs">
+            <div className="p-6 text-center text-slate-500 text-xs">
               ✅ Todos los resultados culminados ya han sido despachados por WhatsApp.
             </div>
           ) : (

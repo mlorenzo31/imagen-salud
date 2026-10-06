@@ -37,7 +37,7 @@ export const ToolbarFiltrosHistorial: React.FC<ToolbarFiltrosHistorialProps> = (
           Subtotal: {formatUSD(totalUSDFiltrado)}
         </Badge>
       </div>
-      <p className="text-[11px] text-slate-400 mt-0.5">
+      <p className="text-[11px] text-slate-500 mt-0.5">
         Trazabilidad cronológica de servicios clínicos, cobros y estado de entrega de resultados
       </p>
     </div>
@@ -78,9 +78,9 @@ export const ToolbarFiltrosHistorial: React.FC<ToolbarFiltrosHistorialProps> = (
           <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
         )}
         {mostrarFiltrosAvanzados ? (
-          <ChevronUp className="w-3 h-3 text-slate-400 ml-0.5" />
+          <ChevronUp className="w-3 h-3 text-slate-500 ml-0.5" />
         ) : (
-          <ChevronDown className="w-3 h-3 text-slate-400 ml-0.5" />
+          <ChevronDown className="w-3 h-3 text-slate-500 ml-0.5" />
         )}
       </Button>
 

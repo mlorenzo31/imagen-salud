@@ -42,7 +42,7 @@ export const TableroKanban: React.FC<TableroKanbanProps> = ({ turnosTodos, turno
       </div>
       <div className="space-y-3 min-h-[420px]">
         {turnosEspera.length === 0 ? (
-          <div className="p-8 text-center border-2 border-dashed border-slate-200 rounded-2xl bg-white text-slate-400 text-xs">No hay pacientes en espera</div>
+          <div className="p-8 text-center border-2 border-dashed border-slate-200 rounded-2xl bg-white text-slate-500 text-xs">No hay pacientes en espera</div>
         ) : (
           turnosEspera.map((t) => (
             <TarjetaEspera key={t.id} turno={t} todos={turnosTodos} isReadOnly={isReadOnly} ocupado={false} isAdmin={isAdmin} llamando={llamandoId === t.id} onLlamar={onLlamar} onAnular={onAnular} />
@@ -62,7 +62,7 @@ export const TableroKanban: React.FC<TableroKanbanProps> = ({ turnosTodos, turno
       </div>
       <div className="space-y-3 min-h-[420px]">
         {turnosAtencion.length === 0 ? (
-          <div className="p-8 text-center border-2 border-dashed border-slate-200 rounded-2xl bg-white text-slate-400 text-xs">No hay pacientes en curso</div>
+          <div className="p-8 text-center border-2 border-dashed border-slate-200 rounded-2xl bg-white text-slate-500 text-xs">No hay pacientes en curso</div>
         ) : (
           turnosAtencion.map((t) => (
             <TarjetaAtencion key={t.id} turno={t} todos={turnosTodos} isReadOnly={isReadOnly} ocupado={false} onFinalizar={onFinalizar} onAusente={onAusente} onRellamar={onRellamar} />
@@ -83,7 +83,7 @@ export const TableroKanban: React.FC<TableroKanbanProps> = ({ turnosTodos, turno
 
       <div className="space-y-3 min-h-[420px]">
         {pacientesFinalizados.length === 0 ? (
-          <div className="p-8 text-center border-2 border-dashed border-slate-200 rounded-2xl bg-white text-slate-400 text-xs">
+          <div className="p-8 text-center border-2 border-dashed border-slate-200 rounded-2xl bg-white text-slate-500 text-xs">
             Aún no hay pacientes culminados hoy
           </div>
         ) : (
@@ -176,7 +176,7 @@ export const TableroKanban: React.FC<TableroKanbanProps> = ({ turnosTodos, turno
                     onClick={() => handleEnviarWhatsAppIndividual(p)}
                     className={'w-full text-xs font-bold rounded-xl h-8 flex items-center justify-center gap-1.5 transition-all ' + (
                       !tieneAdjunto
-                        ? 'bg-slate-100 text-slate-400 border border-slate-200/80 cursor-not-allowed hover:bg-slate-100 shadow-none'
+                        ? 'bg-slate-100 text-slate-500 border border-slate-200/80 cursor-not-allowed hover:bg-slate-100 shadow-none'
                         : whatsappEnviado
                           ? 'bg-slate-100 text-slate-700 hover:bg-slate-200 border border-slate-200'
                           : 'bg-emerald-600 hover:bg-emerald-700 text-white shadow-sm shadow-emerald-600/20 active:scale-[0.98]'
@@ -191,7 +191,7 @@ export const TableroKanban: React.FC<TableroKanbanProps> = ({ turnosTodos, turno
                   >
                     {!tieneAdjunto ? (
                       <>
-                        <Lock className="w-3.5 h-3.5 text-slate-400" />
+                        <Lock className="w-3.5 h-3.5 text-slate-500" />
                         <span>Adjunte Imagen para Enviar WA</span>
                       </>
                     ) : (

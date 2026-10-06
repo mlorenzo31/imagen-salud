@@ -96,7 +96,17 @@ table { border-collapse: separate; border-spacing: 0; }
 thead th { letter-spacing: 0.04em; }
 
 /* Foco accesible con el color de marca */
-:focus-visible { outline-color: #2EA89B; }
+:focus-visible { outline: 2px solid #2EA89B; outline-offset: 2px; }
+
+/* Respeta la preferencia del sistema de reducir animaciones */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
 ::selection { background: #BDEEE8; color: #15201F; }
 
 /* Clases de Identidad Corporativa Imagen Salud */

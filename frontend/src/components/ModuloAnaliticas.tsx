@@ -435,7 +435,7 @@ export const ModuloAnaliticas: React.FC = () => {
         {/* Fila Superior: Buscador y Panel de Filtros y Agrupaciones */}
         <div className="flex flex-col md:flex-row items-center gap-3">
           <div className="relative flex-1 w-full">
-            <Search className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
+            <Search className="w-4 h-4 text-slate-500 absolute left-3 top-1/2 -translate-y-1/2" />
             <Input
               value={busquedaTexto}
               onChange={e => setBusquedaTexto(e.target.value)}
@@ -445,7 +445,7 @@ export const ModuloAnaliticas: React.FC = () => {
             {busquedaTexto && (
               <button 
                 onClick={() => setBusquedaTexto('')} 
-                className="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600"
+                className="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-500 hover:text-slate-600"
               >
                 <X className="w-3.5 h-3.5" />
               </button>
@@ -470,7 +470,7 @@ export const ModuloAnaliticas: React.FC = () => {
 
               {menuFiltrosAbierto && (
                 <div className="absolute right-0 mt-1 w-56 bg-white rounded-xl shadow-xl border border-slate-200 p-2 z-20 space-y-1">
-                  <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider px-2 py-1">Opciones de Agrupación</p>
+                  <p className="text-[10px] font-bold text-slate-500 uppercase tracking-wider px-2 py-1">Opciones de Agrupación</p>
                   <button
                     onClick={() => { setAgruparPor('NINGUNO'); setMenuFiltrosAbierto(false); }}
                     className={`w-full text-left px-2.5 py-1.5 text-xs rounded-lg ${agruparPor === 'NINGUNO' ? 'bg-indigo-50 text-indigo-700 font-bold' : 'hover:bg-slate-50 text-slate-700'}`}
@@ -525,7 +525,7 @@ export const ModuloAnaliticas: React.FC = () => {
 
         {/* Fila Inferior: Chips de Filtro Rápido */}
         <div className="flex flex-wrap items-center gap-2 pt-1 border-t border-slate-100">
-          <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mr-1 flex items-center gap-1">
+          <span className="text-[10px] font-bold text-slate-500 uppercase tracking-wider mr-1 flex items-center gap-1">
             <SlidersHorizontal className="w-3 h-3" /> Período:
           </span>
           {(['HOY', 'SEMANA', 'MES', 'TODOS'] as const).map(p => (
@@ -542,7 +542,7 @@ export const ModuloAnaliticas: React.FC = () => {
             </button>
           ))}
 
-          <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider ml-3 mr-1">
+          <span className="text-[10px] font-bold text-slate-500 uppercase tracking-wider ml-3 mr-1">
             Método:
           </span>
           <select
@@ -557,7 +557,7 @@ export const ModuloAnaliticas: React.FC = () => {
             <option value="PAGO_MOVIL">Pago Móvil</option>
           </select>
 
-          <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider ml-3 mr-1">
+          <span className="text-[10px] font-bold text-slate-500 uppercase tracking-wider ml-3 mr-1">
             Especialidad:
           </span>
           <select
@@ -576,7 +576,7 @@ export const ModuloAnaliticas: React.FC = () => {
       <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4">
         <Card className="bg-white border-slate-200 shadow-sm">
           <CardContent className="p-4">
-            <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Facturación Bruta Filtrada</p>
+            <p className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">Facturación Bruta Filtrada</p>
             <p className="text-2xl font-black text-slate-900 mt-1">${totalFacturadoUSD.toFixed(2)}</p>
             <p className="text-[11px] font-mono text-cyan-700 font-bold mt-0.5">
               Bs. {totalFacturadoBS.toLocaleString('es-VE', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
@@ -586,7 +586,7 @@ export const ModuloAnaliticas: React.FC = () => {
 
         <Card className="bg-white border-slate-200 shadow-sm">
           <CardContent className="p-4">
-            <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Pacientes & Estudios</p>
+            <p className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">Pacientes & Estudios</p>
             <p className="text-2xl font-black text-slate-900 mt-1">{totalPacientes}</p>
             <p className="text-[10px] text-slate-500 mt-0.5">Procedimientos en el período activo</p>
           </CardContent>
@@ -594,7 +594,7 @@ export const ModuloAnaliticas: React.FC = () => {
 
         <Card className="bg-white border-slate-200 shadow-sm">
           <CardContent className="p-4">
-            <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Ticket Promedio</p>
+            <p className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">Ticket Promedio</p>
             <p className="text-2xl font-black text-slate-900 mt-1">${ticketPromedioUSD.toFixed(2)}</p>
             <p className="text-[11px] font-mono text-slate-500 font-bold mt-0.5">
               Bs. {ticketPromedioBS.toLocaleString('es-VE', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
@@ -604,10 +604,10 @@ export const ModuloAnaliticas: React.FC = () => {
 
         <Card className="bg-white border-slate-200 shadow-sm">
           <CardContent className="p-4">
-            <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Honorarios vs Clínica</p>
+            <p className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">Honorarios vs Clínica</p>
             <div className="flex items-baseline gap-2 mt-1">
               <span className="text-lg font-black text-cyan-700">${totalHonorariosMedicosUSD.toFixed(2)}</span>
-              <span className="text-xs text-slate-400">/</span>
+              <span className="text-xs text-slate-500">/</span>
               <span className="text-lg font-black text-emerald-700">${totalMargenClinicaUSD.toFixed(2)}</span>
             </div>
             <p className="text-[10px] text-slate-500 mt-0.5">Honorarios Médicos / Margen Clínica</p>
@@ -740,7 +740,7 @@ export const ModuloAnaliticas: React.FC = () => {
                   <div className="overflow-x-auto">
                     <table className="w-full text-left text-xs border-collapse">
                       <thead>
-                        <tr className="bg-white border-b border-slate-100 text-slate-400 text-[10px] font-black uppercase">
+                        <tr className="bg-white border-b border-slate-100 text-slate-500 text-[10px] font-black uppercase">
                           <th className="py-2 px-4">Paciente</th>
                           <th className="py-2 px-4">Cédula</th>
                           <th className="py-2 px-4">Estudio</th>
@@ -795,7 +795,7 @@ export const ModuloAnaliticas: React.FC = () => {
             <tbody className="divide-y divide-slate-100">
               {rankingMedicos.length === 0 ? (
                 <tr>
-                  <td colSpan={6} className="py-6 text-center text-slate-400">Sin datos que coincidan con los filtros</td>
+                  <td colSpan={6} className="py-6 text-center text-slate-500">Sin datos que coincidan con los filtros</td>
                 </tr>
               ) : (
                 rankingMedicos.map(med => (
