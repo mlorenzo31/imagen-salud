@@ -22,7 +22,7 @@ export const TabEstudios: React.FC<TabEstudiosProps> = ({ busqueda, setBusqueda,
   <div className="space-y-4">
     <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-white p-3.5 rounded-xl border border-slate-200/80">
       <div className="relative flex-1 max-w-sm">
-        <Search className="w-4 h-4 absolute left-3 top-2.5 text-slate-400" />
+        <Search className="w-4 h-4 absolute left-3 top-2.5 text-slate-500" />
         <Input
           placeholder="Buscar por estudio o código..."
           value={busqueda}
@@ -67,7 +67,7 @@ export const TabEstudios: React.FC<TabEstudiosProps> = ({ busqueda, setBusqueda,
                       Grupo {s.grupo_clinico}: {infoGrupo.nombreCorto}
                     </Badge>
                     {s.codigo && (
-                      <span className="font-mono text-[10px] text-slate-400 font-bold">
+                      <span className="font-mono text-[10px] text-slate-500 font-bold">
                         #{s.codigo}
                       </span>
                     )}
@@ -84,7 +84,7 @@ export const TabEstudios: React.FC<TabEstudiosProps> = ({ busqueda, setBusqueda,
               <CardContent className="p-4 space-y-3">
                 {/* Desglose de Regla de Reparto */}
                 <div>
-                  <span className="text-[10px] uppercase font-bold text-slate-400 block mb-1.5">
+                  <span className="text-[10px] uppercase font-bold text-slate-500 block mb-1.5">
                     Regla de Reparto Financiero:
                   </span>
                   <div className="grid grid-cols-4 gap-1 text-center font-mono text-[10px]">

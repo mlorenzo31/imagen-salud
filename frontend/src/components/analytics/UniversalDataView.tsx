@@ -299,7 +299,7 @@ export const UniversalDataView: React.FC<UniversalDataViewProps> = ({
           {/* Badges de Totales Resumen */}
           <div className="flex flex-wrap items-center gap-2.5">
             <div className="px-3 py-1.5 rounded-xl bg-slate-50 border border-slate-200/80 flex items-center gap-2">
-              <span className="text-[10px] uppercase font-bold text-slate-400">Total $</span>
+              <span className="text-[10px] uppercase font-bold text-slate-500">Total $</span>
               <span className="text-xs font-black text-[#1D7A70]">{formatUSD(sumPrincipal)}</span>
             </div>
             {sumBS > 0 && (
@@ -399,7 +399,7 @@ export const UniversalDataView: React.FC<UniversalDataViewProps> = ({
       {/* Contenido Visual Reactivo */}
       <CardContent className="p-4 sm:p-5" ref={containerRef}>
         {data.length === 0 ? (
-          <div className="py-12 text-center text-slate-400">
+          <div className="py-12 text-center text-slate-500">
             <TrendingUp className="w-10 h-10 mx-auto mb-2 text-slate-300 stroke-1" />
             <p className="text-xs font-medium">No hay datos registrados para el criterio seleccionado.</p>
           </div>
@@ -577,7 +577,7 @@ export const UniversalDataView: React.FC<UniversalDataViewProps> = ({
                 {/* Barra de búsqueda interna */}
                 <div className="flex items-center justify-between gap-3">
                   <div className="relative flex-1 max-w-xs">
-                    <Search className="w-3.5 h-3.5 absolute left-3 top-2.5 text-slate-400" />
+                    <Search className="w-3.5 h-3.5 absolute left-3 top-2.5 text-slate-500" />
                     <Input
                       placeholder="Filtrar concepto o valor..."
                       value={busquedaTabla}
@@ -588,7 +588,7 @@ export const UniversalDataView: React.FC<UniversalDataViewProps> = ({
                       className="pl-8 h-8 text-xs rounded-xl bg-slate-50/70 border-slate-200"
                     />
                   </div>
-                  <div className="text-[11px] text-slate-400 font-medium">
+                  <div className="text-[11px] text-slate-500 font-medium">
                     Mostrando {datosPaginados.length} de {datosFiltrados.length} registros
                   </div>
                 </div>
@@ -653,7 +653,7 @@ export const UniversalDataView: React.FC<UniversalDataViewProps> = ({
                           if (col.key === dataKey) return <td key={idx} className="py-2.5 px-3.5 text-right font-mono text-[#1D7A70]">{formatUSD(sumPrincipal)}</td>;
                           if (col.key === secondaryDataKey) return <td key={idx} className="py-2.5 px-3.5 text-right font-mono text-amber-700">{formatUSD(sumSecundario)}</td>;
                           if (col.key === 'valorBS') return <td key={idx} className="py-2.5 px-3.5 text-right font-mono text-cyan-800">{formatBS(sumBS)}</td>;
-                          return <td key={idx} className="py-2.5 px-3.5 text-right font-mono text-slate-400">-</td>;
+                          return <td key={idx} className="py-2.5 px-3.5 text-right font-mono text-slate-500">-</td>;
                         })}
                       </tr>
                     </tfoot>
@@ -663,7 +663,7 @@ export const UniversalDataView: React.FC<UniversalDataViewProps> = ({
                 {/* Controles de Paginación */}
                 {totalPaginas > 1 && (
                   <div className="flex items-center justify-between pt-1">
-                    <span className="text-[11px] text-slate-400">
+                    <span className="text-[11px] text-slate-500">
                       Página {paginaActual} de {totalPaginas}
                     </span>
                     <div className="flex items-center gap-1">

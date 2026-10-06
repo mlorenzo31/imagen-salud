@@ -99,7 +99,7 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({ onLoginSuccess }) => {
                         : 'border-slate-200 bg-slate-50/70 hover:bg-slate-100 text-slate-600'
                     }`}
                   >
-                    <ShieldCheck className={`w-5 h-5 ${rolSeleccionado === 'admin' ? 'text-clinica-primary' : 'text-slate-400'}`} />
+                    <ShieldCheck className={`w-5 h-5 ${rolSeleccionado === 'admin' ? 'text-clinica-primary' : 'text-slate-500'}`} />
                     <span className="text-[11px] font-bold leading-tight">Director / Admin</span>
                   </button>
 
@@ -113,7 +113,7 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({ onLoginSuccess }) => {
                         : 'border-slate-200 bg-slate-50/70 hover:bg-slate-100 text-slate-600'
                     }`}
                   >
-                    <Briefcase className={`w-5 h-5 ${rolSeleccionado === 'asistente' ? 'text-clinica-primary' : 'text-slate-400'}`} />
+                    <Briefcase className={`w-5 h-5 ${rolSeleccionado === 'asistente' ? 'text-clinica-primary' : 'text-slate-500'}`} />
                     <span className="text-[11px] font-bold leading-tight">Asistente Admin</span>
                   </button>
 
@@ -127,7 +127,7 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({ onLoginSuccess }) => {
                         : 'border-slate-200 bg-slate-50/70 hover:bg-slate-100 text-slate-600'
                     }`}
                   >
-                    <Receipt className={`w-5 h-5 ${rolSeleccionado === 'cajero' ? 'text-clinica-primary' : 'text-slate-400'}`} />
+                    <Receipt className={`w-5 h-5 ${rolSeleccionado === 'cajero' ? 'text-clinica-primary' : 'text-slate-500'}`} />
                     <span className="text-[11px] font-bold leading-tight">Caja & Admisión</span>
                   </button>
                 </div>
@@ -174,7 +174,7 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({ onLoginSuccess }) => {
                     <span>PIN / Contraseña de Seguridad</span>
                   </label>
                   <div className="relative">
-                    <KeyRound className="w-4 h-4 absolute left-3 top-3 text-slate-400" />
+                    <KeyRound className="w-4 h-4 absolute left-3 top-3 text-slate-500" />
                     <Input
                       type={mostrarPin ? 'text' : 'password'}
                       placeholder="Ingrese su PIN..."
@@ -186,7 +186,7 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({ onLoginSuccess }) => {
                     <button
                       type="button"
                       onClick={() => setMostrarPin(!mostrarPin)}
-                      className="absolute right-3 top-3 text-slate-400 hover:text-slate-600"
+                      className="absolute right-3 top-3 text-slate-500 hover:text-slate-600"
                     >
                       {mostrarPin ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                     </button>
@@ -218,7 +218,7 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({ onLoginSuccess }) => {
         </Card>
 
         {/* Footer Institucional */}
-        <div className="text-center space-y-1 text-[11px] text-slate-400">
+        <div className="text-center space-y-1 text-[11px] text-slate-500">
           <p>© 2026 Centro Clínico Radiológico Imagen Salud, C.A.</p>
           <p>Módulos auditados conforme a estándares hospitalarios y providencias fiscales SENIAT</p>
         </div>

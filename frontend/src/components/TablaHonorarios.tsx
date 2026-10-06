@@ -299,35 +299,35 @@ export const TablaHonorarios: React.FC<TablaHonorariosProps> = ({
       {/* Tarjetas KPI */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         <Card className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
-          <p className="text-[11px] font-bold text-slate-400 uppercase tracking-wider">Total Honorarios ($ USD)</p>
+          <p className="text-[11px] font-bold text-slate-500 uppercase tracking-wider">Total Honorarios ($ USD)</p>
           <h3 className="text-2xl font-black text-clinica-primary mt-1">
             ${totalUSD.toFixed(2)}
           </h3>
-          <p className="text-[11px] text-slate-400 mt-1">Acumulado pendiente de liquidar</p>
+          <p className="text-[11px] text-slate-500 mt-1">Acumulado pendiente de liquidar</p>
         </Card>
 
         <Card className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
-          <p className="text-[11px] font-bold text-slate-400 uppercase tracking-wider">Equivalente Bolívares</p>
+          <p className="text-[11px] font-bold text-slate-500 uppercase tracking-wider">Equivalente Bolívares</p>
           <h3 className="text-2xl font-black text-slate-900 mt-1">
             Bs. {totalBS.toLocaleString('es-VE', { minimumFractionDigits: 2 })}
           </h3>
-          <p className="text-[11px] text-slate-400 mt-1">Tasa oficial BCV Bs. {tasaReferencia.toFixed(2)}</p>
+          <p className="text-[11px] text-slate-500 mt-1">Tasa oficial BCV Bs. {tasaReferencia.toFixed(2)}</p>
         </Card>
 
         <Card className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
-          <p className="text-[11px] font-bold text-slate-400 uppercase tracking-wider">Pacientes Atendidos</p>
+          <p className="text-[11px] font-bold text-slate-500 uppercase tracking-wider">Pacientes Atendidos</p>
           <h3 className="text-2xl font-black text-cyan-700 mt-1">
             {totalPacientes}
           </h3>
-          <p className="text-[11px] text-slate-400 mt-1">Estudios clínicos realizados</p>
+          <p className="text-[11px] text-slate-500 mt-1">Estudios clínicos realizados</p>
         </Card>
 
         <Card className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
-          <p className="text-[11px] font-bold text-slate-400 uppercase tracking-wider">Especialistas Filtrados</p>
+          <p className="text-[11px] font-bold text-slate-500 uppercase tracking-wider">Especialistas Filtrados</p>
           <h3 className="text-2xl font-black text-indigo-700 mt-1">
             {itemsFiltrados.length}
           </h3>
-          <p className="text-[11px] text-slate-400 mt-1">Con honorarios pendientes</p>
+          <p className="text-[11px] text-slate-500 mt-1">Con honorarios pendientes</p>
         </Card>
       </div>
 
@@ -335,7 +335,7 @@ export const TablaHonorarios: React.FC<TablaHonorariosProps> = ({
       <Card className="rounded-2xl border border-slate-200 bg-white shadow-sm p-4 space-y-3">
         <div className="flex flex-col md:flex-row items-center gap-3">
           <div className="relative flex-1 w-full">
-            <Search className="w-4 h-4 absolute left-3 top-3 text-slate-400" />
+            <Search className="w-4 h-4 absolute left-3 top-3 text-slate-500" />
             <Input
               placeholder="Buscar por médico o especialidad..."
               value={busqueda}
@@ -427,7 +427,7 @@ export const TablaHonorarios: React.FC<TablaHonorariosProps> = ({
             <tbody className="divide-y divide-slate-100">
               {itemsFiltrados.length === 0 ? (
                 <tr>
-                  <td colSpan={7} className="p-8 text-center text-slate-400">
+                  <td colSpan={7} className="p-8 text-center text-slate-500">
                     No se encontraron honorarios médicos registrados.
                   </td>
                 </tr>
@@ -494,7 +494,7 @@ export const TablaHonorarios: React.FC<TablaHonorariosProps> = ({
                                   <PieChart className="w-4 h-4 text-clinica-primary" />
                                   <span>Desglose Exacto de Formas de Pago de Pacientes de {doc.medico}:</span>
                                 </span>
-                                <span className="text-[11px] text-slate-400">Permite planificar la modalidad de liquidación</span>
+                                <span className="text-[11px] text-slate-500">Permite planificar la modalidad de liquidación</span>
                               </div>
 
                               <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
@@ -549,7 +549,7 @@ export const TablaHonorarios: React.FC<TablaHonorariosProps> = ({
                                   <p className="font-mono font-black text-emerald-600 text-sm mt-1">
                                     ${traz.divisas_usd.toFixed(2)} USD
                                   </p>
-                                  <p className="text-[10px] font-mono text-slate-400">Directo en Bóveda Divisas</p>
+                                  <p className="text-[10px] font-mono text-slate-500">Directo en Bóveda Divisas</p>
                                 </div>
                               </div>
                             </div>

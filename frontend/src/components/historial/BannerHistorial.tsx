@@ -50,7 +50,7 @@ export const BannerHistorial: React.FC<BannerHistorialProps> = ({ pacienteSelecc
             )}
             {pacienteSeleccionado.direccion && (
               <span className="flex items-center gap-1 truncate max-w-xs">
-                <MapPin className="w-3.5 h-3.5 text-slate-400 shrink-0" />
+                <MapPin className="w-3.5 h-3.5 text-slate-500 shrink-0" />
                 <span className="truncate">{pacienteSeleccionado.direccion}</span>
               </span>
             )}

@@ -402,7 +402,7 @@ export default function Home() {
                   <CardTitle className="text-sm font-black text-slate-800">
                     Extracto de Movimientos y Libro Mayor
                   </CardTitle>
-                  <p className="text-xs text-slate-400 mt-0.5">Auditoría contable y conciliación de transacciones</p>
+                  <p className="text-xs text-slate-500 mt-0.5">Auditoría contable y conciliación de transacciones</p>
                 </div>
                 <div className="flex items-center gap-2">
                   <Badge variant="outline" className="font-mono text-xs">
@@ -444,7 +444,7 @@ export default function Home() {
                   <tbody className="divide-y divide-slate-100">
                     {transacciones.length === 0 ? (
                       <tr>
-                        <td colSpan={7} className="p-8 text-center text-slate-400 font-medium">
+                        <td colSpan={7} className="p-8 text-center text-slate-500 font-medium">
                           No hay transacciones registradas aún.
                         </td>
                       </tr>

@@ -25,7 +25,7 @@ interface BarraBusquedaCajaProps {
 
 export const BarraBusquedaCaja: React.FC<BarraBusquedaCajaProps> = ({ filtroPeriodo, setFiltroPeriodo, filtroEstados, toggleFiltroEstado, filtroSoloDivisas, setFiltroSoloDivisas, filtroSoloBs, setFiltroSoloBs, filtroMontoMayor50, setFiltroMontoMayor50, agruparPor, setAgruparPor, busquedaTexto, setBusquedaTexto, setMenuFiltrosAbierto, menuFiltrosAbierto }) => (
   <div className="relative flex flex-wrap items-center gap-2 p-2 rounded-xl bg-slate-50 border-2 border-slate-300 focus-within:border-cyan-500 focus-within:bg-white transition-all">
-    <Search className="w-5 h-5 text-slate-400 shrink-0 ml-1" />
+    <Search className="w-5 h-5 text-slate-500 shrink-0 ml-1" />
 
     {/* Chips de Filtros Activos (Etiquetas de Filtrado) */}
     {filtroPeriodo !== 'TODOS' && (

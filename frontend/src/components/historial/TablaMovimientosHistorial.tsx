@@ -34,11 +34,11 @@ export const TablaMovimientosHistorial: React.FC<TablaMovimientosHistorialProps>
       </div>
     ) : movimientosFiltrados.length === 0 ? (
       <div className="p-12 text-center space-y-2">
-        <div className="w-12 h-12 bg-slate-100 text-slate-400 rounded-2xl mx-auto flex items-center justify-center">
+        <div className="w-12 h-12 bg-slate-100 text-slate-500 rounded-2xl mx-auto flex items-center justify-center">
           <Filter className="w-6 h-6" />
         </div>
         <p className="text-sm font-bold text-slate-700">Sin movimientos con los filtros aplicados</p>
-        <p className="text-xs text-slate-400 max-w-sm mx-auto">
+        <p className="text-xs text-slate-500 max-w-sm mx-auto">
           No se encontraron atenciones o estudios que coincidan con los criterios seleccionados. Intente ajustar o restablecer los filtros.
         </p>
         {hayFiltrosActivos && (
@@ -110,7 +110,7 @@ export const TablaMovimientosHistorial: React.FC<TablaMovimientosHistorialProps>
                           {/* Fecha y Hora */}
                           <td className="py-3 px-4">
                             <p className="font-bold text-slate-900">{fechaFormateada}</p>
-                            <p className="text-[10px] text-slate-400">{m.hora || '--:--'}</p>
+                            <p className="text-[10px] text-slate-500">{m.hora || '--:--'}</p>
                           </td>
 
                           {/* N° Control / ID Factura */}
@@ -212,7 +212,7 @@ export const TablaMovimientosHistorial: React.FC<TablaMovimientosHistorialProps>
                                 </span>
                               </div>
                             ) : (
-                              <div className="flex items-center gap-1 text-[10px] text-slate-400">
+                              <div className="flex items-center gap-1 text-[10px] text-slate-500">
                                 <AlertTriangle className="w-3 h-3 text-slate-300" />
                                 <span>Sin adjunto</span>
                               </div>
@@ -232,7 +232,7 @@ export const TablaMovimientosHistorial: React.FC<TablaMovimientosHistorialProps>
                                 <span>Listo WA</span>
                               </Badge>
                             ) : (
-                              <Badge className="bg-slate-100 text-slate-400 text-[9px] font-bold border border-slate-200">
+                              <Badge className="bg-slate-100 text-slate-500 text-[9px] font-bold border border-slate-200">
                                 Inactivo
                               </Badge>
                             )}
@@ -268,7 +268,7 @@ export const TablaMovimientosHistorial: React.FC<TablaMovimientosHistorialProps>
                     {/* Fecha y Hora */}
                     <td className="py-3 px-4">
                       <p className="font-bold text-slate-900">{fechaFormateada}</p>
-                      <p className="text-[10px] text-slate-400">{m.hora || '--:--'}</p>
+                      <p className="text-[10px] text-slate-500">{m.hora || '--:--'}</p>
                     </td>
 
                     {/* N° Control / ID Factura */}
@@ -370,7 +370,7 @@ export const TablaMovimientosHistorial: React.FC<TablaMovimientosHistorialProps>
                           </span>
                         </div>
                       ) : (
-                        <div className="flex items-center gap-1 text-[10px] text-slate-400">
+                        <div className="flex items-center gap-1 text-[10px] text-slate-500">
                           <AlertTriangle className="w-3 h-3 text-slate-300" />
                           <span>Sin adjunto</span>
                         </div>
@@ -390,7 +390,7 @@ export const TablaMovimientosHistorial: React.FC<TablaMovimientosHistorialProps>
                           <span>Listo WA</span>
                         </Badge>
                       ) : (
-                        <Badge className="bg-slate-100 text-slate-400 text-[9px] font-bold border border-slate-200">
+                        <Badge className="bg-slate-100 text-slate-500 text-[9px] font-bold border border-slate-200">
                           Inactivo
                         </Badge>
                       )}

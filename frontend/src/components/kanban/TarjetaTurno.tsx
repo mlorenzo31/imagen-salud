@@ -144,7 +144,7 @@ export const TarjetaEspera: React.FC<PropsEspera> = ({ turno: t, todos, isReadOn
           </Button>
         )}
         {isAdmin && !isReadOnly && (
-          <Button size="sm" variant="ghost" onClick={() => onAnular(t)} className="text-slate-400 hover:text-clinica-coral hover:bg-clinica-coral-soft rounded-xl h-8 px-2" title="Anular atención en sala y enviar fondos a reversión">
+          <Button size="sm" variant="ghost" onClick={() => onAnular(t)} className="text-slate-500 hover:text-clinica-coral hover:bg-clinica-coral-soft rounded-xl h-8 px-2" title="Anular atención en sala y enviar fondos a reversión">
             <XCircle className="w-4 h-4" />
           </Button>
         )}

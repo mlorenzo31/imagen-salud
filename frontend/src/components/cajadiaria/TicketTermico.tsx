@@ -26,15 +26,15 @@ export const TicketTermico: React.FC<TicketTermicoProps> = ({ facturaSeleccionad
         </div>
 
         <div className="space-y-1 text-[11px] border-b border-dashed border-slate-300 pb-2 mb-2">
-          <p><span className="text-slate-400">Folio:</span> #{facturaSeleccionada.id}</p>
-          <p><span className="text-slate-400">Fecha/Hora:</span> {facturaSeleccionada.fecha} {facturaSeleccionada.hora}</p>
-          <p><span className="text-slate-400">Paciente:</span> {facturaSeleccionada.nombre_paciente}</p>
-          <p><span className="text-slate-400">Cédula:</span> {facturaSeleccionada.cedula_paciente}</p>
-          <p><span className="text-slate-400">Médico:</span> {facturaSeleccionada.medico || 'De Guardia'}</p>
+          <p><span className="text-slate-500">Folio:</span> #{facturaSeleccionada.id}</p>
+          <p><span className="text-slate-500">Fecha/Hora:</span> {facturaSeleccionada.fecha} {facturaSeleccionada.hora}</p>
+          <p><span className="text-slate-500">Paciente:</span> {facturaSeleccionada.nombre_paciente}</p>
+          <p><span className="text-slate-500">Cédula:</span> {facturaSeleccionada.cedula_paciente}</p>
+          <p><span className="text-slate-500">Médico:</span> {facturaSeleccionada.medico || 'De Guardia'}</p>
         </div>
 
         <div className="border-b border-dashed border-slate-300 pb-2 mb-2">
-          <p className="text-[10px] font-bold text-slate-400 uppercase mb-1">Servicios:</p>
+          <p className="text-[10px] font-bold text-slate-500 uppercase mb-1">Servicios:</p>
           <p className="font-bold text-slate-900">{facturaSeleccionada.estudio}</p>
         </div>
 
@@ -81,7 +81,7 @@ export const TicketTermico: React.FC<TicketTermicoProps> = ({ facturaSeleccionad
           )}
         </div>
 
-        <div className="text-center text-[10px] text-slate-400 mt-4 pt-3 border-t border-dashed border-slate-300">
+        <div className="text-center text-[10px] text-slate-500 mt-4 pt-3 border-t border-dashed border-slate-300">
           <p>¡Gracias por su confianza!</p>
           <p>Favor esperar su llamado en sala por pantalla.</p>
         </div>

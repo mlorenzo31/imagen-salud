@@ -251,7 +251,7 @@ export const ModuloConciliacionPOS: React.FC<Props> = ({ currentRole, modoOperac
                     <tr className="border-b border-slate-100 hover:bg-slate-50/60">
                       <td className="py-3 pr-3">
                         {l.estado === 'PENDIENTE' && (
-                          <button onClick={() => alternarDetalle(l)} aria-label="Ver cobros del lote" className="text-slate-400 hover:text-slate-700">
+                          <button onClick={() => alternarDetalle(l)} aria-label="Ver cobros del lote" className="text-slate-500 hover:text-slate-700">
                             {expandido === claveLote(l) ? <ChevronDown className="w-4 h-4" /> : <ChevronRight className="w-4 h-4" />}
                           </button>
                         )}
@@ -265,13 +265,13 @@ export const ModuloConciliacionPOS: React.FC<Props> = ({ currentRole, modoOperac
                         {l.estado === 'CONCILIADO'
                           ? <Badge className="bg-clinica-selection text-clinica-dark border border-clinica-aquamarine/50"><CheckCircle2 className="w-3 h-3" /> Conciliado</Badge>
                           : <Badge className="bg-clinica-coral-soft text-clinica-coral border border-clinica-coral/30">Pendiente</Badge>}
-                        {l.estado === 'CONCILIADO' && l.referencia && <span className="ml-2 text-xs text-slate-400">{l.referencia}</span>}
+                        {l.estado === 'CONCILIADO' && l.referencia && <span className="ml-2 text-xs text-slate-500">{l.referencia}</span>}
                       </td>
                       <td className="py-3 text-right">
                         {l.estado === 'PENDIENTE' && esAdmin && (
                           <Button size="sm" onClick={() => abrirConciliar(l)} className="bg-clinica-primary hover:bg-clinica-primary-dark text-white">Conciliar abono</Button>
                         )}
-                        {l.estado === 'PENDIENTE' && !esAdmin && <span className="text-xs text-slate-400">Solo administrador</span>}
+                        {l.estado === 'PENDIENTE' && !esAdmin && <span className="text-xs text-slate-500">Solo administrador</span>}
                       </td>
                     </tr>
                     {expandido === claveLote(l) && (
@@ -282,7 +282,7 @@ export const ModuloConciliacionPOS: React.FC<Props> = ({ currentRole, modoOperac
                             <ul className="divide-y divide-slate-200/70 text-xs">
                               {detalle.map((t) => (
                                 <li key={t.id} className="flex items-center justify-between py-1.5">
-                                  <span className="text-slate-700">{t.hora_transaccion ?? ''} · {t.nombre_paciente ?? 'Paciente'} <span className="text-slate-400">{t.cedula_paciente}</span></span>
+                                  <span className="text-slate-700">{t.hora_transaccion ?? ''} · {t.nombre_paciente ?? 'Paciente'} <span className="text-slate-500">{t.cedula_paciente}</span></span>
                                   <span className="tabular-nums font-medium">{bs(Number(t.monto_bruto_bs))}</span>
                                 </li>
                               ))}
@@ -325,7 +325,7 @@ export const ModuloConciliacionPOS: React.FC<Props> = ({ currentRole, modoOperac
               <span className="text-slate-500">Comisión bancaria retenida</span>
               {netoValido
                 ? <strong className="text-clinica-coral tabular-nums">{bs(centsToNumber(comisionCents))} ({brutoLote > 0 ? ((comisionCents / brutoLote) * 100).toFixed(2) : '0'}%)</strong>
-                : <span className="text-slate-400">{neto !== '' && comisionCents < 0 ? 'El neto no puede superar el bruto' : '—'}</span>}
+                : <span className="text-slate-500">{neto !== '' && comisionCents < 0 ? 'El neto no puede superar el bruto' : '—'}</span>}
             </div>
             <p className="text-xs text-slate-500">Al confirmar se acredita el neto en la cuenta del punto de venta, se descuenta del saldo en tránsito y se registra el movimiento.</p>
             {errorModal && <p className="text-xs font-medium text-clinica-coral">{errorModal}</p>}

@@ -368,39 +368,39 @@ export const ModuloIngresosExtraordinarios: React.FC<ModuloIngresosExtraordinari
       {/* Tarjetas KPI */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         <Card className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
-          <p className="text-[11px] font-bold text-slate-400 uppercase tracking-wider">Total en Bolívares</p>
+          <p className="text-[11px] font-bold text-slate-500 uppercase tracking-wider">Total en Bolívares</p>
           <h3 className="text-2xl font-black text-emerald-600 mt-1">
             Bs. {totalBs.toLocaleString('es-VE', { minimumFractionDigits: 2 })}
           </h3>
-          <p className="text-[11px] text-slate-400 mt-1">
+          <p className="text-[11px] text-slate-500 mt-1">
             ≈ ${(totalBs / (tasaBcv || 1)).toFixed(2)} USD a tasa BCV
           </p>
         </Card>
 
         <Card className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
-          <p className="text-[11px] font-bold text-slate-400 uppercase tracking-wider">Total en Divisas Cash</p>
+          <p className="text-[11px] font-bold text-slate-500 uppercase tracking-wider">Total en Divisas Cash</p>
           <h3 className="text-2xl font-black text-slate-900 mt-1">
             $ {totalUsd.toLocaleString('es-VE', { minimumFractionDigits: 2 })}
           </h3>
-          <p className="text-[11px] text-slate-400 mt-1">
+          <p className="text-[11px] text-slate-500 mt-1">
             ≈ Bs. {(totalUsd * tasaBcv).toLocaleString('es-VE', { minimumFractionDigits: 2 })}
           </p>
         </Card>
 
         <Card className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
-          <p className="text-[11px] font-bold text-slate-400 uppercase tracking-wider">Asientos Filtrados</p>
+          <p className="text-[11px] font-bold text-slate-500 uppercase tracking-wider">Asientos Filtrados</p>
           <h3 className="text-2xl font-black text-cyan-600 mt-1">
             {ingresosFiltrados.length}
           </h3>
-          <p className="text-[11px] text-slate-400 mt-1">Registros de tesorería</p>
+          <p className="text-[11px] text-slate-500 mt-1">Registros de tesorería</p>
         </Card>
 
         <Card className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
-          <p className="text-[11px] font-bold text-slate-400 uppercase tracking-wider">Tasa Oficial BCV</p>
+          <p className="text-[11px] font-bold text-slate-500 uppercase tracking-wider">Tasa Oficial BCV</p>
           <h3 className="text-2xl font-black text-indigo-600 mt-1">
             Bs. {tasaBcv.toFixed(2)}
           </h3>
-          <p className="text-[11px] text-slate-400 mt-1">Sincronización en vivo</p>
+          <p className="text-[11px] text-slate-500 mt-1">Sincronización en vivo</p>
         </Card>
       </div>
 
@@ -408,7 +408,7 @@ export const ModuloIngresosExtraordinarios: React.FC<ModuloIngresosExtraordinari
       <Card className="rounded-2xl border border-slate-200 bg-white shadow-sm p-4 space-y-3">
         <div className="flex flex-col md:flex-row items-center gap-3">
           <div className="relative flex-1 w-full">
-            <Search className="w-4 h-4 absolute left-3 top-3 text-slate-400" />
+            <Search className="w-4 h-4 absolute left-3 top-3 text-slate-500" />
             <Input
               placeholder="Buscar por concepto, categoría, cuenta o referencia..."
               value={searchQuery}
@@ -458,7 +458,7 @@ export const ModuloIngresosExtraordinarios: React.FC<ModuloIngresosExtraordinari
 
         {/* Chips de Categoría */}
         <div className="flex items-center gap-1.5 overflow-x-auto pb-1 text-xs">
-          <span className="text-slate-400 font-bold text-[10px] uppercase">Categorías:</span>
+          <span className="text-slate-500 font-bold text-[10px] uppercase">Categorías:</span>
           <button
             onClick={() => setFiltroCategoria('TODOS')}
             className={`px-2.5 py-1 rounded-lg text-xs font-bold shrink-0 transition-all ${
@@ -500,14 +500,14 @@ export const ModuloIngresosExtraordinarios: React.FC<ModuloIngresosExtraordinari
             <tbody className="divide-y divide-slate-100">
               {loading ? (
                 <tr>
-                  <td colSpan={8} className="p-8 text-center text-slate-400">
+                  <td colSpan={8} className="p-8 text-center text-slate-500">
                     <RefreshCw className="w-6 h-6 animate-spin mx-auto mb-2 text-emerald-500" />
                     Cargando libro de ingresos extraordinarios...
                   </td>
                 </tr>
               ) : ingresosFiltrados.length === 0 ? (
                 <tr>
-                  <td colSpan={8} className="p-8 text-center text-slate-400">
+                  <td colSpan={8} className="p-8 text-center text-slate-500">
                     No se encontraron ingresos extraordinarios para los filtros seleccionados.
                   </td>
                 </tr>
@@ -541,7 +541,7 @@ export const ModuloIngresosExtraordinarios: React.FC<ModuloIngresosExtraordinari
                           {item.referencia}
                         </Badge>
                       ) : (
-                        <span className="text-slate-400">S/R</span>
+                        <span className="text-slate-500">S/R</span>
                       )}
                     </td>
                     <td className="p-3 text-center text-slate-500 text-[11px]">
@@ -593,7 +593,7 @@ export const ModuloIngresosExtraordinarios: React.FC<ModuloIngresosExtraordinari
                             +{parseFloat(String(item.monto)).toLocaleString('es-VE', { minimumFractionDigits: 2 })} {item.moneda}
                           </td>
                           <td className="p-3 text-center font-mono text-slate-600">
-                            {item.referencia || <span className="text-slate-400">S/R</span>}
+                            {item.referencia || <span className="text-slate-500">S/R</span>}
                           </td>
                           <td className="p-3 text-center text-slate-500 text-[11px]">{item.usuario}</td>
                         </tr>
@@ -672,14 +672,14 @@ export const ModuloIngresosExtraordinarios: React.FC<ModuloIngresosExtraordinari
             <div className="space-y-1.5">
               <label className="text-xs font-bold text-slate-700 flex items-center justify-between">
                 <span>Monto a Ingresar ({cuentaSeleccionada?.moneda || 'BS'})</span>
-                <span className="text-[10px] text-slate-400">
+                <span className="text-[10px] text-slate-500">
                   {cuentaSeleccionada?.moneda === 'BS' 
                     ? `≈ $${(parseFloat(monto || '0') / tasaBcv).toFixed(2)} USD` 
                     : `≈ Bs. ${(parseFloat(monto || '0') * tasaBcv).toFixed(2)}`}
                 </span>
               </label>
               <div className="relative">
-                <span className="absolute left-3 top-2.5 text-xs font-bold text-slate-400">
+                <span className="absolute left-3 top-2.5 text-xs font-bold text-slate-500">
                   {cuentaSeleccionada?.moneda === 'USD' ? '$' : 'Bs.'}
                 </span>
                 <Input

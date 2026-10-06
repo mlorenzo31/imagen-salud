@@ -23,7 +23,7 @@ export const TabPacientes: React.FC<TabPacientesProps> = ({ busqueda, setBusqued
     {/* Barra de Filtros y Botón Crear */}
     <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-white p-3.5 rounded-xl border border-slate-200/80">
       <div className="relative flex-1 max-w-sm">
-        <Search className="w-4 h-4 absolute left-3 top-2.5 text-slate-400" />
+        <Search className="w-4 h-4 absolute left-3 top-2.5 text-slate-500" />
         <Input
           placeholder="Buscar por cédula o nombre..."
           value={busqueda}
@@ -76,15 +76,15 @@ export const TabPacientes: React.FC<TabPacientesProps> = ({ busqueda, setBusqued
             <CardContent className="p-4 space-y-3">
               <div className="space-y-1.5 text-xs text-slate-600">
                 <div className="flex items-center gap-2">
-                  <Phone className="w-3.5 h-3.5 text-slate-400" />
+                  <Phone className="w-3.5 h-3.5 text-slate-500" />
                   <span>{p.telefono || 'Sin teléfono registrado'}</span>
                 </div>
                 <div className="flex items-center justify-between pt-1 border-t border-slate-100">
-                  <span className="text-slate-400 text-[11px]">Historial de Atenciones:</span>
+                  <span className="text-slate-500 text-[11px]">Historial de Atenciones:</span>
                   <span className="font-bold text-slate-800">{p.historial_visitas} visitas</span>
                 </div>
                 <div className="flex items-center justify-between">
-                  <span className="text-slate-400 text-[11px]">Saldo Pendiente:</span>
+                  <span className="text-slate-500 text-[11px]">Saldo Pendiente:</span>
                   <span className={`font-mono font-black ${p.saldo_pendiente_usd > 0 ? 'text-rose-600' : 'text-emerald-700'}`}>
                     ${p.saldo_pendiente_usd.toFixed(2)}
                   </span>

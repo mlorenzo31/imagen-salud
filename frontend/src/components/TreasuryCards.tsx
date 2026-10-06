@@ -58,7 +58,7 @@ export const TreasuryCards: React.FC<TreasuryCardsProps> = ({ cuentas, loading, 
           border: 'border-slate-800',
           bg: 'bg-slate-900',
           badge: 'bg-slate-800 text-slate-300',
-          iconBg: 'bg-slate-800 text-slate-400'
+          iconBg: 'bg-slate-800 text-slate-500'
         };
     }
   };

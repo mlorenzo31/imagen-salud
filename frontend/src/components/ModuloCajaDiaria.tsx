@@ -381,7 +381,7 @@ export const ModuloCajaDiaria: React.FC<ModuloCajaDiariaProps> = ({ currentRole 
       <div className="grid grid-cols-2 md:grid-cols-6 gap-3">
         <Card className="bg-white border-slate-200">
           <CardContent className="p-3.5">
-            <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Facturas Totales</p>
+            <p className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">Facturas Totales</p>
             <p className="text-2xl font-black text-slate-900 mt-1">{totalFacturas}</p>
             <p className="text-[10px] text-slate-500 mt-0.5">{facturasActivas.length} activas • {totalAnuladas} anuladas</p>
           </CardContent>
@@ -399,7 +399,7 @@ export const ModuloCajaDiaria: React.FC<ModuloCajaDiariaProps> = ({ currentRole 
 
         <Card className="bg-white border-slate-200">
           <CardContent className="p-3.5">
-            <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Efectivo Divisas</p>
+            <p className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">Efectivo Divisas</p>
             <p className="text-xl font-black text-emerald-600 mt-1">${totalDivisasUSD.toFixed(2)}</p>
             <p className="text-[10px] font-mono text-slate-500 mt-0.5">
               ≈ Bs. {totalDivisasEquivBs.toLocaleString('es-VE', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
@@ -409,7 +409,7 @@ export const ModuloCajaDiaria: React.FC<ModuloCajaDiariaProps> = ({ currentRole 
 
         <Card className="bg-white border-slate-200">
           <CardContent className="p-3.5">
-            <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Efectivo Bs</p>
+            <p className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">Efectivo Bs</p>
             <p className="text-lg font-black text-blue-600 mt-1">
               Bs. {totalEfectivoBs.toLocaleString('es-VE', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
             </p>
@@ -421,7 +421,7 @@ export const ModuloCajaDiaria: React.FC<ModuloCajaDiariaProps> = ({ currentRole 
 
         <Card className="bg-white border-slate-200">
           <CardContent className="p-3.5">
-            <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Punto de Venta</p>
+            <p className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">Punto de Venta</p>
             <p className="text-lg font-black text-indigo-600 mt-1">
               Bs. {totalPuntoBs.toLocaleString('es-VE', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
             </p>
@@ -433,7 +433,7 @@ export const ModuloCajaDiaria: React.FC<ModuloCajaDiariaProps> = ({ currentRole 
 
         <Card className="bg-white border-slate-200">
           <CardContent className="p-3.5">
-            <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Pago Móvil</p>
+            <p className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">Pago Móvil</p>
             <p className="text-lg font-black text-cyan-600 mt-1">
               Bs. {totalPagoMovilBs.toLocaleString('es-VE', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
             </p>

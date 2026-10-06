@@ -118,7 +118,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
           if (itemsPermitidos.length === 0) return null;
           return (
             <div key={idx} className="space-y-1">
-              <p className="px-3 pb-1 text-[10.5px] font-semibold tracking-[0.08em] text-slate-400 uppercase">{sec.group}</p>
+              <p className="px-3 pb-1 text-[10.5px] font-semibold tracking-[0.08em] text-slate-500 uppercase">{sec.group}</p>
               {itemsPermitidos.map(item => {
                 const Icon = item.icon;
                 const isActive = activeSection === item.id;
@@ -133,7 +133,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
                     }`}
                   >
                     {isActive && <span className="absolute left-0 top-1/2 -translate-y-1/2 h-5 w-[3px] rounded-r-full bg-clinica-primary" />}
-                    <Icon className={`w-[18px] h-[18px] shrink-0 ${isActive ? 'text-clinica-primary' : 'text-slate-400'}`} strokeWidth={1.75} />
+                    <Icon className={`w-[18px] h-[18px] shrink-0 ${isActive ? 'text-clinica-primary' : 'text-slate-500'}`} strokeWidth={1.75} />
                     <span className="truncate text-left">{item.label}</span>
                   </button>
                 );
@@ -154,7 +154,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
             <span>Cerrar sesión</span>
           </button>
         )}
-        <p className="mt-2 px-3 text-[10.5px] text-slate-400">v4.8 · Gestión clínica</p>
+        <p className="mt-2 px-3 text-[10.5px] text-slate-500">v4.8 · Gestión clínica</p>
       </div>
     </aside>
     </>

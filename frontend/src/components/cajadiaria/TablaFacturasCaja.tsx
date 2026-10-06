@@ -33,7 +33,7 @@ export const TablaFacturasCaja: React.FC<TablaFacturasCajaProps> = ({ facturasFi
           </Badge>
         )}
       </CardTitle>
-      <p className="text-[11px] text-slate-400">Total en vista: ${totalCobradoUSD.toFixed(2)} (Bs. {totalCobradoBs.toLocaleString('es-VE', { minimumFractionDigits: 2, maximumFractionDigits: 2 })})</p>
+      <p className="text-[11px] text-slate-500">Total en vista: ${totalCobradoUSD.toFixed(2)} (Bs. {totalCobradoBs.toLocaleString('es-VE', { minimumFractionDigits: 2, maximumFractionDigits: 2 })})</p>
     </CardHeader>
 
     <div className="overflow-x-auto">
@@ -41,7 +41,7 @@ export const TablaFacturasCaja: React.FC<TablaFacturasCajaProps> = ({ facturasFi
       {grupos ? (
         <div className="divide-y divide-slate-200">
           {grupos.length === 0 ? (
-            <div className="py-10 text-center text-slate-400 text-xs">
+            <div className="py-10 text-center text-slate-500 text-xs">
               No hay comprobantes que coincidan con los filtros y agrupaciones activas
             </div>
           ) : (
@@ -117,7 +117,7 @@ export const TablaFacturasCaja: React.FC<TablaFacturasCajaProps> = ({ facturasFi
                                   <button
                                     disabled={anulandoId === f.id}
                                     onClick={() => handleAnular(f.id)}
-                                    className="p-1 rounded-lg text-slate-400 hover:text-rose-600 hover:bg-rose-50"
+                                    className="p-1 rounded-lg text-slate-500 hover:text-rose-600 hover:bg-rose-50"
                                     title="Anular"
                                   >
                                     <Ban className="w-4 h-4" />
@@ -153,7 +153,7 @@ export const TablaFacturasCaja: React.FC<TablaFacturasCajaProps> = ({ facturasFi
           <tbody className="divide-y divide-slate-100">
             {facturasFiltradas.length === 0 ? (
               <tr>
-                <td colSpan={8} className="py-8 text-center text-slate-400 text-xs font-medium">
+                <td colSpan={8} className="py-8 text-center text-slate-500 text-xs font-medium">
                   No se encontraron comprobantes para los filtros seleccionados
                 </td>
               </tr>
@@ -176,7 +176,7 @@ export const TablaFacturasCaja: React.FC<TablaFacturasCajaProps> = ({ facturasFi
                     </td>
                     <td className="py-2.5 px-3">
                       <p className="font-bold text-slate-900 leading-tight">{f.nombre_paciente}</p>
-                      <p className="text-[10px] text-slate-400 font-mono">{f.cedula_paciente}</p>
+                      <p className="text-[10px] text-slate-500 font-mono">{f.cedula_paciente}</p>
                     </td>
                     <td className="py-2.5 px-3">
                       <p className="font-semibold text-slate-800 line-clamp-1">{f.estudio}</p>
@@ -246,7 +246,7 @@ export const TablaFacturasCaja: React.FC<TablaFacturasCajaProps> = ({ facturasFi
                           <button
                             disabled={anulandoId === f.id}
                             onClick={() => handleAnular(f.id)}
-                            className="p-1.5 rounded-lg text-slate-400 hover:text-rose-600 hover:bg-rose-50 transition-colors"
+                            className="p-1.5 rounded-lg text-slate-500 hover:text-rose-600 hover:bg-rose-50 transition-colors"
                             title="Anular Factura"
                           >
                             <Ban className="w-4 h-4" />

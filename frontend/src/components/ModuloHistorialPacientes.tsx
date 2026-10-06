@@ -563,7 +563,7 @@ export const ModuloHistorialPacientes: React.FC<ModuloHistorialPacientesProps> =
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
             <Card className="rounded-2xl border border-slate-200/80 bg-white p-3.5 shadow-sm space-y-1">
               <div className="flex items-center justify-between">
-                <span className="text-[10px] font-black uppercase text-slate-400 tracking-wider">
+                <span className="text-[10px] font-black uppercase text-slate-500 tracking-wider">
                   {pacienteSeleccionado ? 'Atenciones Paciente' : 'Total Atenciones'}
                 </span>
                 <Activity className="w-4 h-4 text-clinica-primary" />
@@ -574,7 +574,7 @@ export const ModuloHistorialPacientes: React.FC<ModuloHistorialPacientesProps> =
 
             <Card className="rounded-2xl border border-slate-200/80 bg-white p-3.5 shadow-sm space-y-1">
               <div className="flex items-center justify-between">
-                <span className="text-[10px] font-black uppercase text-slate-400 tracking-wider">Total Facturado</span>
+                <span className="text-[10px] font-black uppercase text-slate-500 tracking-wider">Total Facturado</span>
                 <DollarSign className="w-4 h-4 text-emerald-600" />
               </div>
               <p className="text-xl font-black text-emerald-600 font-mono">{formatUSD(kpis.totalUSD)}</p>
@@ -583,11 +583,11 @@ export const ModuloHistorialPacientes: React.FC<ModuloHistorialPacientesProps> =
 
             <Card className="rounded-2xl border border-slate-200/80 bg-white p-3.5 shadow-sm space-y-1">
               <div className="flex items-center justify-between">
-                <span className="text-[10px] font-black uppercase text-slate-400 tracking-wider">Con Imágenes</span>
+                <span className="text-[10px] font-black uppercase text-slate-500 tracking-wider">Con Imágenes</span>
                 <Paperclip className="w-4 h-4 text-cyan-600" />
               </div>
               <p className="text-xl font-black text-slate-900 font-mono">
-                {kpis.conAdjunto} <span className="text-xs font-normal text-slate-400">/ {kpis.totalVisitas}</span>
+                {kpis.conAdjunto} <span className="text-xs font-normal text-slate-500">/ {kpis.totalVisitas}</span>
               </p>
               <p className="text-[10px] text-cyan-600 font-medium">
                 {kpis.totalVisitas > 0 ? Math.round((kpis.conAdjunto / kpis.totalVisitas) * 100) : 0}% con informe
@@ -596,11 +596,11 @@ export const ModuloHistorialPacientes: React.FC<ModuloHistorialPacientesProps> =
 
             <Card className="rounded-2xl border border-slate-200/80 bg-white p-3.5 shadow-sm space-y-1">
               <div className="flex items-center justify-between">
-                <span className="text-[10px] font-black uppercase text-slate-400 tracking-wider">WhatsApp Entregados</span>
+                <span className="text-[10px] font-black uppercase text-slate-500 tracking-wider">WhatsApp Entregados</span>
                 <MessageCircle className="w-4 h-4 text-emerald-600" />
               </div>
               <p className="text-xl font-black text-slate-900 font-mono">
-                {kpis.conWhatsApp} <span className="text-xs font-normal text-slate-400">/ {kpis.conAdjunto}</span>
+                {kpis.conWhatsApp} <span className="text-xs font-normal text-slate-500">/ {kpis.conAdjunto}</span>
               </p>
               <p className="text-[10px] text-emerald-600 font-medium">
                 {kpis.conAdjunto > 0 ? Math.round((kpis.conWhatsApp / kpis.conAdjunto) * 100) : 0}% notificados
@@ -617,7 +617,7 @@ export const ModuloHistorialPacientes: React.FC<ModuloHistorialPacientesProps> =
               <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-2.5 pt-1">
                 {/* Búsqueda dentro de movimientos (estudio, médico, informe, paciente, CI) */}
                 <div className="relative flex-1 max-w-md">
-                  <Search className="w-3.5 h-3.5 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+                  <Search className="w-3.5 h-3.5 absolute left-3 top-1/2 -translate-y-1/2 text-slate-500" />
                   <Input
                     type="text"
                     placeholder="Filtrar por paciente, cédula, estudio, médico, informe o N°..."
@@ -628,7 +628,7 @@ export const ModuloHistorialPacientes: React.FC<ModuloHistorialPacientesProps> =
                   {filtroTextoEstudio && (
                     <button
                       onClick={() => setFiltroTextoEstudio('')}
-                      className="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600"
+                      className="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-500 hover:text-slate-600"
                     >
                       <X className="w-3 h-3" />
                     </button>

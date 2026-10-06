@@ -47,7 +47,7 @@ export const BandejaReembolsos: React.FC<BandejaReembolsosProps> = ({ reembolsos
         <tbody className="divide-y divide-slate-100">
           {reembolsos.length === 0 ? (
             <tr>
-              <td colSpan={7} className="p-8 text-center text-slate-400">
+              <td colSpan={7} className="p-8 text-center text-slate-500">
                 No hay reversiones pendientes en este momento.
               </td>
             </tr>
@@ -63,7 +63,7 @@ export const BandejaReembolsos: React.FC<BandejaReembolsosProps> = ({ reembolsos
                 <td className="p-3 text-slate-600 max-w-xs">{r.motivo_anulacion}</td>
                 <td className="p-3 text-right font-mono font-black text-rose-600 text-sm">
                   Bs. {r.monto_bs.toLocaleString('es-VE', { minimumFractionDigits: 2 })}
-                  <div className="text-[10px] text-slate-400">${r.monto_usd.toFixed(2)} USD</div>
+                  <div className="text-[10px] text-slate-500">${r.monto_usd.toFixed(2)} USD</div>
                 </td>
                 <td className="p-3 text-center">
                   <Badge className="bg-amber-100 text-amber-800 text-[10px] font-bold">
