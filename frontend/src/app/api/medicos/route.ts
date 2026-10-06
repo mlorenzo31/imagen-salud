@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import pool from '@/lib/db';
 import { errorResponse } from '@/lib/apiHelpers';
+import { leerPorcentaje } from '@/lib/porcentaje';
 import { normalizarCedulaRif, extraerDigitos, validarEstructuraCedulaRif } from '@/lib/cedulaRif';
 
 export async function GET(req: NextRequest) {
@@ -79,7 +80,7 @@ export async function POST(req: NextRequest) {
       nombre.trim(),
       especialidad || 'Especialista General',
       turno || 'COMPLETO',
-      parseFloat(String(comision_pct || 70)),
+      leerPorcentaje(comision_pct || 70, 'La comisión'),
       telefono || null,
       email || null,
       mpps_matricula || null,
@@ -141,7 +142,7 @@ export async function PUT(req: NextRequest) {
       nombre,
       especialidad,
       turno,
-      comision_pct !== undefined ? parseFloat(String(comision_pct)) : null,
+      comision_pct !== undefined ? leerPorcentaje(comision_pct, 'La comisión') : null,
       telefono,
       email,
       mpps_matricula,
