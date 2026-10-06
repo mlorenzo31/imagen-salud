@@ -59,6 +59,7 @@ export default function Home() {
   const [role, setRole] = useState<UserRole>('admin');
   const [modoOperacion, setModoOperacion] = useState<ModoOperacion>('operador');
   const [activeSection, setActiveSection] = useState<string>('facturacion');
+  const [menuAbierto, setMenuAbierto] = useState(false);
 
   // Estados de datos
   const [cuentas, setCuentas] = useState<CuentaBancaria[]>([]);
@@ -251,7 +252,9 @@ export default function Home() {
         currentRole={role}
         onRoleChange={setRole}
         activeSection={activeSection}
-        onSelectSection={setActiveSection}
+        onSelectSection={(s) => { setActiveSection(s); setMenuAbierto(false); }}
+        abierto={menuAbierto}
+        onCerrar={() => setMenuAbierto(false)}
         onLogout={handleLogout}
         modoOperacion={modoOperacion}
         onToggleModoOperacion={() => setModoOperacion((prev: ModoOperacion) => prev === 'operador' ? 'vista' : 'operador')}
@@ -259,8 +262,8 @@ export default function Home() {
 
       {/* Contenedor Principal Pulcro (85-90% Blanco Clínico) */}
       <div className="flex-1 min-w-0 flex flex-col">
-      <TopBar seccion={activeSection} tasaBcv={tasaBcv} nombreUsuario={nombreUsuario} role={role} />
-      <main className="flex-1 w-full p-6 lg:p-8 max-w-7xl mx-auto space-y-6">
+      <TopBar seccion={activeSection} tasaBcv={tasaBcv} nombreUsuario={nombreUsuario} role={role} onMenu={() => setMenuAbierto(true)} />
+      <main className="flex-1 w-full p-4 sm:p-6 lg:p-8 max-w-7xl mx-auto space-y-6">
 
         {/* Banner Crítico de Atenciones Abiertas de Fecha Anterior (Pillar 4) */}
         {pacientesPendientes.length > 0 && role === 'admin' && (

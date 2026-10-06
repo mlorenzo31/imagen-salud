@@ -12,6 +12,9 @@ interface SidebarProps {
   onLogout?: () => void;
   modoOperacion?: ModoOperacion;
   onToggleModoOperacion?: () => void;
+  /** En pantallas menores a lg el menú es un panel deslizable. */
+  abierto?: boolean;
+  onCerrar?: () => void;
 }
 
 export const Sidebar: React.FC<SidebarProps> = ({
@@ -20,7 +23,9 @@ export const Sidebar: React.FC<SidebarProps> = ({
   onSelectSection,
   onLogout,
   modoOperacion = 'operador',
-  onToggleModoOperacion
+  onToggleModoOperacion,
+  abierto = false,
+  onCerrar
 }) => {
   const isAdmin = currentRole === 'admin';
   const isAsistente = currentRole === 'asistente';
@@ -70,7 +75,12 @@ export const Sidebar: React.FC<SidebarProps> = ({
   const perfil = isAdmin ? 'Director Médico' : isAsistente ? 'Asistente Administrativo' : 'Caja y Admisión';
 
   return (
-    <aside className="w-64 bg-white text-slate-700 h-screen sticky top-0 flex flex-col border-r border-slate-200/80 shrink-0">
+    <>
+    {abierto && <div className="fixed inset-0 z-30 bg-slate-900/40 lg:hidden" onClick={onCerrar} aria-hidden="true" />}
+    <aside
+      aria-label="Menú principal"
+      className={`w-64 bg-white text-slate-700 h-dvh fixed inset-y-0 left-0 z-40 lg:sticky lg:top-0 lg:z-auto lg:translate-x-0 transition-transform duration-200 flex flex-col border-r border-slate-200/80 shrink-0 ${abierto ? 'translate-x-0 shadow-xl' : '-translate-x-full'}`}
+    >
       {/* Marca */}
       <div className="px-5 pt-5 pb-4">
         <h1 className="sr-only">Imagen Salud · Centro de Atención Radiológica</h1>
@@ -147,5 +157,6 @@ export const Sidebar: React.FC<SidebarProps> = ({
         <p className="mt-2 px-3 text-[10.5px] text-slate-400">v4.8 · Gestión clínica</p>
       </div>
     </aside>
+    </>
   );
 };
