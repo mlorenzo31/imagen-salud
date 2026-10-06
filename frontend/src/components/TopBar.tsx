@@ -1,7 +1,7 @@
 'use client';
 
 import React from 'react';
-import { CircleDollarSign } from 'lucide-react';
+import { CircleDollarSign, Menu } from 'lucide-react';
 import type { UserRole } from '@/types';
 import { WhatsAppEstado } from '@/components/WhatsAppEstado';
 
@@ -29,19 +29,28 @@ interface Props {
   tasaBcv: number;
   nombreUsuario: string;
   role: UserRole;
+  onMenu?: () => void;
 }
 
 const iniciales = (n: string) => n.replace(/^(Dr\.|Dra\.|Lcda\.|Lic\.)\s*/i, '').split(/\s+/).slice(0, 2).map((p) => p[0]?.toUpperCase() ?? '').join('');
 
-export const TopBar: React.FC<Props> = ({ seccion, tasaBcv, nombreUsuario, role }) => {
+export const TopBar: React.FC<Props> = ({ seccion, tasaBcv, nombreUsuario, role, onMenu }) => {
   const info = TITULOS[seccion] ?? { titulo: 'Imagen Salud', detalle: '' };
   const fechaBase = new Intl.DateTimeFormat('es-VE', { timeZone: 'America/Caracas', weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' }).format(new Date());
   const fecha = fechaBase.charAt(0).toUpperCase() + fechaBase.slice(1);
 
   return (
     <header className="sticky top-0 z-20 bg-white/85 backdrop-blur border-b border-slate-200/80">
-      <div className="max-w-7xl mx-auto px-6 lg:px-8 h-16 flex items-center justify-between gap-4">
-        <div className="min-w-0">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between gap-3">
+        <button
+          type="button"
+          onClick={onMenu}
+          aria-label="Abrir menú"
+          className="lg:hidden shrink-0 -ml-1 p-2 rounded-lg text-slate-600 hover:bg-slate-100"
+        >
+          <Menu className="w-5 h-5" strokeWidth={1.75} />
+        </button>
+        <div className="min-w-0 flex-1">
           <h2 className="text-[17px] font-semibold tracking-tight text-slate-900 leading-tight truncate">{info.titulo}</h2>
           <p className="text-xs text-slate-500 truncate">{info.detalle}</p>
         </div>
