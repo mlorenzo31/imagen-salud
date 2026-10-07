@@ -8,6 +8,7 @@ import { obtenerTasaBcv } from '@/lib/tasaBcv';
 import { exigirJornadaAlDia, ultimaFechaCerrada } from '@/lib/cierre';
 import { asegurarMedioTransito } from '@/lib/transito';
 import { listarEstudios, repartoCents, type EstudioFila } from '@/lib/catalogoDb';
+import { BENEFICIARIO_PATOLOGO } from '@/lib/reparto';
 
 export async function GET(req: NextRequest) {
   try {
@@ -79,14 +80,15 @@ interface Servicio {
   sala: string;
   estado?: string;
   precio: number; // centavos USD
-  honorarios: number; // centavos USD
-  ganancia: number; // centavos USD
+  honorarios: number; // centavos USD (médico + patólogo)
+  honMedico: number; // centavos USD
+  honPatologo: number; // centavos USD
+  ganancia: number; // centavos USD (imagen + eco)
   orden: number;
   raw: Raw; // campos adicionales del cliente (se conservan en el JSON de la factura)
 }
 
 const str = (v: unknown): string => (typeof v === 'string' ? v : v == null ? '' : String(v));
-const HONORARIOS_DEFECTO_PCT = 70; // % del precio si el servicio no informa honorarios
 
 function normalizarServicios(data: Raw, catalogo: EstudioFila[]): Servicio[] {
   const lista: Raw[] = Array.isArray(data.servicios) && data.servicios.length > 0
@@ -108,8 +110,8 @@ function normalizarServicios(data: Raw, catalogo: EstudioFila[]): Servicio[] {
     const nombre = str(s.estudio);
     const cat = porClave.get(clave(str(s.area), nombre));
 
-    let honorarios: number;
-    let ganancia: number;
+    let honMedico: number;
+    let honPatologo = 0;
     if (cat) {
       // Estudio del catálogo: el precio y el reparto los fija el catálogo, no el cliente.
       if (!cat.activo) throw new ApiError(400, `El estudio "${nombre}" está desactivado en el catálogo.`);
@@ -117,24 +119,26 @@ function normalizarServicios(data: Raw, catalogo: EstudioFila[]): Servicio[] {
       if (precio !== r.precio) {
         throw new ApiError(400, `El precio de "${nombre}" ($${centsToStr(precio)}) no coincide con el catálogo ($${centsToStr(r.precio)}). Recargue la pantalla.`);
       }
-      honorarios = r.medico + r.eco + r.patologo;
-      ganancia = r.imagen;
+      honMedico = r.medico;
+      honPatologo = r.patologo;
     } else if (s.dist && typeof s.dist === 'object') {
       // Fuera del catálogo (p. ej. consultas con tarifa por especialista): se acepta el reparto informado si cuadra.
       const d = s.dist as Raw;
       const parte = (k: string) => toCents(d[k]);
       const suma = parte('imagen') + parte('medico') + parte('eco') + parte('patologo');
       if (Math.abs(suma - precio) > 1) throw new ApiError(400, `El reparto de "${nombre}" no suma su precio.`);
-      honorarios = parte('medico') + parte('eco') + parte('patologo');
-      ganancia = precio - honorarios;
+      honMedico = parte('medico');
+      honPatologo = parte('patologo');
     } else {
+      // Sin catálogo ni reparto: los honorarios se exigen siempre (no se asume ningún porcentaje).
       const honRaw = s.honorariosMedico ?? s.honorarios_medico;
-      honorarios = honRaw === undefined || honRaw === null || honRaw === ''
-        ? Math.round((precio * HONORARIOS_DEFECTO_PCT) / 100)
-        : toCents(honRaw);
-      ganancia = precio - honorarios;
+      if (honRaw === undefined || honRaw === null || honRaw === '') throw new ApiError(400, `Indique los honorarios del servicio "${nombre}".`);
+      honMedico = toCents(honRaw);
     }
-    if (honorarios < 0 || honorarios > precio) throw new ApiError(400, 'Los honorarios de un servicio deben estar entre 0 y su precio.');
+    const honorarios = honMedico + honPatologo;
+    if (honMedico < 0 || honPatologo < 0 || honorarios > precio) throw new ApiError(400, 'Los honorarios de un servicio deben estar entre 0 y su precio.');
+    // Ganancia de la clínica = lo que no se paga como honorario (imagen + eco).
+    const ganancia = precio - honorarios;
 
     return {
       estudio: nombre,
@@ -144,6 +148,8 @@ function normalizarServicios(data: Raw, catalogo: EstudioFila[]): Servicio[] {
       estado: s.estado ? str(s.estado) : undefined,
       precio,
       honorarios,
+      honMedico,
+      honPatologo,
       ganancia,
       orden: idx + 1,
       raw: s,
@@ -279,11 +285,18 @@ export async function POST(req: NextRequest) {
           [f.id, s.estudio.toUpperCase(), (s.medico || 'DE GUARDIA').toUpperCase(), s.area.toUpperCase(), s.sala.toUpperCase(),
            centsToStr(s.precio), centsToStr(s.honorarios), centsToStr(s.ganancia), s.estado || 'ESPERA', s.orden]
         );
-        if (s.honorarios > 0 && s.medico && s.medico !== 'De Guardia') {
+        if (s.honMedico > 0 && s.medico && s.medico !== 'De Guardia') {
           await client.query(
             `INSERT INTO honorarios_medicos_pendientes (factura_id, fecha_servicio, medico, estudio, paciente, monto_usd, estado)
              VALUES ($1,$2,$3,$4,$5,$6,'PENDIENTE')`,
-            [f.id, fecha, s.medico, s.estudio, f.nombre_paciente, centsToStr(s.honorarios)]
+            [f.id, fecha, s.medico, s.estudio, f.nombre_paciente, centsToStr(s.honMedico)]
+          );
+        }
+        if (s.honPatologo > 0) {
+          await client.query(
+            `INSERT INTO honorarios_medicos_pendientes (factura_id, fecha_servicio, medico, estudio, paciente, monto_usd, estado)
+             VALUES ($1,$2,$3,$4,$5,$6,'PENDIENTE')`,
+            [f.id, fecha, BENEFICIARIO_PATOLOGO, s.estudio, f.nombre_paciente, centsToStr(s.honPatologo)]
           );
         }
       }

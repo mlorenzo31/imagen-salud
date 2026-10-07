@@ -13,7 +13,7 @@ export async function GET() {
     const res = await pool.query(`
       SELECT h.id, h.medico, h.factura_id, h.monto_usd,
              f.precio_usd, f.tasa_bcv, f.pago_punto, f.pago_movil, f.pago_efectivo_bs, f.pago_divisas,
-             COALESCE(m.especialidad, 'General') AS especialidad
+             COALESCE(m.especialidad, CASE WHEN UPPER(h.medico) = 'PATOLOGO' THEN 'Patología y Citología' ELSE 'General' END) AS especialidad
       FROM honorarios_medicos_pendientes h
       JOIN facturas_caja f ON f.id = h.factura_id
       LEFT JOIN medicos m ON LOWER(m.nombre) = LOWER(h.medico)

@@ -456,8 +456,8 @@ export const ModuloFacturacion: React.FC<ModuloFacturacionProps> = ({ onFacturaE
       const horaActual = new Date().toLocaleTimeString('es-VE', { hour12: false });
 
       // Consolidar totales de honorarios y ganancia
-      const totalHonorarios = carrito.reduce((sum, c) => sum + c.dist.medico + c.dist.eco + c.dist.patologo, 0);
-      const totalGanancia = carrito.reduce((sum, c) => sum + c.dist.imagen, 0);
+      const totalHonorarios = carrito.reduce((sum, c) => sum + c.dist.medico + c.dist.patologo, 0);
+      const totalGanancia = carrito.reduce((sum, c) => sum + c.dist.imagen + c.dist.eco, 0);
 
       const res = await fetch('/api/facturas', {
         method: 'POST',

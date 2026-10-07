@@ -191,7 +191,7 @@ export const ModuloAnaliticas: React.FC = () => {
       if (f.total_honorarios !== undefined && f.total_honorarios !== null) {
         return sum + Number(f.total_honorarios || 0);
       }
-      return sum + (Number(f.precio_usd || 0) * 0.7);
+      return sum;
     }, 0);
   }, [facturasFiltradas]);
 
@@ -230,7 +230,7 @@ export const ModuloAnaliticas: React.FC = () => {
       const med = f.medico || 'Médico no asignado';
       if (!map[med]) map[med] = { count: 0, totalUSD: 0, honorariosUSD: 0 };
       const precio = Number(f.precio_usd || 0);
-      const hon = f.total_honorarios !== undefined ? Number(f.total_honorarios) : (precio * 0.7);
+      const hon = Number(f.total_honorarios ?? 0);
       map[med].count += 1;
       map[med].totalUSD += precio;
       map[med].honorariosUSD += hon;

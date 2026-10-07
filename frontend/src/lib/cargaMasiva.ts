@@ -81,7 +81,8 @@ export function normalizarFila(fila: Fila, medicosCatalogo: string[]): Resultado
   const efectivoBs = dinero(leer(fila, 'Pago_Efectivo_BS'), 'Pago_Efectivo_BS', errores);
 
   const honRaw = leer(fila, 'Honorarios_Medico_USD');
-  const honorarios = honRaw ? dinero(honRaw, 'Honorarios_Medico_USD', errores) : Math.round(precio * 0.7);
+  if (!honRaw) errores.push('Honorarios_Medico_USD es obligatorio (0 si no hay honorario).');
+  const honorarios = honRaw ? dinero(honRaw, 'Honorarios_Medico_USD', errores) : 0;
   if (honorarios < 0 || honorarios > precio) errores.push('Honorarios_Medico_USD debe estar entre 0 y el precio.');
   const ganancia = precio - honorarios;
 
