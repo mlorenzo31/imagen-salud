@@ -13,6 +13,7 @@ import { PanelFiltrosAvanzados } from '@/components/historial/PanelFiltrosAvanza
 import { ToolbarFiltrosHistorial } from '@/components/historial/ToolbarFiltrosHistorial';
 import { BannerHistorial } from '@/components/historial/BannerHistorial';
 import { ListaPacientesPanel } from '@/components/historial/ListaPacientesPanel';
+import { diferir } from '@/lib/diferir';
 
 interface ModuloHistorialPacientesProps {
   currentRole?: UserRole;
@@ -125,15 +126,15 @@ export const ModuloHistorialPacientes: React.FC<ModuloHistorialPacientesProps> =
   };
 
   // Efecto inicial: Cargar directorio y movimientos globales o específicos
-  useEffect(() => {
+  useEffect(() => diferir(() => {
     cargarDirectorioPacientes();
     if (!cedulaInicial) {
       cargarMovimientosGlobales();
     }
-  }, []);
+  }), []);
 
   // Si viene cedulaInicial, cargar automáticamente dicho paciente
-  useEffect(() => {
+  useEffect(() => diferir(() => {
     if (cedulaInicial && pacientesDirectorio.length > 0) {
       const match = pacientesDirectorio.find(p => 
         sonMismoDocumento(p.cedula, cedulaInicial)
@@ -152,7 +153,7 @@ export const ModuloHistorialPacientes: React.FC<ModuloHistorialPacientesProps> =
           .catch(console.error);
       }
     }
-  }, [cedulaInicial, pacientesDirectorio]);
+  }), [cedulaInicial, pacientesDirectorio]);
 
   // 4. Filtrar lista de pacientes coincidentes con la búsqueda (100% blindada anti-duplicados)
   const pacientesFiltrados = useMemo(() => {

@@ -3,6 +3,7 @@
 import Image from 'next/image';
 import { useState, useEffect, useRef, useMemo } from 'react';import { Volume2, VolumeX, Maximize2, Minimize2, Users, Stethoscope } from 'lucide-react';import { Badge } from '@/components/ui/badge';
 import { ejecutarLlamadoCompleto } from '@/lib/audioLlamado';
+import { diferir } from '@/lib/diferir';
 import { 
   GrupoClinico, 
   GRUPOS_CLINICOS, 
@@ -109,9 +110,9 @@ export default function PantallaTVSalaEspera() {
   };
 
   useEffect(() => {
-    cargarTurnos();
+    const cancelar = diferir(cargarTurnos);
     const interval = setInterval(cargarTurnos, 4000);
-    return () => clearInterval(interval);
+    return () => { cancelar(); clearInterval(interval); };
   }, [audioHabilitado]);
 
   // Pantalla Completa

@@ -17,6 +17,7 @@ import { WhatsAppMasivoDialog } from '@/components/kanban/WhatsAppMasivoDialog';
 import { TableroKanban } from '@/components/kanban/TableroKanban';
 import { BandejaReembolsos } from '@/components/kanban/BandejaReembolsos';
 import { EncabezadoSalaEspera } from '@/components/kanban/EncabezadoSalaEspera';
+import { diferir } from '@/lib/diferir';
 
 export interface PacienteTurno {
   id: number;
@@ -127,9 +128,9 @@ export const ModuloKanbanSalaEspera: React.FC<ModuloKanbanSalaEsperaProps> = ({
   };
 
   useEffect(() => {
-    cargarPacientes();
+    const cancelar = diferir(cargarPacientes);
     const interval = setInterval(cargarPacientes, 6000);
-    return () => clearInterval(interval);
+    return () => { cancelar(); clearInterval(interval); };
   }, []);
 
   // Acciones de sala: el servidor valida (paciente en un solo grupo, sala libre, médico libre) y decide la sala.

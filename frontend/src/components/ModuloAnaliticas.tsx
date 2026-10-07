@@ -33,6 +33,7 @@ import { UniversalDataView } from '@/components/analytics/UniversalDataView';
 import { exportarAExcel, exportarAPDF } from '@/lib/exportUtils';
 import { hoyLocal, parseFechaLocal } from '@/lib/date';
 import { esAnulada } from '@/lib/estados';
+import { diferir } from '@/lib/diferir';
 
 type GrupoAnalitica = 'NINGUNO' | 'AREA' | 'MEDICO' | 'METODO_PAGO' | 'FECHA';
 
@@ -72,9 +73,7 @@ export const ModuloAnaliticas: React.FC = () => {
       .finally(() => setLoading(false));
   };
 
-  useEffect(() => {
-    cargarDatos();
-  }, []);
+  useEffect(() => diferir(cargarDatos), []);
 
   // Normalización de áreas médicas
   const detectarArea = (estudio: string): string => {

@@ -52,6 +52,7 @@ import {
 import { exportarAExcel, exportarAPDF } from '@/lib/exportUtils';
 import { CuentaBancaria, TransaccionBancaria, HonorarioMedico, PacientePendiente, UserRole, ModoOperacion } from '@/types';
 import { hoyLocal } from '@/lib/date';
+import { diferir } from '@/lib/diferir';
 
 export default function Home() {
   const [isAuthenticated, setIsAuthenticated] = useState<boolean>(false);
@@ -107,7 +108,7 @@ export default function Home() {
   };
 
   // Guard Estricto de RBAC para navegacin segura
-  useEffect(() => {
+  useEffect(() => diferir(() => {
     if (role === 'cajero') {
       const cajeroAllowed = ['facturacion', 'caja', 'kanban', 'historial-pacientes'];
       if (!cajeroAllowed.includes(activeSection)) {
@@ -119,7 +120,7 @@ export default function Home() {
         setActiveSection('facturacion');
       }
     }
-  }, [role, activeSection]);
+  }), [role, activeSection]);
 
   const loadInitialData = async () => {
     setLoading(true);
@@ -159,24 +160,10 @@ export default function Home() {
 
   useEffect(() => {
     if (isAuthenticated) {
-      loadInitialData();
+      return diferir(loadInitialData);
     }
   }, [isAuthenticated]);
 
-  // Protección RBAC en Navegación: si Cajero intenta abrir módulo restringido, forzar a 'facturacion'
-  useEffect(() => {
-    if (role === 'cajero') {
-      const permitidasCajero = ['facturacion', 'caja', 'kanban', 'historial-pacientes'];
-      if (!permitidasCajero.includes(activeSection)) {
-        setActiveSection('facturacion');
-      }
-    } else if (role === 'asistente') {
-      const denegadasAsistente = ['tesoreria', 'ingresos-extra', 'egresos', 'divisas', 'honorarios', 'cierre', 'admin'];
-      if (denegadasAsistente.includes(activeSection)) {
-        setActiveSection('facturacion');
-      }
-    }
-  }, [role, activeSection]);
 
   const exportarLibroMayorExcel = () => {
     if (transacciones.length === 0) {
