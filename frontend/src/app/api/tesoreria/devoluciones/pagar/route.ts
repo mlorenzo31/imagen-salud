@@ -6,6 +6,7 @@ import { centsToStr, toCents } from '@/lib/money';
 import { esAnulada } from '@/lib/estados';
 import { asegurarDevoluciones } from '@/lib/devoluciones';
 import { exigirPinSesion } from '@/lib/pin';
+import { marcarCierreModificado } from '@/lib/cierre';
 import { camposFechaOperacion, resolverFechaOperacion } from '@/lib/fechaOperacion';
 
 const schema = z.object({
@@ -24,7 +25,7 @@ export async function POST(req: NextRequest) {
     const b = await parseBody(req, schema);
     exigirPinSesion(req, b.pin);
     const usuario = sesionUsuario(req);
-    const { fecha, hora, nota } = await resolverFechaOperacion(b, req.headers.get('x-session-role') === 'admin');
+    const { fecha, hora, nota, diaCerrado, motivo } = await resolverFechaOperacion(b, req.headers.get('x-session-role') === 'admin');
     await asegurarDevoluciones(pool);
 
     const out = await withTransaction(async (client) => {
@@ -62,6 +63,7 @@ export async function POST(req: NextRequest) {
         `UPDATE devoluciones_facturas SET estado = 'PAGADA', egreso_id = $2, referencia = $3, pagada_en = now(), pagada_por = $4 WHERE id = $1`,
         [b.id, egresoId, b.referencia, usuario],
       );
+      if (diaCerrado) await marcarCierreModificado(client, fecha, motivo, usuario);
       return { monto, egresoId, afecta: d.afecta_cuenta as boolean };
     });
 

@@ -12,7 +12,7 @@ export const camposFechaOperacion = {
   motivo_retroactivo: z.string().trim().max(200).nullish(),
 };
 
-export interface FechaOperacion { fecha: string; hora: string; retroactiva: boolean; nota: string }
+export interface FechaOperacion { fecha: string; hora: string; retroactiva: boolean; nota: string; diaCerrado: boolean; motivo: string }
 
 /**
  * Fecha contable de una operación. Sin `fecha` (o igual a hoy) = hoy. Con una fecha pasada:
@@ -27,12 +27,13 @@ export async function resolverFechaOperacion(
   db: Db = pool,
 ): Promise<FechaOperacion> {
   const hoy = fechaHoraLocal();
-  if (!b.fecha || b.fecha === hoy.fecha) return { ...hoy, retroactiva: false, nota: '' };
+  if (!b.fecha || b.fecha === hoy.fecha) return { ...hoy, retroactiva: false, nota: '', diaCerrado: false, motivo: '' };
   if (b.fecha > hoy.fecha) throw new ApiError(400, 'La fecha de la operación no puede ser futura.');
   const motivo = (b.motivo_retroactivo ?? '').trim();
   if (motivo.length < 3) throw new ApiError(400, 'Indique el motivo del registro en un día anterior.');
-  if ((await fechasCerradas(db)).has(b.fecha) && !esAdmin) {
+  const diaCerrado = (await fechasCerradas(db)).has(b.fecha);
+  if (diaCerrado && !esAdmin) {
     throw new ApiError(403, `El ${b.fecha} ya está cerrado: solo un administrador puede registrar operaciones en ese día.`);
   }
-  return { fecha: b.fecha, hora: hoy.hora, retroactiva: true, nota: ` [Registro retroactivo del ${b.fecha}: ${motivo}]` };
+  return { fecha: b.fecha, hora: hoy.hora, retroactiva: true, diaCerrado, motivo, nota: ` [Registro retroactivo del ${b.fecha}: ${motivo}]` };
 }

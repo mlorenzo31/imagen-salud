@@ -3,7 +3,7 @@ import { z } from 'zod';
 import pool from '@/lib/db';
 import { ApiError, errorResponse, parseBody, sesionUsuario, withTransaction } from '@/lib/apiHelpers';
 import { centsToStr, centsToNumber, toCents } from '@/lib/money';
-import { exigirJornadaAlDia } from '@/lib/cierre';
+import { exigirJornadaAlDia, marcarCierreModificado } from '@/lib/cierre';
 import { camposFechaOperacion, resolverFechaOperacion } from '@/lib/fechaOperacion';
 
 export async function GET() {
@@ -44,7 +44,7 @@ export async function POST(req: NextRequest) {
     if (neto <= 0) throw new ApiError(400, 'El monto neto del egreso debe ser mayor a 0.');
     if (comision < 0) throw new ApiError(400, 'La comisión bancaria no puede ser negativa.');
     const totalDebitado = neto + comision;
-    const { fecha, hora, nota } = await resolverFechaOperacion(b, req.headers.get('x-session-role') === 'admin');
+    const { fecha, hora, nota, diaCerrado, motivo } = await resolverFechaOperacion(b, req.headers.get('x-session-role') === 'admin');
 
     const out = await withTransaction(async (client) => {
       const cuentaRes = await client.query('SELECT * FROM cuentas_bancarias WHERE id = $1 FOR UPDATE', [b.cuenta_id]);
@@ -85,6 +85,7 @@ export async function POST(req: NextRequest) {
            cuenta.moneda, b.referencia || null, egreso.id, fecha, hora, usuario]
         );
       }
+      if (diaCerrado) await marcarCierreModificado(client, fecha, motivo, usuario);
       return { egreso, nuevoSaldo };
     });
 

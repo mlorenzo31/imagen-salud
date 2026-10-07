@@ -40,3 +40,24 @@ describe('fecha de operación retroactiva', () => {
     expect((await resolverFechaOperacion({ fecha: ayer, motivo_retroactivo: 'se olvidó registrar' }, true, db)).fecha).toBe(ayer);
   });
 });
+
+describe('cierre ya cerrado: marcarCierreModificado', () => {
+  it('actualiza totales de egresos/ingresos y deja constancia', async () => {
+    const { marcarCierreModificado } = await import('./cierre');
+    const calls: { sql: string; params?: unknown[] }[] = [];
+    const client = {
+      query: async (sql: string, params?: unknown[]) => {
+        calls.push({ sql, params });
+        if (sql.includes('information_schema')) return { rows: ['fecha_cierre', 'observaciones', 'total_egresos_bs', 'total_egresos_usd', 'total_ingresos_extra_bs', 'total_ingresos_extra_usd'].map((column_name) => ({ column_name })) };
+        if (sql.includes('FROM cierres_diarios')) return { rows: [{ id: 7 }] };
+        if (sql.includes('egresos_operativos')) return { rows: [{ moneda: 'BS', t: '150.25' }] };
+        return { rows: [] };
+      },
+    } as unknown as Parameters<typeof marcarCierreModificado>[0];
+    await marcarCierreModificado(client, antier, 'se olvidó', 'Admin');
+    const upd = calls.find((c) => c.sql.startsWith('UPDATE cierres_diarios'))!;
+    expect(upd.params?.slice(0, 4)).toEqual(['150.25', '0.00', '0.00', '0.00']);
+    expect(String(upd.params?.[4])).toContain('se olvidó');
+    expect(upd.params?.[5]).toBe(7);
+  });
+});

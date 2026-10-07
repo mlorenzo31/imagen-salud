@@ -1,6 +1,7 @@
 import { NextResponse, type NextRequest } from 'next/server';
 import type { PoolClient } from 'pg';
 import { z } from 'zod';
+import { marcarCierreModificado } from '@/lib/cierre';
 import { camposFechaOperacion, resolverFechaOperacion } from '@/lib/fechaOperacion';
 import { ApiError, parseBody, sesionUsuario, withTransaction, errorResponse } from '@/lib/apiHelpers';
 import { centsToStr, toCents } from '@/lib/money';
@@ -45,7 +46,7 @@ export async function POST(request: NextRequest) {
   try {
     const b = await parseBody(request, schema);
     const usuario = sesionUsuario(request);
-    const { fecha, hora, nota } = await resolverFechaOperacion(b, request.headers.get('x-session-role') === 'admin');
+    const { fecha, hora, nota, diaCerrado, motivo } = await resolverFechaOperacion(b, request.headers.get('x-session-role') === 'admin');
     const pm = toCents(b.pago_movil_bs);
     const comPm = toCents(b.comision_pago_movil_bs);
     const efBs = toCents(b.efectivo_bs);
@@ -96,6 +97,7 @@ export async function POST(request: NextRequest) {
         await debitar(client, { codigo: 'EFECTIVO_USD', etiqueta: 'Efectivo Divisas', simbolo: '$', cents: efUsd, tipo: 'PAGO_HONORARIOS_EF_USD', moneda: 'USD', comision: 0,
           descripcion: `Pago honorarios Dr(a). ${b.medico} en Efectivo Divisas ($)` }, ctx);
       }
+      if (diaCerrado) await marcarCierreModificado(client, fecha, motivo, usuario);
       return { pago, count: hon.rows.length, sumaUsd };
     });
 

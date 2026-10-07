@@ -30,6 +30,8 @@ export interface CambioDivisaPayload {
   referencia: string;
   notas?: string;
   usuario: string;
+  fecha?: string;
+  motivo_retroactivo?: string;
 }
 
 export interface LiquidacionHonorariosPayload {

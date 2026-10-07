@@ -3,7 +3,7 @@ import { z } from 'zod';
 import pool from '@/lib/db';
 import { ApiError, errorResponse, parseBody, sesionUsuario, withTransaction } from '@/lib/apiHelpers';
 import { centsToStr, toCents } from '@/lib/money';
-import { exigirJornadaAlDia } from '@/lib/cierre';
+import { exigirJornadaAlDia, marcarCierreModificado } from '@/lib/cierre';
 import { camposFechaOperacion, resolverFechaOperacion } from '@/lib/fechaOperacion';
 
 const schema = z.object({
@@ -23,7 +23,7 @@ export async function POST(request: NextRequest) {
     const usuario = sesionUsuario(request);
     const montoCents = toCents(b.monto);
     if (montoCents <= 0) throw new ApiError(400, 'El monto del ingreso extraordinario debe ser mayor a 0.');
-    const { fecha, hora, nota } = await resolverFechaOperacion(b, request.headers.get('x-session-role') === 'admin');
+    const { fecha, hora, nota, diaCerrado, motivo } = await resolverFechaOperacion(b, request.headers.get('x-session-role') === 'admin');
 
     const out = await withTransaction(async (client) => {
       const cuentaRes = await client.query('SELECT * FROM cuentas_bancarias WHERE id = $1 FOR UPDATE', [b.cuenta_id]);
@@ -46,6 +46,7 @@ export async function POST(request: NextRequest) {
          VALUES ($1, 'INGRESO_EXTRAORDINARIO', $2, $3, 0, $2, $4, $5, $6, $7, $8, $9, $10)`,
         [b.cuenta_id, centsToStr(montoCents), cuenta.moneda, centsToStr(saldoAnt), centsToStr(saldoPost), b.referencia || `ING-EXT-${ing.rows[0].id}`, concepto + nota, fecha, hora, usuario]
       );
+      if (diaCerrado) await marcarCierreModificado(client, fecha, motivo, usuario);
       return { ingreso: ing.rows[0], saldoPost };
     });
 

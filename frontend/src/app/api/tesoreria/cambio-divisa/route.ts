@@ -2,7 +2,7 @@ import { NextResponse, type NextRequest } from 'next/server';
 import { z } from 'zod';
 import { ApiError, errorResponse, parseBody, sesionUsuario, withTransaction } from '@/lib/apiHelpers';
 import { centsToNumber, centsToStr, toCents } from '@/lib/money';
-import { exigirJornadaAlDia } from '@/lib/cierre';
+import { exigirJornadaAlDia, marcarCierreModificado } from '@/lib/cierre';
 import { camposFechaOperacion, resolverFechaOperacion } from '@/lib/fechaOperacion';
 
 const num = z.union([z.string(), z.number()]);
@@ -21,7 +21,7 @@ export async function POST(req: NextRequest) {
     await exigirJornadaAlDia(req.headers.get('x-session-role') === 'admin');
     const b = await parseBody(req, schema);
     const usuario = sesionUsuario(req);
-    const { fecha, hora, nota } = await resolverFechaOperacion(b, req.headers.get('x-session-role') === 'admin');
+    const { fecha, hora, nota, diaCerrado, motivo } = await resolverFechaOperacion(b, req.headers.get('x-session-role') === 'admin');
 
     const bsBase = toCents(b.monto_bs_base);
     const comision = toCents(b.comision_bancaria_bs);
@@ -77,6 +77,7 @@ export async function POST(req: NextRequest) {
         [destino.id, centsToStr(usdCents), centsToStr(saldoDestinoAnt), centsToStr(saldoDestinoPost), ref,
          `Ingreso por compra de divisas de cobertura cambiaria (Origen: ${origen.nombre})`, op.id, fecha, hora, usuario]
       );
+      if (diaCerrado) await marcarCierreModificado(client, fecha, motivo, usuario);
       return { op, saldoOrigenPost, saldoDestinoPost };
     });
 

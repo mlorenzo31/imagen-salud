@@ -202,3 +202,32 @@ export async function consolidarCierre(client: PoolClient, fecha: string, usuari
   }
   return { fila, tot, arqueo };
 }
+
+/**
+ * Una operación de tesorería se registró en un día ya cerrado: actualiza los totales de egresos e ingresos extraordinarios
+ * del cierre (los saldos de cierre quedan como estaban) y deja constancia en las observaciones. No toca el arqueo.
+ */
+export async function marcarCierreModificado(client: PoolClient, fecha: string, motivo: string, usuario: string): Promise<void> {
+  const cols = await columnasCierre(client);
+  const colFecha = cols.has('fecha_cierre') ? 'fecha_cierre' : 'fecha';
+  const previo = await client.query(`SELECT id FROM cierres_diarios WHERE ${colFecha} = $1 LIMIT 1`, [fecha]);
+  if (previo.rows.length === 0) return;
+
+  const egr = await client.query('SELECT moneda, COALESCE(SUM(total_debitado), 0) AS t FROM egresos_operativos WHERE fecha = $1 GROUP BY moneda', [fecha]).catch(() => ({ rows: [] }));
+  const ing = await client.query('SELECT moneda, COALESCE(SUM(monto), 0) AS t FROM ingresos_extraordinarios WHERE fecha = $1 GROUP BY moneda', [fecha]).catch(() => ({ rows: [] }));
+  const porMoneda = (rows: { moneda: string; t: string }[], m: string) => centsToStr(toCents(rows.find((r) => r.moneda === m)?.t));
+  const nota = ` | Modificado el ${fechaHoraLocal().fecha} por ${usuario}: ${motivo}`;
+
+  const sets: [string, Valor][] = [
+    ['total_egresos_bs', porMoneda(egr.rows, 'BS')], ['total_egresos_usd', porMoneda(egr.rows, 'USD')],
+    ['total_ingresos_extra_bs', porMoneda(ing.rows, 'BS')], ['total_ingresos_extra_usd', porMoneda(ing.rows, 'USD')],
+  ].filter(([k]) => cols.has(k as string)) as [string, Valor][];
+  const textos = ['observaciones', 'notas'].filter((c) => cols.has(c));
+  const params: Valor[] = sets.map(([, v]) => v);
+  const asign = sets.map(([k], i) => `${k} = $${i + 1}`);
+  for (const c of textos) asign.push(`${c} = COALESCE(${c}, '') || $${params.length + 1}`);
+  if (textos.length) params.push(nota);
+  if (cols.has('actualizado_en')) asign.push('actualizado_en = CURRENT_TIMESTAMP');
+  if (asign.length === 0) return;
+  await client.query(`UPDATE cierres_diarios SET ${asign.join(', ')} WHERE id = $${params.length + 1}`, [...params, previo.rows[0].id]);
+}
