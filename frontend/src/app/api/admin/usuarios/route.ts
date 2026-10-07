@@ -41,7 +41,7 @@ const editarSchema = z.object({
 export async function GET() {
   try {
     await asegurarUsuarios();
-    const { rows } = await pool.query(`SELECT ${COLUMNAS} FROM usuarios ORDER BY activo DESC, rol, usuario`);
+    const { rows } = await pool.query(`SELECT ${COLUMNAS} FROM cuentas_usuario ORDER BY activo DESC, rol, usuario`);
     return NextResponse.json(rows);
   } catch (err) {
     return errorResponse(err);
@@ -55,10 +55,10 @@ export async function POST(req: NextRequest) {
     const motivo = validarPoliticaClave(b.clave);
     if (motivo) throw new ApiError(400, motivo);
     const out = await withTransaction(async (client) => {
-      const dup = await client.query('SELECT 1 FROM usuarios WHERE usuario = $1', [b.usuario]);
+      const dup = await client.query('SELECT 1 FROM cuentas_usuario WHERE usuario = $1', [b.usuario]);
       if (dup.rowCount) throw new ApiError(409, 'Ya existe un usuario con ese nombre de acceso.');
       const r = await client.query(
-        `INSERT INTO usuarios (usuario, nombre, rol, password_hash, telefono, email) VALUES ($1,$2,$3,$4,$5,$6) RETURNING ${COLUMNAS}`,
+        `INSERT INTO cuentas_usuario (usuario, nombre, rol, password_hash, telefono, email) VALUES ($1,$2,$3,$4,$5,$6) RETURNING ${COLUMNAS}`,
         [b.usuario, b.nombre, b.rol, hashClave(b.clave), b.telefono, b.email ?? null],
       );
       await registrarBitacora(client, {
@@ -84,8 +84,8 @@ export async function PUT(req: NextRequest) {
     }
     const out = await withTransaction(async (client) => {
       // Bloquea a los administradores activos para que dos cambios simultáneos no dejen el sistema sin ninguno.
-      const admins = await client.query<{ id: number }>("SELECT id FROM usuarios WHERE rol = 'admin' AND activo ORDER BY id FOR UPDATE");
-      const actual = await client.query<{ usuario: string; rol: string; activo: boolean }>('SELECT usuario, rol, activo FROM usuarios WHERE id = $1 FOR UPDATE', [b.id]);
+      const admins = await client.query<{ id: number }>("SELECT id FROM cuentas_usuario WHERE rol = 'admin' AND activo ORDER BY id FOR UPDATE");
+      const actual = await client.query<{ usuario: string; rol: string; activo: boolean }>('SELECT usuario, rol, activo FROM cuentas_usuario WHERE id = $1 FOR UPDATE', [b.id]);
       const u = actual.rows[0];
       if (!u) throw new ApiError(404, 'Usuario no encontrado.');
       const rolFinal = b.rol ?? u.rol;
@@ -105,7 +105,7 @@ export async function PUT(req: NextRequest) {
       if (b.nuevaClave !== undefined) { add('password_hash', hashClave(b.nuevaClave)); sets.push('intentos_fallidos = 0', 'bloqueado_hasta = NULL'); }
       if (!sets.length) throw new ApiError(400, 'No hay cambios.');
       vals.push(b.id);
-      const r = await client.query(`UPDATE usuarios SET ${sets.join(', ')} WHERE id = $${vals.length} RETURNING ${COLUMNAS}`, vals);
+      const r = await client.query(`UPDATE cuentas_usuario SET ${sets.join(', ')} WHERE id = $${vals.length} RETURNING ${COLUMNAS}`, vals);
       const cambios = [b.nombre !== undefined && 'nombre', b.rol !== undefined && `rol→${b.rol}`, b.telefono !== undefined && 'teléfono', b.email !== undefined && 'correo',
         b.activo !== undefined && (b.activo ? 'activado' : 'desactivado'), b.nuevaClave !== undefined && 'clave restablecida'].filter(Boolean).join(', ');
       await registrarBitacora(client, {

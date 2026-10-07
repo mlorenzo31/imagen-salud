@@ -381,8 +381,8 @@ CREATE UNIQUE INDEX IF NOT EXISTS ux_cuentas_bancarias_codigo ON cuentas_bancari
 CREATE UNIQUE INDEX IF NOT EXISTS ux_usuarios_login ON usuarios (user_login);
 
 
--- Tabla: usuarios (acceso individual; se siembran admin/asistente/cajero desde AUTH_PIN_* la primera vez)
-CREATE TABLE IF NOT EXISTS usuarios (
+-- Tabla: cuentas_usuario (acceso individual; se siembran admin/asistente/cajero desde AUTH_PIN_* la primera vez)
+CREATE TABLE IF NOT EXISTS cuentas_usuario (
   id SERIAL PRIMARY KEY,
   usuario VARCHAR(40) NOT NULL UNIQUE,
   nombre VARCHAR(100) NOT NULL,
@@ -396,10 +396,10 @@ CREATE TABLE IF NOT EXISTS usuarios (
   creado_en TIMESTAMPTZ NOT NULL DEFAULT now()
 );
 
--- Tabla: recuperacion_clave (código de 6 dígitos por WhatsApp, guardado con HMAC; vence a los 10 min)
-CREATE TABLE IF NOT EXISTS recuperacion_clave (
+-- Tabla: codigos_recuperacion (código de 6 dígitos por WhatsApp, guardado con HMAC; vence a los 10 min)
+CREATE TABLE IF NOT EXISTS codigos_recuperacion (
   id SERIAL PRIMARY KEY,
-  usuario_id INT NOT NULL REFERENCES usuarios(id),
+  usuario_id INT NOT NULL REFERENCES cuentas_usuario(id),
   codigo_hash TEXT NOT NULL,
   expira TIMESTAMPTZ NOT NULL,
   intentos INT NOT NULL DEFAULT 0,

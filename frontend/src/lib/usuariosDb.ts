@@ -38,7 +38,7 @@ export function asegurarUsuarios(): Promise<void> {
   if (!listo) {
     listo = (async () => {
       await pool.query(`
-        CREATE TABLE IF NOT EXISTS usuarios (
+        CREATE TABLE IF NOT EXISTS cuentas_usuario (
           id SERIAL PRIMARY KEY,
           usuario VARCHAR(40) NOT NULL UNIQUE,
           nombre VARCHAR(100) NOT NULL,
@@ -52,23 +52,23 @@ export function asegurarUsuarios(): Promise<void> {
           creado_en TIMESTAMPTZ NOT NULL DEFAULT now()
         )`);
       await pool.query(`
-        CREATE TABLE IF NOT EXISTS recuperacion_clave (
+        CREATE TABLE IF NOT EXISTS codigos_recuperacion (
           id SERIAL PRIMARY KEY,
-          usuario_id INT NOT NULL REFERENCES usuarios(id),
+          usuario_id INT NOT NULL REFERENCES cuentas_usuario(id),
           codigo_hash TEXT NOT NULL,
           expira TIMESTAMPTZ NOT NULL,
           intentos INT NOT NULL DEFAULT 0,
           usado BOOLEAN NOT NULL DEFAULT FALSE,
           creado_en TIMESTAMPTZ NOT NULL DEFAULT now()
         )`);
-      await pool.query('CREATE INDEX IF NOT EXISTS ix_recuperacion_usuario ON recuperacion_clave (usuario_id, creado_en DESC)');
-      await pool.query('ALTER TABLE usuarios ENABLE ROW LEVEL SECURITY'); // el hash nunca debe ser legible por la API pública de Supabase
-      await pool.query('ALTER TABLE recuperacion_clave ENABLE ROW LEVEL SECURITY');
+      await pool.query('CREATE INDEX IF NOT EXISTS ix_recuperacion_usuario ON codigos_recuperacion (usuario_id, creado_en DESC)');
+      await pool.query('ALTER TABLE cuentas_usuario ENABLE ROW LEVEL SECURITY'); // el hash nunca debe ser legible por la API pública de Supabase
+      await pool.query('ALTER TABLE codigos_recuperacion ENABLE ROW LEVEL SECURITY');
       for (const rol of Object.keys(PIN_ENV) as UserRole[]) {
         const pin = process.env[PIN_ENV[rol]];
         if (!pin) continue;
         await pool.query(
-          `INSERT INTO usuarios (usuario, nombre, rol, password_hash) VALUES ($1, $2, $3, $4) ON CONFLICT (usuario) DO NOTHING`,
+          `INSERT INTO cuentas_usuario (usuario, nombre, rol, password_hash) VALUES ($1, $2, $3, $4) ON CONFLICT (usuario) DO NOTHING`,
           [rol, NOMBRES_INICIALES[rol], rol, hashClave(pin)],
         );
       }
@@ -79,12 +79,12 @@ export function asegurarUsuarios(): Promise<void> {
 
 export async function buscarUsuario(usuario: string): Promise<UsuarioFila | null> {
   await asegurarUsuarios();
-  const { rows } = await pool.query<UsuarioFila>('SELECT * FROM usuarios WHERE usuario = $1', [usuario.trim().toLowerCase()]);
+  const { rows } = await pool.query<UsuarioFila>('SELECT * FROM cuentas_usuario WHERE usuario = $1', [usuario.trim().toLowerCase()]);
   return rows[0] ?? null;
 }
 
 export async function buscarUsuarioPorId(id: number): Promise<UsuarioFila | null> {
   await asegurarUsuarios();
-  const { rows } = await pool.query<UsuarioFila>('SELECT * FROM usuarios WHERE id = $1', [id]);
+  const { rows } = await pool.query<UsuarioFila>('SELECT * FROM cuentas_usuario WHERE id = $1', [id]);
   return rows[0] ?? null;
 }
