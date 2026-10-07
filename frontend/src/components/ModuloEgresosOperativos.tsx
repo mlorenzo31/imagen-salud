@@ -1,5 +1,6 @@
 'use client';
 
+import { useFechaOperacion } from './FechaOperacion';
 import { DevolucionesPendientes } from './DevolucionesPendientes';
 import React, { useState, useEffect, useMemo } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -89,6 +90,7 @@ export const ModuloEgresosOperativos: React.FC<ModuloEgresosOperativosProps> = (
   const [egresoMonto, setEgresoMonto] = useState<string>('');
   const [egresoComisionPM, setEgresoComisionPM] = useState<string>('');
   const [egresoReferencia, setEgresoReferencia] = useState<string>('');
+  const fechaOp = useFechaOperacion();
   const [egresoBeneficiario, setEgresoBeneficiario] = useState<string>('');
 
   // Formulario Ingreso Extraordinario
@@ -105,16 +107,14 @@ export const ModuloEgresosOperativos: React.FC<ModuloEgresosOperativosProps> = (
   const [filtroTipo, setFiltroTipo] = useState<'TODOS' | 'EGRESO' | 'INGRESO_EXTRA'>('TODOS');
   const [filtroCuenta, setFiltroCuenta] = useState<string>('TODAS');
 
-  // Inicializar cuenta por defecto
-  useEffect(() => {
-    if (cuentas.length > 0 && !egresoCuentaId) {
-      setEgresoCuentaId(cuentas[0].id.toString());
-      setIngresoCuentaId(cuentas[0].id.toString());
-    }
-  }, [cuentas]);
+  // Cuenta por defecto: se ajusta durante el render (patrón recomendado por React) en vez de en un efecto
+  if (cuentas.length > 0 && !egresoCuentaId) {
+    setEgresoCuentaId(cuentas[0].id.toString());
+    setIngresoCuentaId(cuentas[0].id.toString());
+  }
 
-  // Cargar historial de egresos e ingresos extraordinarios
-  const cargarHistorial = async () => {
+  // Obtiene el historial de egresos e ingresos extraordinarios (sin tocar el estado)
+  const obtenerHistorial = async (): Promise<RegistroFinanciero[]> => {
     try {
       // Consultar transacciones de egresos e ingresos
       const resEgresos = await fetch('/api/tesoreria/egresos-operativos').catch(() => null);
@@ -162,14 +162,22 @@ export const ModuloEgresosOperativos: React.FC<ModuloEgresosOperativosProps> = (
         }
       }
 
-      setHistorial(list.sort((a, b) => b.id - a.id));
+      return list.sort((a, b) => b.id - a.id);
     } catch (err) {
       console.error('Error cargando historial de egresos/ingresos:', err);
+      return [];
     }
   };
 
+  const cargarHistorial = async () => {
+    setHistorial(await obtenerHistorial());
+  };
+
   useEffect(() => {
-    cargarHistorial();
+    let vivo = true;
+    obtenerHistorial().then((lista) => { if (vivo) setHistorial(lista); });
+    return () => { vivo = false; };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   // Determinar cuenta seleccionada en Egreso
@@ -229,6 +237,7 @@ export const ModuloEgresosOperativos: React.FC<ModuloEgresosOperativosProps> = (
         monto_total_debitado: totalDebitadoEgreso,
         referencia: egresoReferencia.trim() || 'EGRESO_OPERATIVO',
         beneficiario: egresoBeneficiario.trim() || 'Proveedor General',
+        ...fechaOp.payload,
         usuario: 'Administrador'
       };
 
@@ -287,6 +296,7 @@ export const ModuloEgresosOperativos: React.FC<ModuloEgresosOperativosProps> = (
         monto: montoNum,
         referencia: ingresoReferencia.trim() || 'INGRESO_EXTRA',
         origen: ingresoOrigen.trim() || 'Aporte Extraordinario',
+        ...fechaOp.payload,
         usuario: 'Administrador'
       };
 
@@ -573,6 +583,8 @@ export const ModuloEgresosOperativos: React.FC<ModuloEgresosOperativosProps> = (
                   />
                 </div>
 
+                {fechaOp.campo}
+
                 {/* Referencia Bancaria */}
                 <div>
                   <label className="block text-xs font-bold text-slate-700 mb-1.5">
@@ -742,6 +754,8 @@ export const ModuloEgresosOperativos: React.FC<ModuloEgresosOperativosProps> = (
                     className="text-xs bg-slate-50 border-slate-200 rounded-xl"
                   />
                 </div>
+
+                {fechaOp.campo}
 
                 {/* Referencia */}
                 <div>

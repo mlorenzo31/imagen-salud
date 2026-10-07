@@ -1,5 +1,6 @@
 'use client';
 
+import { useFechaOperacion } from './FechaOperacion';
 import React, { useCallback, useEffect, useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -17,6 +18,7 @@ const bs = (v: string | number) => `Bs. ${Number(v).toLocaleString('es-VE', { mi
 /** Devoluciones de facturas anuladas (POS / pago móvil) que deben pagarse como egreso con clave y referencia. */
 export const DevolucionesPendientes: React.FC<Props> = ({ onPagada }) => {
   const [items, setItems] = useState<Devolucion[]>([]);
+  const fechaOp = useFechaOperacion();
   const [activa, setActiva] = useState<Devolucion | null>(null);
   const [referencia, setReferencia] = useState('');
   const [pin, setPin] = useState('');
@@ -47,7 +49,7 @@ export const DevolucionesPendientes: React.FC<Props> = ({ onPagada }) => {
     try {
       const r = await fetch('/api/tesoreria/devoluciones/pagar', {
         method: 'POST', headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ id: activa.id, referencia, pin }),
+        body: JSON.stringify({ id: activa.id, referencia, pin, ...fechaOp.payload }),
       });
       const j = (await r.json().catch(() => ({}))) as { error?: string };
       if (!r.ok) { setError(j.error ?? 'No se pudo pagar la devolución.'); return; }
@@ -86,9 +88,10 @@ export const DevolucionesPendientes: React.FC<Props> = ({ onPagada }) => {
             <form className="space-y-3" onSubmit={pagar}>
               <p className="text-xs text-slate-600">Factura {activa.factura_id} · {activa.nombre_paciente ?? 'Paciente'}<br />Monto fijo a devolver: <span className="font-black">{bs(activa.monto_bs)}</span></p>
               <Input required placeholder="Referencia bancaria de la devolución" value={referencia} onChange={(e) => setReferencia(e.target.value)} className="rounded-xl text-sm" />
+              {fechaOp.campo}
               <Input required type="password" placeholder="Clave de inicio de sesión" value={pin} onChange={(e) => setPin(e.target.value)} className="rounded-xl text-sm" autoComplete="current-password" />
               {error && <p className="text-xs font-bold text-rose-600">{error}</p>}
-              <Button type="submit" disabled={enviando || referencia.trim().length < 3 || !pin} className="w-full rounded-xl font-bold">{enviando ? 'Registrando…' : 'Confirmar y registrar egreso'}</Button>
+              <Button type="submit" disabled={enviando || fechaOp.incompleta || referencia.trim().length < 3 || !pin} className="w-full rounded-xl font-bold">{enviando ? 'Registrando…' : 'Confirmar y registrar egreso'}</Button>
             </form>
           )}
         </DialogContent>

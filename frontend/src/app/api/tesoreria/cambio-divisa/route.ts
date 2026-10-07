@@ -1,8 +1,9 @@
 import { NextResponse, type NextRequest } from 'next/server';
 import { z } from 'zod';
-import { ApiError, errorResponse, fechaHoraLocal, parseBody, sesionUsuario, withTransaction } from '@/lib/apiHelpers';
+import { ApiError, errorResponse, parseBody, sesionUsuario, withTransaction } from '@/lib/apiHelpers';
 import { centsToNumber, centsToStr, toCents } from '@/lib/money';
-import { exigirJornadaAlDia } from '@/lib/cierre';
+import { exigirJornadaAlDia, marcarCierreModificado } from '@/lib/cierre';
+import { camposFechaOperacion, resolverFechaOperacion } from '@/lib/fechaOperacion';
 
 const num = z.union([z.string(), z.number()]);
 const schema = z.object({
@@ -12,6 +13,7 @@ const schema = z.object({
   comision_bancaria_bs: num.optional(),
   referencia: z.string().max(100).nullish(),
   notas: z.string().max(500).nullish(),
+  ...camposFechaOperacion,
 });
 
 export async function POST(req: NextRequest) {
@@ -19,7 +21,7 @@ export async function POST(req: NextRequest) {
     await exigirJornadaAlDia(req.headers.get('x-session-role') === 'admin');
     const b = await parseBody(req, schema);
     const usuario = sesionUsuario(req);
-    const { fecha, hora } = fechaHoraLocal();
+    const { fecha, hora, nota, diaCerrado, motivo } = await resolverFechaOperacion(b, req.headers.get('x-session-role') === 'admin');
 
     const bsBase = toCents(b.monto_bs_base);
     const comision = toCents(b.comision_bancaria_bs);
@@ -51,7 +53,7 @@ export async function POST(req: NextRequest) {
         `INSERT INTO operaciones_cambiarias
          (cuenta_origen_id, monto_bs_base, tasa_cambio_manual, comision_bancaria_bs, monto_total_debitado_bs, monto_usd_ingreso, fecha, referencia, notas, usuario)
          VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10) RETURNING *`,
-        [origen.id, centsToStr(bsBase), tasa, centsToStr(comision), centsToStr(totalDebitar), centsToStr(usdCents), fecha, b.referencia || 'CAMBIO-USD', b.notas || '', usuario]
+        [origen.id, centsToStr(bsBase), tasa, centsToStr(comision), centsToStr(totalDebitar), centsToStr(usdCents), fecha, b.referencia || 'CAMBIO-USD', (b.notas || '') + nota, usuario]
       );
       const op = opRes.rows[0];
 
@@ -66,7 +68,7 @@ export async function POST(req: NextRequest) {
          (cuenta_id, tipo, monto, moneda, comision, monto_neto, saldo_anterior, saldo_posterior, referencia, descripcion, operacion_cambiaria_id, fecha, hora, usuario)
          VALUES ($1,'CAMBIO_DIVISA_EGRESO',$2,'BS',$3,$4,$5,$6,$7,$8,$9,$10,$11,$12)`,
         [origen.id, centsToStr(bsBase), centsToStr(comision), centsToStr(totalDebitar), centsToStr(saldoOrigenAnt), centsToStr(saldoOrigenPost), ref,
-         `Compra de $${centsToStr(usdCents)} USD a tasa ${tasa} Bs/$. Comisión bancaria: Bs. ${centsToStr(comision)}`, op.id, fecha, hora, usuario]
+         `Compra de $${centsToStr(usdCents)} USD a tasa ${tasa} Bs/$. Comisión bancaria: Bs. ${centsToStr(comision)}${nota}`, op.id, fecha, hora, usuario]
       );
       await client.query(
         `INSERT INTO movimientos_tesoreria
@@ -75,6 +77,7 @@ export async function POST(req: NextRequest) {
         [destino.id, centsToStr(usdCents), centsToStr(saldoDestinoAnt), centsToStr(saldoDestinoPost), ref,
          `Ingreso por compra de divisas de cobertura cambiaria (Origen: ${origen.nombre})`, op.id, fecha, hora, usuario]
       );
+      if (diaCerrado) await marcarCierreModificado(client, fecha, motivo, usuario);
       return { op, saldoOrigenPost, saldoDestinoPost };
     });
 

@@ -1,9 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
 import pool from '@/lib/db';
-import { ApiError, errorResponse, fechaHoraLocal, parseBody, sesionUsuario, withTransaction } from '@/lib/apiHelpers';
+import { ApiError, errorResponse, parseBody, sesionUsuario, withTransaction } from '@/lib/apiHelpers';
 import { centsToStr, centsToNumber, toCents } from '@/lib/money';
-import { exigirJornadaAlDia } from '@/lib/cierre';
+import { exigirJornadaAlDia, marcarCierreModificado } from '@/lib/cierre';
+import { camposFechaOperacion, resolverFechaOperacion } from '@/lib/fechaOperacion';
 
 export async function GET() {
   try {
@@ -30,6 +31,7 @@ const schema = z.object({
   referencia: z.string().max(100).nullish(),
   descripcion: z.string().max(500).nullish(),
   proveedor_beneficiario: z.string().max(200).nullish(),
+  ...camposFechaOperacion,
 });
 
 export async function POST(req: NextRequest) {
@@ -42,7 +44,7 @@ export async function POST(req: NextRequest) {
     if (neto <= 0) throw new ApiError(400, 'El monto neto del egreso debe ser mayor a 0.');
     if (comision < 0) throw new ApiError(400, 'La comisión bancaria no puede ser negativa.');
     const totalDebitado = neto + comision;
-    const { fecha, hora } = fechaHoraLocal();
+    const { fecha, hora, nota, diaCerrado, motivo } = await resolverFechaOperacion(b, req.headers.get('x-session-role') === 'admin');
 
     const out = await withTransaction(async (client) => {
       const cuentaRes = await client.query('SELECT * FROM cuentas_bancarias WHERE id = $1 FOR UPDATE', [b.cuenta_id]);
@@ -62,11 +64,11 @@ export async function POST(req: NextRequest) {
            (cuenta_id, categoria, concepto_libre, monto_neto, comision_bancaria, total_debitado, moneda, referencia, descripcion, proveedor_beneficiario, fecha, hora, usuario)
          VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13) RETURNING *`,
         [b.cuenta_id, b.categoria, b.concepto_libre || null, centsToStr(neto), centsToStr(comision), centsToStr(totalDebitado), cuenta.moneda,
-         referencia, b.descripcion || null, beneficiario, fecha, hora, usuario]
+         referencia, ((b.descripcion || '') + nota) || null, beneficiario, fecha, hora, usuario]
       );
       const egreso = egresoRes.rows[0];
 
-      const conceptoPrincipal = `Egreso Operativo [${b.categoria}]: ${b.concepto_libre || b.descripcion || 'Gasto Operativo'} - Beneficiario: ${b.proveedor_beneficiario || 'General'}`;
+      const conceptoPrincipal = `Egreso Operativo [${b.categoria}]: ${b.concepto_libre || b.descripcion || 'Gasto Operativo'} - Beneficiario: ${b.proveedor_beneficiario || 'General'}${nota}`;
       await client.query(
         `INSERT INTO transacciones_bancarias
            (cuenta_id, tipo_transaccion, concepto, monto_debito, monto_credito, saldo_posterior, moneda, referencia, beneficiario, categoria, es_comision, egreso_id, fecha, hora, usuario)
@@ -83,6 +85,7 @@ export async function POST(req: NextRequest) {
            cuenta.moneda, b.referencia || null, egreso.id, fecha, hora, usuario]
         );
       }
+      if (diaCerrado) await marcarCierreModificado(client, fecha, motivo, usuario);
       return { egreso, nuevoSaldo };
     });
 

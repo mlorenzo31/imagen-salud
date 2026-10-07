@@ -1,9 +1,10 @@
 import { NextResponse, type NextRequest } from 'next/server';
 import { z } from 'zod';
 import pool from '@/lib/db';
-import { ApiError, errorResponse, fechaHoraLocal, parseBody, sesionUsuario, withTransaction } from '@/lib/apiHelpers';
+import { ApiError, errorResponse, parseBody, sesionUsuario, withTransaction } from '@/lib/apiHelpers';
 import { centsToStr, toCents } from '@/lib/money';
-import { exigirJornadaAlDia } from '@/lib/cierre';
+import { exigirJornadaAlDia, marcarCierreModificado } from '@/lib/cierre';
+import { camposFechaOperacion, resolverFechaOperacion } from '@/lib/fechaOperacion';
 
 const schema = z.object({
   cuenta_id: z.coerce.number().int().positive(),
@@ -12,6 +13,7 @@ const schema = z.object({
   monto: z.union([z.string(), z.number()]),
   referencia: z.string().max(100).nullish(),
   descripcion: z.string().max(500).nullish(),
+  ...camposFechaOperacion,
 });
 
 export async function POST(request: NextRequest) {
@@ -21,7 +23,7 @@ export async function POST(request: NextRequest) {
     const usuario = sesionUsuario(request);
     const montoCents = toCents(b.monto);
     if (montoCents <= 0) throw new ApiError(400, 'El monto del ingreso extraordinario debe ser mayor a 0.');
-    const { fecha, hora } = fechaHoraLocal();
+    const { fecha, hora, nota, diaCerrado, motivo } = await resolverFechaOperacion(b, request.headers.get('x-session-role') === 'admin');
 
     const out = await withTransaction(async (client) => {
       const cuentaRes = await client.query('SELECT * FROM cuentas_bancarias WHERE id = $1 FOR UPDATE', [b.cuenta_id]);
@@ -35,15 +37,16 @@ export async function POST(request: NextRequest) {
         `INSERT INTO ingresos_extraordinarios
          (cuenta_id, categoria, concepto_libre, monto, moneda, referencia, descripcion, fecha, hora, usuario)
          VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10) RETURNING *`,
-        [b.cuenta_id, b.categoria, b.concepto_libre || null, centsToStr(montoCents), cuenta.moneda, b.referencia || null, b.descripcion || null, fecha, hora, usuario]
+        [b.cuenta_id, b.categoria, b.concepto_libre || null, centsToStr(montoCents), cuenta.moneda, b.referencia || null, ((b.descripcion || '') + nota) || null, fecha, hora, usuario]
       );
       const concepto = `Ingreso Extraordinario [${b.categoria}]` + (b.concepto_libre ? `: ${b.concepto_libre}` : '');
       await client.query(
         `INSERT INTO movimientos_tesoreria
          (cuenta_id, tipo, monto, moneda, comision, monto_neto, saldo_anterior, saldo_posterior, referencia, descripcion, fecha, hora, usuario)
          VALUES ($1, 'INGRESO_EXTRAORDINARIO', $2, $3, 0, $2, $4, $5, $6, $7, $8, $9, $10)`,
-        [b.cuenta_id, centsToStr(montoCents), cuenta.moneda, centsToStr(saldoAnt), centsToStr(saldoPost), b.referencia || `ING-EXT-${ing.rows[0].id}`, concepto, fecha, hora, usuario]
+        [b.cuenta_id, centsToStr(montoCents), cuenta.moneda, centsToStr(saldoAnt), centsToStr(saldoPost), b.referencia || `ING-EXT-${ing.rows[0].id}`, concepto + nota, fecha, hora, usuario]
       );
+      if (diaCerrado) await marcarCierreModificado(client, fecha, motivo, usuario);
       return { ingreso: ing.rows[0], saldoPost };
     });
 

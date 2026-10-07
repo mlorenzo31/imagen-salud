@@ -7,6 +7,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { ArrowLeftRight, AlertCircle } from 'lucide-react';
 import { getErrorMessage } from '@/lib/utils';
+import { useFechaOperacion } from './FechaOperacion';
 
 interface ModalCambioDivisaProps {
   open: boolean;
@@ -36,6 +37,7 @@ export const ModalCambioDivisa: React.FC<ModalCambioDivisaProps> = ({
   }, [open]);
   const [comisionBs, setComisionBs] = useState<string>('0.00');
   const [referencia, setReferencia] = useState<string>('');
+  const fechaOp = useFechaOperacion();
   const [notas, setNotas] = useState<string>('');
   const [loading, setLoading] = useState<boolean>(false);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
@@ -77,7 +79,8 @@ export const ModalCambioDivisa: React.FC<ModalCambioDivisaProps> = ({
         comision_bancaria_bs: comision,
         referencia: referencia.trim() || `FX-${Date.now().toString().slice(-6)}`,
         notas: notas.trim() || undefined,
-        usuario: 'Administrador'
+        usuario: 'Administrador',
+        ...fechaOp.payload
       });
 
       alert(`Operación completada con éxito. Se acreditaron $${totalUsdComprado.toFixed(2)} USD en Efectivo Divisas.`);
@@ -171,6 +174,7 @@ export const ModalCambioDivisa: React.FC<ModalCambioDivisaProps> = ({
                 className="font-mono font-bold text-sm text-amber-900"
               />
             </div>
+            <div>{fechaOp.campo}</div>
             <div>
               <label className="block text-xs font-bold text-slate-700 mb-1">N° Referencia de Pago</label>
               <Input
@@ -213,7 +217,7 @@ export const ModalCambioDivisa: React.FC<ModalCambioDivisaProps> = ({
             </Button>
             <Button
               type="submit"
-              disabled={loading || isSaldoInsuficiente || bsBase <= 0}
+              disabled={loading || isSaldoInsuficiente || bsBase <= 0 || fechaOp.incompleta}
               className="text-xs font-bold bg-blue-600 hover:bg-blue-700 text-white shadow-md shadow-blue-600/20"
             >
               {loading ? 'Procesando...' : 'Confirmar Cobertura Cambiaria'}

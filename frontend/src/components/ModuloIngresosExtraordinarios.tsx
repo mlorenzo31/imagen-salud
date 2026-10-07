@@ -1,5 +1,6 @@
 'use client';
 
+import { useFechaOperacion } from './FechaOperacion';
 import React, { useState, useEffect, useMemo } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -85,6 +86,7 @@ export const ModuloIngresosExtraordinarios: React.FC<ModuloIngresosExtraordinari
   const [conceptoLibre, setConceptoLibre] = useState<string>('');
   const [monto, setMonto] = useState<string>('');
   const [referencia, setReferencia] = useState<string>('');
+  const fechaOp = useFechaOperacion();
   const [descripcion, setDescripcion] = useState<string>('');
   const [comisionBancariaManual, setComisionBancariaManual] = useState<string>('0.00');
   const [tasaBcv, setTasaBcv] = useState<number>(0);
@@ -155,6 +157,7 @@ export const ModuloIngresosExtraordinarios: React.FC<ModuloIngresosExtraordinari
         monto_neto: montoNeto,
         referencia: referencia.trim() || null,
         descripcion: descripcion.trim() || null,
+        ...fechaOp.payload,
         usuario: currentRole === 'admin' ? 'Director Médico (Admin)' : 'Cajero de Turno'
       };
 
@@ -695,6 +698,8 @@ export const ModuloIngresosExtraordinarios: React.FC<ModuloIngresosExtraordinari
               </div>
             </div>
 
+            {fechaOp.campo}
+
             {/* 5. Referencia Bancaria / Comprobante */}
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <div className="space-y-1.5">
@@ -739,7 +744,7 @@ export const ModuloIngresosExtraordinarios: React.FC<ModuloIngresosExtraordinari
               </Button>
               <Button
                 type="submit"
-                disabled={submitting}
+                disabled={submitting || fechaOp.incompleta}
                 className="bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold rounded-xl shadow-md shadow-emerald-600/20 flex items-center gap-1.5"
               >
                 {submitting ? <RefreshCw className="w-3.5 h-3.5 animate-spin" /> : <CheckCircle2 className="w-3.5 h-3.5" />}
