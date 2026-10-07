@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { ShoppingCart, CreditCard, CheckCircle2, AlertCircle, Trash2, Search, UserCheck, Stethoscope, RefreshCw, RotateCcw, X } from 'lucide-react';import { ESPECIALISTAS_MEDICOS } from '@/lib/catalogos';import { useCatalogoEstudios } from '@/lib/useCatalogoEstudios';import { facturaCreateSchema } from '@/lib/validations';
+import { inferirSexo, esSexo, ETIQUETA_SEXO, type Sexo } from '@/lib/sexo';
 import { mapearEstudioAGrupo, GrupoClinico } from '@/lib/gruposClinicos';import { normalizarCedulaRif } from '@/lib/cedulaRif';import { aFormatoInputDate, calcularEdadReal, hoyLocal } from '@/lib/date';
 import { getErrorMessage } from '@/lib/utils';
 import {
@@ -51,6 +52,8 @@ export const ModuloFacturacion: React.FC<ModuloFacturacionProps> = ({ onFacturaE
   const [cedula, setCedula] = useState<string>('');
   const [nombre, setNombre] = useState<string>('');
   const [fechaNacimiento, setFechaNacimiento] = useState<string>('');
+  const [sexo, setSexo] = useState<Sexo | ''>('');
+  const [sexoManual, setSexoManual] = useState<boolean>(false);
   const [telefono, setTelefono] = useState<string>('');
   const [direccion, setDireccion] = useState<string>('');
   const [erroresFicha, setErroresFicha] = useState<FichaErrores>({});
@@ -64,6 +67,8 @@ export const ModuloFacturacion: React.FC<ModuloFacturacionProps> = ({ onFacturaE
   const limpiarDatosPaciente = () => {
     setNombre('');
     setFechaNacimiento('');
+    setSexo('');
+    setSexoManual(false);
     setTelefono('');
     setDireccion('');
     setPacienteExiste(null);
@@ -93,6 +98,8 @@ export const ModuloFacturacion: React.FC<ModuloFacturacionProps> = ({ onFacturaE
   const handleNombreChange = (nuevoNombre: string) => {
     const limpio = limpiarNombreInput(nuevoNombre);
     setNombre(limpio);
+    // Sugerencia automática por el primer nombre mientras recepción no la haya elegido a mano.
+    if (!sexoManual) setSexo(inferirSexo(limpio) ?? '');
     if (erroresFicha.nombre) {
       setErroresFicha(prev => ({ ...prev, nombre: undefined }));
     }
@@ -234,6 +241,8 @@ export const ModuloFacturacion: React.FC<ModuloFacturacionProps> = ({ onFacturaE
           if (data && data.nombre) {
             setNombre(data.nombre);
             setFechaNacimiento(aFormatoInputDate(data.fecha_nacimiento));
+            setSexo(esSexo(data.sexo) ? data.sexo : (inferirSexo(data.nombre) ?? ''));
+            setSexoManual(esSexo(data.sexo));
             setTelefono(data.telefono || '');
             setDireccion(data.direccion || '');
             setPacienteExiste(true);
@@ -266,6 +275,7 @@ export const ModuloFacturacion: React.FC<ModuloFacturacionProps> = ({ onFacturaE
       cedula,
       nombre,
       fecha_nacimiento: fechaNacimiento,
+      sexo,
       telefono,
       direccion
     });
@@ -287,6 +297,7 @@ export const ModuloFacturacion: React.FC<ModuloFacturacionProps> = ({ onFacturaE
           cedula: fullCedula,
           nombre: nombre.trim().toUpperCase(),
           fecha_nacimiento: fechaNacimiento || null,
+          sexo,
           telefono: telefono.trim(),
           direccion: direccion.trim().toUpperCase()
         })
@@ -406,6 +417,7 @@ export const ModuloFacturacion: React.FC<ModuloFacturacionProps> = ({ onFacturaE
       cedula,
       nombre,
       fecha_nacimiento: fechaNacimiento,
+      sexo,
       telefono,
       direccion
     });
@@ -423,6 +435,7 @@ export const ModuloFacturacion: React.FC<ModuloFacturacionProps> = ({ onFacturaE
       cedula: cedula.trim(),
       nombre: nombre.trim(),
       fecha_nacimiento: fechaNacimiento || undefined,
+      sexo,
       edad: fechaNacimiento ? calcularEdadReal(fechaNacimiento) : undefined,
       telefono: telefono.trim(),
       direccion: direccion.trim(),
@@ -471,6 +484,7 @@ export const ModuloFacturacion: React.FC<ModuloFacturacionProps> = ({ onFacturaE
           nombre_paciente: nombre.trim().toUpperCase(),
           fecha_nacimiento_paciente: fechaNacimiento || null,
           fecha_nacimiento: fechaNacimiento || null,
+          sexo,
           edad_paciente: fechaNacimiento ? calcularEdadReal(fechaNacimiento) : 0,
           telefono_paciente: telefono.trim(),
           direccion_paciente: direccion.trim().toUpperCase(),
@@ -511,6 +525,8 @@ export const ModuloFacturacion: React.FC<ModuloFacturacionProps> = ({ onFacturaE
       setCedula('');
       setNombre('');
       setFechaNacimiento('');
+      setSexo('');
+      setSexoManual(false);
       setTelefono('');
       setDireccion('');
       setPacienteExiste(null);
@@ -714,6 +730,43 @@ export const ModuloFacturacion: React.FC<ModuloFacturacionProps> = ({ onFacturaE
                   )}
                 </div>
 
+                {/* Sexo (sugerido por el nombre; recepción confirma) */}
+                <div className="md:col-span-5">
+                  <label className="block text-[10px] font-black text-slate-600 uppercase mb-1">
+                    Sexo <span className="text-rose-500">*</span>
+                  </label>
+                  <div className="flex gap-2">
+                    {(['F', 'M'] as const).map((op) => (
+                      <button
+                        key={op}
+                        type="button"
+                        onClick={() => {
+                          setSexo(op);
+                          setSexoManual(true);
+                          if (erroresFicha.sexo) setErroresFicha(prev => ({ ...prev, sexo: undefined }));
+                        }}
+                        className={`flex-1 h-9 rounded-xl text-xs font-bold border transition-colors ${
+                          sexo === op
+                            ? 'bg-teal-600 border-teal-600 text-white'
+                            : erroresFicha.sexo ? 'border-rose-400 bg-rose-50/20 text-slate-600' : 'border-slate-300 text-slate-600 hover:bg-slate-50'
+                        }`}
+                      >
+                        {ETIQUETA_SEXO[op]}
+                      </button>
+                    ))}
+                  </div>
+                  {erroresFicha.sexo ? (
+                    <p className="text-[10px] text-rose-600 font-bold mt-1 flex items-center gap-1">
+                      <AlertCircle className="w-3 h-3 shrink-0" />
+                      {erroresFicha.sexo}
+                    </p>
+                  ) : (
+                    <p className="text-[9px] text-slate-500 mt-0.5">
+                      {sexo && !sexoManual ? 'Sugerido por el nombre; confirme o cambie' : 'Seleccione una opción'}
+                    </p>
+                  )}
+                </div>
+
                 {/* Teléfono */}
                 <div className="md:col-span-5">
                   <label className="block text-[10px] font-black text-slate-600 uppercase mb-1">
@@ -741,7 +794,7 @@ export const ModuloFacturacion: React.FC<ModuloFacturacionProps> = ({ onFacturaE
                 </div>
 
                 {/* Dirección */}
-                <div className="md:col-span-12">
+                <div className="md:col-span-7">
                   <label className="block text-[10px] font-black text-slate-600 uppercase mb-1">
                     Dirección / Residencia <span className="text-rose-500">*</span>
                   </label>

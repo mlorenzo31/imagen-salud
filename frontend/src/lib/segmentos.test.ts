@@ -2,7 +2,7 @@ import { describe, it, expect } from 'vitest';
 import { calcularEdad, rangoEtario, personalizarMensaje, resumirSegmento, FiltrosSchema, type PacienteSegmento } from './segmentos';
 
 const p = (o: Partial<PacienteSegmento>): PacienteSegmento => ({
-  cedula: 'V1', nombre: 'X', telefono: '04141234567', fecha_nacimiento: null, edad: null, visitas: 1, gasto_cents: 0,
+  cedula: 'V1', nombre: 'X', telefono: '04141234567', fecha_nacimiento: null, sexo: null, edad: null, visitas: 1, gasto_cents: 0,
   ultima_visita: null, estudios: [], medicos: [], areas: [], contactable: true, ...o,
 });
 

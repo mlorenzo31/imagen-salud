@@ -44,6 +44,7 @@ export const pacienteSchema = z.object({
       hace125.setFullYear(hace125.getFullYear() - 125);
       return d >= hace125;
     }, 'La fecha de nacimiento debe ser una fecha válida en el pasado'),
+  sexo: z.enum(['M', 'F'], { message: 'Seleccione el sexo (M o F)' }),
   edad: z.coerce.number().optional(),
   telefono: z.string().trim()
     .min(10, 'El teléfono debe tener entre 10 y 11 dígitos numéricos')
@@ -90,6 +91,7 @@ export const facturaCreateSchema = z.object({
       hoy.setHours(23, 59, 59, 999);
       return d <= hoy;
     }, 'La fecha de nacimiento debe ser una fecha válida y no puede ser en el futuro'),
+  sexo: z.enum(['M', 'F'], { message: 'Seleccione el sexo (M o F)' }),
   edad: z.coerce.number().optional(),
   telefono: z.string().trim()
     .min(10, 'El teléfono debe tener entre 10 y 11 dígitos numéricos')

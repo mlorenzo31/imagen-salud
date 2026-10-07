@@ -139,8 +139,9 @@ export const ModuloCampanas: React.FC = () => {
             <Badge variant="outline">{resumen.sinTelefono} sin teléfono válido</Badge>
             <Badge variant="outline">{resumen.conBaja} con baja</Badge>
           </div>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-3">
             <Barra titulo="Por rango etario (clic para filtrar)" items={resumen.porRango} onClick={aplicarRango} />
+            <Barra titulo="Por sexo" items={resumen.porSexo} />
             <Barra titulo="Por área" items={resumen.porArea} />
             <Barra titulo="Por médico" items={resumen.porMedico} />
           </div>

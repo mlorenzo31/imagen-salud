@@ -33,6 +33,7 @@ export function asegurarCatalogo(): Promise<void> {
     listo = (async () => {
       // Columnas auxiliares (idempotente): estado del paciente y áreas de atención del especialista.
       await pool.query('ALTER TABLE pacientes ADD COLUMN IF NOT EXISTS activo BOOLEAN NOT NULL DEFAULT TRUE');
+      await pool.query("ALTER TABLE pacientes ADD COLUMN IF NOT EXISTS sexo CHAR(1) CHECK (sexo IN ('M','F'))");
       await pool.query('ALTER TABLE medicos ADD COLUMN IF NOT EXISTS areas TEXT');
       await pool.query(`
         CREATE TABLE IF NOT EXISTS catalogo_estudios (
