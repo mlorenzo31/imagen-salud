@@ -5,7 +5,7 @@ import { evaluarDia } from '@/lib/cierre';
 export async function GET(req: NextRequest) {
   try {
     // El cajero solo ve el día de hoy.
-    const fechaParam = req.headers.get('x-session-role') === 'cajero' ? null : new URL(req.url).searchParams.get('fecha');
+    const fechaParam = req.headers.get('x-session-role') === 'cajero' ? fechaHoraLocal().fecha : new URL(req.url).searchParams.get('fecha');
     const dia = await evaluarDia(fechaParam);
     return NextResponse.json({
       puedeCerrar: dia.puedeCerrar,
