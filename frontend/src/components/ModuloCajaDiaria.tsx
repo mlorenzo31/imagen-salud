@@ -10,6 +10,7 @@ import { esAnulada } from '@/lib/estados';
 import { TicketTermico } from '@/components/cajadiaria/TicketTermico';
 import { TablaFacturasCaja } from '@/components/cajadiaria/TablaFacturasCaja';
 import { BarraBusquedaCaja } from '@/components/cajadiaria/BarraBusquedaCaja';
+import { diferir } from '@/lib/diferir';
 
 interface ModuloCajaDiariaProps {
   currentRole: UserRole;
@@ -69,10 +70,10 @@ export const ModuloCajaDiaria: React.FC<ModuloCajaDiariaProps> = ({ currentRole 
     }
   };
 
-  useEffect(() => {
+  useEffect(() => diferir(() => {
     cargarTasaBcv();
     cargarFacturas();
-  }, []);
+  }), []);
 
   // Helper de fechas para filtros
   const hoyStr = hoyLocal();

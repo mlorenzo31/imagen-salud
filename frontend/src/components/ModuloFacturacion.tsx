@@ -17,6 +17,7 @@ import {
 } from '@/lib/pacienteValidation';
 import { FormasDePago } from '@/components/facturacion/FormasDePago';
 import { SeleccionEstudios } from '@/components/facturacion/SeleccionEstudios';
+import { diferir } from '@/lib/diferir';
 
 interface ModuloFacturacionProps {
   onFacturaEmitida?: () => void;
@@ -173,21 +174,21 @@ export const ModuloFacturacion: React.FC<ModuloFacturacionProps> = ({ onFacturaE
   const tasaManualRef = useRef(false);
   useEffect(() => { tasaManualRef.current = tasaManualEditada; }, [tasaManualEditada]);
   useEffect(() => {
-    sincronizarTasaBCV(false);
+    const cancelar = diferir(() => { void sincronizarTasaBCV(false); });
     const id = setInterval(() => { if (!tasaManualRef.current) sincronizarTasaBCV(false); }, 5 * 60 * 1000);
-    return () => clearInterval(id);
+    return () => { cancelar(); clearInterval(id); };
   }, []);
 
   // Si el catálogo se actualiza y el estudio elegido ya no existe, se vuelve al primero del área.
-  useEffect(() => {
+  useEffect(() => diferir(() => {
     const lista = catalogo[selectedArea] || [];
     if (lista.length > 0 && !lista.some((e) => e.nombre === selectedEstudioNombre)) {
       setSelectedEstudioNombre(lista[0].nombre);
     }
-  }, [catalogo, selectedArea, selectedEstudioNombre]);
+  }), [catalogo, selectedArea, selectedEstudioNombre]);
 
   // Autoselección según Área
-  useEffect(() => {
+  useEffect(() => diferir(() => {
     const estudiosArea = catalogo[selectedArea] || [];
     if (estudiosArea.length > 0) {
       setSelectedEstudioNombre(estudiosArea[0].nombre);
@@ -211,15 +212,16 @@ export const ModuloFacturacion: React.FC<ModuloFacturacionProps> = ({ onFacturaE
       const doctores = ESPECIALISTAS_MEDICOS.GINECOLOGIA || [];
       setSelectedDoctor(doctores.length > 0 ? doctores[0].nombre : '');
     }
-  }, [selectedArea]);
+  }), [selectedArea]);
 
     // Búsqueda Reactiva de Paciente con Debounce
   useEffect(() => {
     const cleanCedula = cedula.trim();
     if (!cleanCedula || cleanCedula.length < 3) {
-      setPacienteExiste(null);
-      limpiarDatosPaciente();
-      return;
+      return diferir(() => {
+        setPacienteExiste(null);
+        limpiarDatosPaciente();
+      });
     }
 
     const timer = setTimeout(async () => {

@@ -36,6 +36,7 @@ import { exportarAExcel, exportarAPDF } from '@/lib/exportUtils';
 import { CuentaBancaria } from '@/types';
 import { getErrorMessage } from '@/lib/utils';
 import { hoyLocal, sumarDias } from '@/lib/date';
+import { diferir } from '@/lib/diferir';
 
 export interface IngresoExtraordinario {
   id: number;
@@ -123,9 +124,7 @@ export const ModuloIngresosExtraordinarios: React.FC<ModuloIngresosExtraordinari
     }
   };
 
-  useEffect(() => {
-    cargarIngresos();
-  }, []);
+  useEffect(() => diferir(cargarIngresos), []);
 
   const cuentaSeleccionada = useMemo(() => {
     return cuentas.find(c => c.id === Number(cuentaId)) || cuentas[0];

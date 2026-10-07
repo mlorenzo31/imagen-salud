@@ -25,6 +25,7 @@ import { UserRole, PacientePendiente, ResumenCierre } from '@/types';
 import { BloqueoCierrePendiente } from './BloqueoCierrePendiente';
 import { PinCierreDialog } from './PinCierreDialog';
 import { hoyLocal } from '@/lib/date';
+import { diferir } from '@/lib/diferir';
 
 const METODOS = [
   { clave: 'divisas_usd', etiqueta: 'Efectivo divisas', simbolo: '$' },
@@ -83,9 +84,7 @@ export const ModuloCierreDiario: React.FC<ModuloCierreDiarioProps> = ({ currentR
     }
   };
 
-  useEffect(() => {
-    verificarEstado();
-  }, [fechaCierre]);
+  useEffect(() => diferir(verificarEstado), [fechaCierre]);
 
   const [pidiendoPin, setPidiendoPin] = useState(false);
   const [errorPin, setErrorPin] = useState<string | null>(null);
