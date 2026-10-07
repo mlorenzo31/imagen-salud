@@ -34,15 +34,15 @@ export async function POST(req: NextRequest) {
     const u = await buscarUsuario(usuario);
     const tel = normalizarTelefono(u?.telefono);
     if (u && u.activo && tel) {
-      const reciente = await pool.query(`SELECT 1 FROM recuperacion_clave WHERE usuario_id = $1 AND creado_en > now() - interval '60 seconds'`, [u.id]);
+      const reciente = await pool.query(`SELECT 1 FROM codigos_recuperacion WHERE usuario_id = $1 AND creado_en > now() - interval '60 seconds'`, [u.id]);
       if (!reciente.rowCount) {
         const codigo = generarCodigo();
         const client = await pool.connect();
         try {
           await client.query('BEGIN');
-          await client.query('UPDATE recuperacion_clave SET usado = TRUE WHERE usuario_id = $1 AND NOT usado', [u.id]);
+          await client.query('UPDATE codigos_recuperacion SET usado = TRUE WHERE usuario_id = $1 AND NOT usado', [u.id]);
           await client.query(
-            `INSERT INTO recuperacion_clave (usuario_id, codigo_hash, expira) VALUES ($1, $2, now() + make_interval(mins => $3))`,
+            `INSERT INTO codigos_recuperacion (usuario_id, codigo_hash, expira) VALUES ($1, $2, now() + make_interval(mins => $3))`,
             [u.id, hashCodigo(codigo, u.id), CODIGO_VIGENCIA_MIN],
           );
           // Mensaje del sistema: sin factura ni campaña (el bot lo envía primero y de inmediato).

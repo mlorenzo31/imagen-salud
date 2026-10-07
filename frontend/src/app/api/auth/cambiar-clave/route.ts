@@ -14,7 +14,7 @@ export async function POST(req: NextRequest) {
     const motivo = validarPoliticaClave(b.nueva);
     if (motivo) throw new ApiError(400, motivo);
     await exigirPinSesion(req, b.actual);
-    await pool.query('UPDATE usuarios SET password_hash = $2 WHERE id = $1', [Number(req.headers.get('x-session-uid')), hashClave(b.nueva)]);
+    await pool.query('UPDATE cuentas_usuario SET password_hash = $2 WHERE id = $1', [Number(req.headers.get('x-session-uid')), hashClave(b.nueva)]);
     return NextResponse.json({ ok: true });
   } catch (err) {
     return errorResponse(err);

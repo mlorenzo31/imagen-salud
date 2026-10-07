@@ -35,19 +35,19 @@ export async function POST(req: NextRequest) {
     try {
       await client.query('BEGIN');
       const r = await client.query<{ id: number; codigo_hash: string; intentos: number }>(
-        `SELECT id, codigo_hash, intentos FROM recuperacion_clave
+        `SELECT id, codigo_hash, intentos FROM codigos_recuperacion
           WHERE usuario_id = $1 AND NOT usado AND expira > now() ORDER BY id DESC LIMIT 1 FOR UPDATE`,
         [u.id],
       );
       const fila = r.rows[0];
       if (!fila || fila.intentos >= CODIGO_MAX_INTENTOS) throw invalido;
       if (!codigoCoincide(codigo, u.id, fila.codigo_hash)) {
-        await client.query('UPDATE recuperacion_clave SET intentos = intentos + 1 WHERE id = $1', [fila.id]);
+        await client.query('UPDATE codigos_recuperacion SET intentos = intentos + 1 WHERE id = $1', [fila.id]);
         await client.query('COMMIT');
         throw invalido;
       }
-      await client.query('UPDATE recuperacion_clave SET usado = TRUE WHERE id = $1', [fila.id]);
-      await client.query('UPDATE usuarios SET password_hash = $2, intentos_fallidos = 0, bloqueado_hasta = NULL WHERE id = $1', [u.id, hashClave(clave)]);
+      await client.query('UPDATE codigos_recuperacion SET usado = TRUE WHERE id = $1', [fila.id]);
+      await client.query('UPDATE cuentas_usuario SET password_hash = $2, intentos_fallidos = 0, bloqueado_hasta = NULL WHERE id = $1', [u.id, hashClave(clave)]);
       await registrarBitacora(client, {
         tipo: 'RECUPERACION_CLAVE', fechaAfectada: fechaHoraLocal().fecha, usuario: u.nombre, rol: u.rol,
         descripcion: `${u.nombre} (${u.usuario}) restableció su clave con un código enviado por WhatsApp.`,
