@@ -1,16 +1,18 @@
 import { NextResponse, type NextRequest } from 'next/server';
 import { z } from 'zod';
 import pool from '@/lib/db';
-import { ApiError, errorResponse, fechaHoraLocal, parseBody, sesionUsuario, withTransaction } from '@/lib/apiHelpers';
+import { ApiError, errorResponse, parseBody, sesionUsuario, withTransaction } from '@/lib/apiHelpers';
 import { centsToStr, toCents } from '@/lib/money';
 import { esAnulada } from '@/lib/estados';
 import { asegurarDevoluciones } from '@/lib/devoluciones';
 import { exigirPinSesion } from '@/lib/pin';
+import { camposFechaOperacion, resolverFechaOperacion } from '@/lib/fechaOperacion';
 
 const schema = z.object({
   id: z.coerce.number().int().positive(),
   referencia: z.string().trim().min(3, 'Indique la referencia bancaria de la devolución.').max(100),
   pin: z.string().min(1),
+  ...camposFechaOperacion,
 });
 
 /**
@@ -22,7 +24,7 @@ export async function POST(req: NextRequest) {
     const b = await parseBody(req, schema);
     exigirPinSesion(req, b.pin);
     const usuario = sesionUsuario(req);
-    const { fecha, hora } = fechaHoraLocal();
+    const { fecha, hora, nota } = await resolverFechaOperacion(b, req.headers.get('x-session-role') === 'admin');
     await asegurarDevoluciones(pool);
 
     const out = await withTransaction(async (client) => {
@@ -43,7 +45,7 @@ export async function POST(req: NextRequest) {
         const saldo = toCents(cuenta.saldo_actual);
         if (saldo < monto) throw new ApiError(400, `Saldo insuficiente en ${cuenta.nombre}. Disponible: ${centsToStr(saldo)}, requerido: ${centsToStr(monto)}.`);
         await client.query('UPDATE cuentas_bancarias SET saldo_actual = $1, actualizado_en = NOW() WHERE id = $2', [centsToStr(saldo - monto), cuenta.id]);
-        const concepto = `Devolución factura ${d.factura_id} (${fRes.rows[0].nombre_paciente}) por ${d.medio === 'PAGO_MOVIL' ? 'pago móvil' : 'punto de venta'}`;
+        const concepto = `Devolución factura ${d.factura_id} (${fRes.rows[0].nombre_paciente}) por ${d.medio === 'PAGO_MOVIL' ? 'pago móvil' : 'punto de venta'}${nota}`;
         const e = await client.query(
           `INSERT INTO egresos_operativos (cuenta_id, categoria, concepto_libre, monto_neto, comision_bancaria, total_debitado, moneda, referencia, descripcion, proveedor_beneficiario, fecha, hora, usuario)
            VALUES ($1,'Devolución de factura',$2,$3,0,$3,'BS',$4,$2,$5,$6,$7,$8) RETURNING id`,

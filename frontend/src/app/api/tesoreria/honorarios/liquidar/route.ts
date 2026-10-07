@@ -1,7 +1,8 @@
 import { NextResponse, type NextRequest } from 'next/server';
 import type { PoolClient } from 'pg';
 import { z } from 'zod';
-import { ApiError, fechaHoraLocal, parseBody, sesionUsuario, withTransaction, errorResponse } from '@/lib/apiHelpers';
+import { camposFechaOperacion, resolverFechaOperacion } from '@/lib/fechaOperacion';
+import { ApiError, parseBody, sesionUsuario, withTransaction, errorResponse } from '@/lib/apiHelpers';
 import { centsToStr, toCents } from '@/lib/money';
 
 const monto = z.union([z.string(), z.number()]).optional();
@@ -16,6 +17,7 @@ const schema = z.object({
   efectivo_usd: monto,
   referencia: z.string().max(100).optional(),
   observaciones: z.string().max(500).optional(),
+  ...camposFechaOperacion,
 });
 
 interface Debito { codigo: string; etiqueta: string; simbolo: string; cents: number; tipo: string; moneda: 'BS' | 'USD'; comision: number; descripcion: string }
@@ -43,7 +45,7 @@ export async function POST(request: NextRequest) {
   try {
     const b = await parseBody(request, schema);
     const usuario = sesionUsuario(request);
-    const { fecha, hora } = fechaHoraLocal();
+    const { fecha, hora, nota } = await resolverFechaOperacion(b, request.headers.get('x-session-role') === 'admin');
     const pm = toCents(b.pago_movil_bs);
     const comPm = toCents(b.comision_pago_movil_bs);
     const efBs = toCents(b.efectivo_bs);
@@ -73,7 +75,7 @@ export async function POST(request: NextRequest) {
          (medico, fecha_pago, dias_liquidados, total_usd_liquidado, tasa_cambio_bcv, pago_movil_bs, comision_pago_movil_bs, efectivo_bs, efectivo_usd, referencia, observaciones, usuario)
          VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12) RETURNING *`,
         [b.medico, fecha, b.dias_liquidados || '', centsToStr(sumaUsd), tasa, centsToStr(pm), centsToStr(comPm),
-         centsToStr(efBs), centsToStr(efUsd), referencia, b.observaciones || '', usuario]
+         centsToStr(efBs), centsToStr(efUsd), referencia, (b.observaciones || '') + nota, usuario]
       );
       const pago = pagoRes.rows[0];
       await client.query(

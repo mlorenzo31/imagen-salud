@@ -1,5 +1,6 @@
 'use client';
 
+import { useFechaOperacion } from './FechaOperacion';
 import React, { useState, useMemo } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -53,6 +54,7 @@ export const TablaHonorarios: React.FC<TablaHonorariosProps> = ({
   currentRole = 'admin'
 }) => {
   const [selectedDoctor, setSelectedDoctor] = useState<HonorarioMedico | null>(null);
+  const fechaOp = useFechaOperacion();
   const [trazabilidadAbierta, setTrazabilidadAbierta] = useState<Record<number, boolean>>({});
 
   // Filtros
@@ -172,7 +174,8 @@ export const TablaHonorarios: React.FC<TablaHonorariosProps> = ({
           efectivo_bs: parseFloat(efectivoBs) || 0,
           efectivo_usd: parseFloat(efectivoUsd) || 0,
           referencia: refPM || undefined,
-          observaciones: observaciones || undefined
+          observaciones: observaciones || undefined,
+          ...fechaOp.payload
         })
       });
 
@@ -671,6 +674,8 @@ export const TablaHonorarios: React.FC<TablaHonorariosProps> = ({
                 </div>
               </div>
 
+              {fechaOp.campo}
+
               {/* Observaciones */}
               <div className="space-y-1">
                 <label className="text-[11px] font-bold text-slate-700">Observaciones del Pago</label>
@@ -693,7 +698,7 @@ export const TablaHonorarios: React.FC<TablaHonorariosProps> = ({
                 </Button>
                 <Button
                   type="submit"
-                  disabled={loading}
+                  disabled={loading || fechaOp.incompleta}
                   className="bg-clinica-primary hover:bg-clinica-primary-dark text-white text-xs font-bold rounded-xl shadow-md"
                 >
                   {loading ? 'Procesando...' : 'Confirmar Liquidación y Egresar'}

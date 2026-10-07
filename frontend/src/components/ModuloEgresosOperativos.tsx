@@ -1,5 +1,6 @@
 'use client';
 
+import { useFechaOperacion } from './FechaOperacion';
 import { DevolucionesPendientes } from './DevolucionesPendientes';
 import React, { useState, useEffect, useMemo } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -89,6 +90,7 @@ export const ModuloEgresosOperativos: React.FC<ModuloEgresosOperativosProps> = (
   const [egresoMonto, setEgresoMonto] = useState<string>('');
   const [egresoComisionPM, setEgresoComisionPM] = useState<string>('');
   const [egresoReferencia, setEgresoReferencia] = useState<string>('');
+  const fechaOp = useFechaOperacion();
   const [egresoBeneficiario, setEgresoBeneficiario] = useState<string>('');
 
   // Formulario Ingreso Extraordinario
@@ -229,6 +231,7 @@ export const ModuloEgresosOperativos: React.FC<ModuloEgresosOperativosProps> = (
         monto_total_debitado: totalDebitadoEgreso,
         referencia: egresoReferencia.trim() || 'EGRESO_OPERATIVO',
         beneficiario: egresoBeneficiario.trim() || 'Proveedor General',
+        ...fechaOp.payload,
         usuario: 'Administrador'
       };
 
@@ -287,6 +290,7 @@ export const ModuloEgresosOperativos: React.FC<ModuloEgresosOperativosProps> = (
         monto: montoNum,
         referencia: ingresoReferencia.trim() || 'INGRESO_EXTRA',
         origen: ingresoOrigen.trim() || 'Aporte Extraordinario',
+        ...fechaOp.payload,
         usuario: 'Administrador'
       };
 
@@ -573,6 +577,8 @@ export const ModuloEgresosOperativos: React.FC<ModuloEgresosOperativosProps> = (
                   />
                 </div>
 
+                {fechaOp.campo}
+
                 {/* Referencia Bancaria */}
                 <div>
                   <label className="block text-xs font-bold text-slate-700 mb-1.5">
@@ -742,6 +748,8 @@ export const ModuloEgresosOperativos: React.FC<ModuloEgresosOperativosProps> = (
                     className="text-xs bg-slate-50 border-slate-200 rounded-xl"
                   />
                 </div>
+
+                {fechaOp.campo}
 
                 {/* Referencia */}
                 <div>
