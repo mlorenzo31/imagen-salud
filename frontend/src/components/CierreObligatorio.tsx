@@ -3,6 +3,7 @@
 import React, { useCallback, useEffect, useState } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
 import { Lock, ShieldAlert } from 'lucide-react';
 import { BloqueoCierrePendiente } from '@/components/BloqueoCierrePendiente';
 import { PinCierreDialog } from '@/components/PinCierreDialog';
@@ -27,6 +28,14 @@ interface Props {
 
 const num = (v: unknown) => Number(v ?? 0);
 
+/** Medios que se cuentan al cerrar (mismas claves que el servidor). */
+const METODOS = [
+  { clave: 'divisas_usd', etiqueta: 'Efectivo divisas', simbolo: '$', campo: 'totalDivisasUSD' },
+  { clave: 'efectivo_bs', etiqueta: 'Efectivo bolívares', simbolo: 'Bs.', campo: 'totalEfectivoBs' },
+  { clave: 'punto_bs', etiqueta: 'Punto de venta', simbolo: 'Bs.', campo: 'totalPuntoBs' },
+  { clave: 'pago_movil_bs', etiqueta: 'Pago móvil', simbolo: 'Bs.', campo: 'totalPagoMovilBs' },
+] as const;
+
 /**
  * Bloqueo obligatorio: si pasó un día sin cerrar caja, nadie opera hasta cerrarla.
  * Primero se resuelven los pacientes en espera/atención y los resultados sin enviar; luego se cierra la caja.
@@ -38,6 +47,8 @@ export const CierreObligatorio: React.FC<Props> = ({ role, onResuelto }) => {
   const esAdmin = role === 'admin';
   const [abierto, setAbierto] = useState(false);
   const [pidiendoPin, setPidiendoPin] = useState(false);
+  const [conteo, setConteo] = useState<Record<string, string>>({ divisas_usd: '', efectivo_bs: '', punto_bs: '', pago_movil_bs: '' });
+  const [observaciones, setObservaciones] = useState('');
 
   const refrescar = useCallback(async () => {
     try {
@@ -63,7 +74,7 @@ export const CierreObligatorio: React.FC<Props> = ({ role, onResuelto }) => {
       const res = await fetch('/api/cierres/ejecutar-cierre', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ fecha: estado.fecha, observaciones: 'Cierre obligatorio de jornada anterior', pin }),
+        body: JSON.stringify({ fecha: estado.fecha, observaciones: observaciones.trim() || 'Cierre obligatorio de jornada anterior', arqueo: conteo, pin }),
       });
       const data = await res.json().catch(() => ({}));
       if (!res.ok) throw new Error(data.error || 'No se pudo cerrar la caja.');
@@ -114,6 +125,10 @@ export const CierreObligatorio: React.FC<Props> = ({ role, onResuelto }) => {
 
   // Paso 2: cerrar la caja (admin) o esperar al administrador (resto de roles).
   const r = estado.resumen ?? {};
+  const esperado = (campo: (typeof METODOS)[number]['campo']) => Math.round(num(r[campo]) * 100);
+  const contadoCents = (clave: string): number | null => (/^\d+(\.\d{1,2})?$/.test(conteo[clave].trim()) ? Math.round(Number(conteo[clave]) * 100) : null);
+  const conteoCompleto = METODOS.every((m) => contadoCents(m.clave) !== null);
+  const hayDif = conteoCompleto && METODOS.some((m) => contadoCents(m.clave) !== esperado(m.campo));
   const pendientesParaOtros = sala.length + wa.length;
   return (
     <Dialog open onOpenChange={(o) => { if (esAdmin && !o) setAbierto(false); }}>
@@ -145,9 +160,39 @@ export const CierreObligatorio: React.FC<Props> = ({ role, onResuelto }) => {
 
           {esAdmin ? (
             <>
+              <div className="space-y-2">
+                <p className="text-xs font-bold text-slate-700">Cuente la caja e indique el monto por medio de pago (0 si no hubo):</p>
+                {METODOS.map((m) => {
+                  const c = contadoCents(m.clave);
+                  const dif = c === null ? null : c - esperado(m.campo);
+                  return (
+                    <div key={m.clave} className="grid grid-cols-[1fr_7rem] items-center gap-2">
+                      <label htmlFor={`conteo-${m.clave}`} className="text-xs text-slate-700">
+                        {m.etiqueta} ({m.simbolo})
+                        <span className="block text-[11px] text-slate-500">
+                          Sistema: {m.simbolo} {(esperado(m.campo) / 100).toFixed(2)}
+                          {dif !== null && (
+                            <span className={`ml-1 font-bold ${dif === 0 ? 'text-emerald-700' : 'text-amber-700'}`}>
+                              {dif === 0 ? '· Cuadra' : dif > 0 ? `· Sobrante ${(dif / 100).toFixed(2)}` : `· Faltante ${(Math.abs(dif) / 100).toFixed(2)}`}
+                            </span>
+                          )}
+                        </span>
+                      </label>
+                      <Input id={`conteo-${m.clave}`} type="number" min="0" step="0.01" inputMode="decimal" placeholder="0.00" value={conteo[m.clave]}
+                        onChange={(e) => setConteo((p) => ({ ...p, [m.clave]: e.target.value }))} className="rounded-xl text-sm font-mono text-right" />
+                    </div>
+                  );
+                })}
+                {hayDif && (
+                  <div>
+                    <p className="text-[11px] font-bold text-amber-700 mb-1">Hay sobrante o faltante: explíquelo para poder cerrar.</p>
+                    <Input aria-label="Explicación del sobrante o faltante" placeholder="Explicación" value={observaciones} onChange={(e) => setObservaciones(e.target.value)} className="rounded-xl text-xs" />
+                  </div>
+                )}
+              </div>
               <p className="text-xs text-slate-500">Al cerrar, la sala de espera queda vacía en sus tres columnas y comienza la nueva jornada.</p>
               {error && <p className="text-xs font-bold text-clinica-coral">{error}</p>}
-              <Button onClick={() => { setError(null); setPidiendoPin(true); }} disabled={cerrando || estado.puedeCerrar === false} className="w-full rounded-xl font-bold bg-clinica-primary hover:bg-clinica-primary-dark text-white">
+              <Button onClick={() => { setError(null); setPidiendoPin(true); }} disabled={cerrando || estado.puedeCerrar === false || !conteoCompleto || (hayDif && !observaciones.trim())} className="w-full rounded-xl font-bold bg-clinica-primary hover:bg-clinica-primary-dark text-white">
                 <Lock className="w-4 h-4 mr-2" />
                 {cerrando ? 'Cerrando caja…' : `Cerrar caja del ${estado.fecha}`}
               </Button>
