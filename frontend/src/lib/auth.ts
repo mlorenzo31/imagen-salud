@@ -62,7 +62,7 @@ export async function verifySession(token: string | undefined): Promise<SessionP
 }
 
 /** Prefijos de API por rol. El admin tiene acceso total. */
-const CAJERO_API = ['/api/facturas', '/api/pacientes', '/api/medicos', '/api/bcv', '/api/cierres/verificar-estado-diario', '/api/cierres/estado-jornada', '/api/catalogo', '/api/auth', '/api/whatsapp', '/api/sala'];
+const CAJERO_API = ['/api/facturas', '/api/pacientes', '/api/medicos', '/api/bcv', '/api/cierres/verificar-estado-diario', '/api/cierres/estado-jornada', '/api/cierres/ejecutar-cierre', '/api/catalogo', '/api/auth', '/api/whatsapp', '/api/sala'];
 const SOLO_ADMIN = [
   '/api/tesoreria/cambio-divisa',
   '/api/tesoreria/conciliacion/ejecutar',
@@ -70,7 +70,6 @@ const SOLO_ADMIN = [
   '/api/admin',
   '/api/campanas',
   '/api/excel',
-  '/api/cierres/ejecutar-cierre',
 ];
 
 const matches = (path: string, prefixes: string[]) => prefixes.some((p) => path === p || path.startsWith(p + '/'));
@@ -81,6 +80,8 @@ export function isAllowed(role: UserRole, path: string, method: string = 'GET'):
   // El catálogo se consulta libremente, pero solo el administrador lo modifica.
   if (matches(path, ['/api/catalogo']) && method !== 'GET') return false;
   if (path === '/api/pacientes' && method === 'PUT') return false;
+  // Cerrar caja: administrador y cajero (este último solo el día de hoy; ver la ruta). El asistente no.
+  if (role === 'asistente' && matches(path, ['/api/cierres/ejecutar-cierre'])) return false;
   if (role === 'cajero') return matches(path, CAJERO_API);
   // Asistente: lectura de tesorería permitida; cualquier escritura en tesorería queda reservada al admin.
   if (matches(path, ['/api/tesoreria']) && method !== 'GET') return false;

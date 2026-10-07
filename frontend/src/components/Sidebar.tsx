@@ -59,7 +59,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
         { id: 'egresos', label: 'Egresos', icon: ArrowDownRight, allowed: ['admin'] },
         { id: 'divisas', label: 'Cambio Divisas', icon: ArrowLeftRight, allowed: ['admin'] },
         { id: 'honorarios', label: 'Honorarios', icon: Stethoscope, allowed: ['admin'] },
-        { id: 'cierre', label: 'Cierre Diario', icon: ShieldAlert, allowed: ['admin'] },
+        { id: 'cierre', label: 'Cierre Diario', icon: ShieldAlert, allowed: ['admin', 'cajero'] },
       ]
     },
     {

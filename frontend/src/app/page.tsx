@@ -111,7 +111,7 @@ export default function Home() {
   // Guard Estricto de RBAC para navegacin segura
   useEffect(() => diferir(() => {
     if (role === 'cajero') {
-      const cajeroAllowed = ['facturacion', 'caja', 'kanban', 'historial-pacientes'];
+      const cajeroAllowed = ['facturacion', 'caja', 'kanban', 'historial-pacientes', 'cierre'];
       if (!cajeroAllowed.includes(activeSection)) {
         setActiveSection('facturacion');
       }
@@ -538,8 +538,8 @@ export default function Home() {
           </div>
         )}
 
-        {/* 11. AUDITORÍA DE CIERRE DIARIO (Exclusivo Admin) */}
-        {activeSection === 'cierre' && role === 'admin' && (
+        {/* 11. CIERRE DIARIO (admin: cualquier fecha; cajero: solo el día de hoy) */}
+        {activeSection === 'cierre' && (role === 'admin' || role === 'cajero') && (
           <div className="animate-in fade-in-50 duration-300">
             <ModuloCierreDiario currentRole={role} />
           </div>

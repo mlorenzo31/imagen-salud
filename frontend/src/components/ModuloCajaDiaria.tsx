@@ -75,6 +75,9 @@ export const ModuloCajaDiaria: React.FC<ModuloCajaDiariaProps> = ({ currentRole 
     cargarFacturas();
   }), []);
 
+  // El cajero solo ve las operaciones del día: sin filtros de período, estado, método ni agrupaciones.
+  const soloHoy = currentRole === 'cajero';
+
   // Helper de fechas para filtros
   const hoyStr = hoyLocal();
   const fechaUnaSemanaAtras = sumarDias(hoyLocal(), -7);
@@ -84,21 +87,21 @@ export const ModuloCajaDiaria: React.FC<ModuloCajaDiariaProps> = ({ currentRole 
   const facturasFiltradas = useMemo(() => {
     return facturas.filter(f => {
       // 1. Filtro Período
-      if (filtroPeriodo === 'HOY' && !f.fecha.startsWith(hoyStr)) return false;
-      if (filtroPeriodo === 'SEMANA' && f.fecha < fechaUnaSemanaAtras) return false;
-      if (filtroPeriodo === 'MES' && !f.fecha.startsWith(mesActualStr)) return false;
+      if ((soloHoy || filtroPeriodo === 'HOY') && !f.fecha.startsWith(hoyStr)) return false;
+      if (!soloHoy && filtroPeriodo === 'SEMANA' && f.fecha < fechaUnaSemanaAtras) return false;
+      if (!soloHoy && filtroPeriodo === 'MES' && !f.fecha.startsWith(mesActualStr)) return false;
 
       // 2. Filtro Estados
-      if (filtroEstados.length > 0) {
+      if (!soloHoy && filtroEstados.length > 0) {
         const matchesEstado = filtroEstados.includes(f.estado) || 
           (f.etapa_actual !== undefined && filtroEstados.includes(String(f.etapa_actual)));
         if (!matchesEstado) return false;
       }
 
       // 3. Filtros Específicos
-      if (filtroSoloDivisas && Number(f.pago_divisas || 0) <= 0) return false;
-      if (filtroSoloBs && (Number(f.pago_efectivo_bs || 0) + Number(f.pago_punto || 0) + Number(f.pago_movil || 0)) <= 0) return false;
-      if (filtroMontoMayor50 && Number(f.precio_usd || 0) < 50) return false;
+      if (!soloHoy && filtroSoloDivisas && Number(f.pago_divisas || 0) <= 0) return false;
+      if (!soloHoy && filtroSoloBs && (Number(f.pago_efectivo_bs || 0) + Number(f.pago_punto || 0) + Number(f.pago_movil || 0)) <= 0) return false;
+      if (!soloHoy && filtroMontoMayor50 && Number(f.precio_usd || 0) < 50) return false;
 
       // 4. Búsqueda por texto (Paciente, Cédula, Folio, Médico, Estudio)
       const q = busquedaTexto.toLowerCase().trim();
@@ -116,11 +119,11 @@ export const ModuloCajaDiaria: React.FC<ModuloCajaDiariaProps> = ({ currentRole 
 
       return true;
     });
-  }, [facturas, filtroPeriodo, filtroEstados, filtroSoloDivisas, filtroSoloBs, filtroMontoMayor50, busquedaTexto, hoyStr, fechaUnaSemanaAtras, mesActualStr]);
+  }, [facturas, filtroPeriodo, filtroEstados, filtroSoloDivisas, filtroSoloBs, filtroMontoMayor50, busquedaTexto, hoyStr, fechaUnaSemanaAtras, mesActualStr, soloHoy]);
 
   // Agrupación dinámica estilo Clinico Tree/Group View
   const grupos = useMemo(() => {
-    if (agruparPor === 'NINGUNO') return null;
+    if (soloHoy || agruparPor === 'NINGUNO') return null;
 
     const mapGrupos: Record<string, FacturaCaja[]> = {};
 
@@ -174,7 +177,7 @@ export const ModuloCajaDiaria: React.FC<ModuloCajaDiariaProps> = ({ currentRole 
         totalItems: items.length
       };
     });
-  }, [facturasFiltradas, agruparPor, tasaBcv]);
+  }, [facturasFiltradas, agruparPor, tasaBcv, soloHoy]);
 
   // Toggle colapsar grupo
   const toggleColapsarGrupo = (nombre: string) => {
@@ -450,10 +453,10 @@ export const ModuloCajaDiaria: React.FC<ModuloCajaDiariaProps> = ({ currentRole 
         <CardContent className="p-4 space-y-3">
           
           {/* Barra Unificada de Búsqueda con Chips Clinico */}
-          <BarraBusquedaCaja filtroPeriodo={filtroPeriodo} setFiltroPeriodo={setFiltroPeriodo} filtroEstados={filtroEstados} toggleFiltroEstado={toggleFiltroEstado} filtroSoloDivisas={filtroSoloDivisas} setFiltroSoloDivisas={setFiltroSoloDivisas} filtroSoloBs={filtroSoloBs} setFiltroSoloBs={setFiltroSoloBs} filtroMontoMayor50={filtroMontoMayor50} setFiltroMontoMayor50={setFiltroMontoMayor50} agruparPor={agruparPor} setAgruparPor={setAgruparPor} busquedaTexto={busquedaTexto} setBusquedaTexto={setBusquedaTexto} setMenuFiltrosAbierto={setMenuFiltrosAbierto} menuFiltrosAbierto={menuFiltrosAbierto} />
+          <BarraBusquedaCaja filtroPeriodo={filtroPeriodo} setFiltroPeriodo={setFiltroPeriodo} filtroEstados={filtroEstados} toggleFiltroEstado={toggleFiltroEstado} filtroSoloDivisas={filtroSoloDivisas} setFiltroSoloDivisas={setFiltroSoloDivisas} filtroSoloBs={filtroSoloBs} setFiltroSoloBs={setFiltroSoloBs} filtroMontoMayor50={filtroMontoMayor50} setFiltroMontoMayor50={setFiltroMontoMayor50} agruparPor={agruparPor} setAgruparPor={setAgruparPor} busquedaTexto={busquedaTexto} setBusquedaTexto={setBusquedaTexto} setMenuFiltrosAbierto={setMenuFiltrosAbierto} menuFiltrosAbierto={menuFiltrosAbierto} soloHoy={soloHoy} />
 
           {/* Menú Desplegable Estilo Clinico con Secciones Separadas */}
-          {menuFiltrosAbierto && (
+          {!soloHoy && menuFiltrosAbierto && (
             <div className="p-4 rounded-xl bg-slate-50 border border-slate-200 shadow-inner grid grid-cols-1 md:grid-cols-3 gap-4 animate-in fade-in-50 duration-200">
               
               {/* SECCIÓN 1: FILTROS PREDETERMINADOS */}
@@ -600,7 +603,7 @@ export const ModuloCajaDiaria: React.FC<ModuloCajaDiariaProps> = ({ currentRole 
       </Card>
 
       {/* === VISTA DE TABLA CON SOPORTE DE AGRUPACIÓN (TREE/GROUP VIEW) === */}
-      <TablaFacturasCaja facturasFiltradas={facturasFiltradas} agruparPor={agruparPor} grupos={grupos} totalCobradoUSD={totalCobradoUSD} totalCobradoBs={totalCobradoBs} gruposColapsados={gruposColapsados} toggleColapsarGrupo={toggleColapsarGrupo} tasaBcv={tasaBcv} verTicket={verTicket} anulandoId={anulandoId} handleAnular={handleAnular} />
+      <TablaFacturasCaja facturasFiltradas={facturasFiltradas} agruparPor={soloHoy ? 'NINGUNO' : agruparPor} grupos={grupos} totalCobradoUSD={totalCobradoUSD} totalCobradoBs={totalCobradoBs} gruposColapsados={gruposColapsados} toggleColapsarGrupo={toggleColapsarGrupo} tasaBcv={tasaBcv} verTicket={verTicket} anulandoId={anulandoId} handleAnular={handleAnular} />
 
       {/* Modal de Ticket Térmico Imprimible */}
       {mostrarModalTicket && facturaSeleccionada && (

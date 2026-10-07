@@ -9,7 +9,9 @@ export async function POST(req: NextRequest) {
     const body = (await req.json().catch(() => ({}))) as Record<string, unknown>;
     exigirPinSesion(req, body.pin);
     const fechaIn = String(body.fecha || body.fecha_cierre || '');
-    const fecha = /^\d{4}-\d{2}-\d{2}$/.test(fechaIn) ? fechaIn : fechaHoraLocal().fecha;
+    // El cajero solo puede cerrar el día de hoy, sin importar la fecha enviada.
+    const esCajero = req.headers.get('x-session-role') === 'cajero';
+    const fecha = !esCajero && /^\d{4}-\d{2}-\d{2}$/.test(fechaIn) ? fechaIn : fechaHoraLocal().fecha;
     const usuario = sesionUsuario(req);
     const observaciones = typeof body.observaciones === 'string' && body.observaciones ? body.observaciones : 'Cierre auditado conforme';
 
