@@ -80,9 +80,13 @@ export const ModuloHistorialPacientes: React.FC<ModuloHistorialPacientesProps> =
     }
   };
 
+  const esCajero = currentRole === 'cajero';
+
   // 2. Cargar todos los movimientos globales de la clínica
   const cargarMovimientosGlobales = async () => {
     setPacienteSeleccionado(null);
+    // El cajero no ve la auditoría global (totales de toda la clínica): solo el historial de un paciente.
+    if (esCajero) { setMovimientos([]); return; }
     setCargandoMovimientos(true);
     try {
       const res = await fetch('/api/facturas?limit=500');
@@ -522,10 +526,15 @@ export const ModuloHistorialPacientes: React.FC<ModuloHistorialPacientesProps> =
       {/* 2. PANEL DE BÚSQUEDA Y SELECTOR DE PACIENTES */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
         {/* COLUMNA IZQUIERDA: BUSCADOR Y LISTA DE PACIENTES (4 Cols) */}
-        <ListaPacientesPanel pacientesFiltrados={pacientesFiltrados} searchTerm={searchTerm} setSearchTerm={setSearchTerm} cargarMovimientosGlobales={cargarMovimientosGlobales} pacienteSeleccionado={pacienteSeleccionado} cargarMovimientosPaciente={cargarMovimientosPaciente} />
+        <ListaPacientesPanel pacientesFiltrados={pacientesFiltrados} searchTerm={searchTerm} setSearchTerm={setSearchTerm} cargarMovimientosGlobales={cargarMovimientosGlobales} pacienteSeleccionado={pacienteSeleccionado} cargarMovimientosPaciente={cargarMovimientosPaciente} ocultarGlobal={esCajero} />
 
         {/* COLUMNA DERECHA: FICHA / BANNER, KPIS Y TABLA DE MOVIMIENTOS CON FILTROS (8 Cols) */}
         <div className="lg:col-span-8 space-y-5">
+          {esCajero && !pacienteSeleccionado ? (
+            <Card className="rounded-3xl border border-slate-200/80 bg-white p-8 text-center shadow-sm">
+              <p className="text-sm font-bold text-slate-700">Seleccione un paciente del directorio para ver su historial.</p>
+            </Card>
+          ) : (<>
           {/* 3. BANNER PRINCIPAL (PACIENTE INDIVIDUAL O AUDITORÍA GLOBAL) */}
           {pacienteSeleccionado ? (
             <BannerHistorial pacienteSeleccionado={pacienteSeleccionado} cargarMovimientosGlobales={cargarMovimientosGlobales} />
@@ -681,6 +690,7 @@ export const ModuloHistorialPacientes: React.FC<ModuloHistorialPacientesProps> =
 
             <TablaMovimientosHistorial cargandoMovimientos={cargandoMovimientos} movimientosFiltrados={movimientosFiltrados} hayFiltrosActivos={hayFiltrosActivos} limpiarTodosLosFiltros={limpiarTodosLosFiltros} pacienteSeleccionado={pacienteSeleccionado} agrupacion={agrupacion} movimientosAgrupados={movimientosAgrupados} formatUSD={formatUSD} pacientesDirectorio={pacientesDirectorio} cargarMovimientosPaciente={cargarMovimientosPaciente} setFacturaDetalle={setFacturaDetalle} />
           </Card>
+          </>)}
         </div>
       </div>
 

@@ -16,9 +16,11 @@ interface ListaPacientesPanelProps {
   cargarMovimientosGlobales: () => Promise<void>;
   pacienteSeleccionado: PacienteData | null;
   cargarMovimientosPaciente: (paciente: PacienteData) => Promise<void>;
+  /** Cajero: sin la auditoría global de la clínica. */
+  ocultarGlobal?: boolean;
 }
 
-export const ListaPacientesPanel: React.FC<ListaPacientesPanelProps> = ({ pacientesFiltrados, searchTerm, setSearchTerm, cargarMovimientosGlobales, pacienteSeleccionado, cargarMovimientosPaciente }) => (
+export const ListaPacientesPanel: React.FC<ListaPacientesPanelProps> = ({ pacientesFiltrados, searchTerm, setSearchTerm, cargarMovimientosGlobales, pacienteSeleccionado, cargarMovimientosPaciente, ocultarGlobal = false }) => (
   <div className="lg:col-span-4 space-y-4">
     <Card className="rounded-3xl border border-slate-200/80 bg-white shadow-sm overflow-hidden">
       <CardHeader className="p-4 pb-3 border-b border-slate-100 bg-slate-50/50">
@@ -47,7 +49,7 @@ export const ListaPacientesPanel: React.FC<ListaPacientesPanelProps> = ({ pacien
 
       <CardContent className="p-2 space-y-1.5 max-h-[560px] overflow-y-auto">
         {/* OPCIÓN SUPERIOR: AUDITORÍA GENERAL / TODOS LOS PACIENTES */}
-        <div
+        {!ocultarGlobal && <div
           onClick={cargarMovimientosGlobales}
           className={`p-3 rounded-2xl cursor-pointer transition-all border flex items-center justify-between gap-3 ${
             !pacienteSeleccionado
@@ -80,7 +82,7 @@ export const ListaPacientesPanel: React.FC<ListaPacientesPanelProps> = ({ pacien
           >
             Global
           </Badge>
-        </div>
+        </div>}
 
         {/* LISTA DE PACIENTES INDIVIDUALES */}
         {pacientesFiltrados.length === 0 ? (
