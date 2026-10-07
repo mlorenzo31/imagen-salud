@@ -4,6 +4,7 @@ export const SESSION_COOKIE = 'imagen_salud_session';
 export const SESSION_TTL_SECONDS = 60 * 60 * 12;
 
 export interface SessionPayload {
+  uid: number;
   role: UserRole;
   nombre: string;
   modo: ModoOperacion;
@@ -53,7 +54,7 @@ export async function verifySession(token: string | undefined): Promise<SessionP
     const ok = await crypto.subtle.verify('HMAC', await hmacKey('verify'), fromB64Url(sig) as BufferSource, enc.encode(body));
     if (!ok) return null;
     const payload = JSON.parse(new TextDecoder().decode(fromB64Url(body))) as SessionPayload;
-    if (!ROLES.includes(payload.role) || typeof payload.exp !== 'number') return null;
+    if (!ROLES.includes(payload.role) || typeof payload.exp !== 'number' || !Number.isInteger(payload.uid)) return null;
     if (payload.exp < Math.floor(Date.now() / 1000)) return null;
     return payload;
   } catch {

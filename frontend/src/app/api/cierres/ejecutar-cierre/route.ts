@@ -8,7 +8,7 @@ import { actorSesion, esADestiempo, registrarBitacora } from '@/lib/bitacora';
 export async function POST(req: NextRequest) {
   try {
     const body = (await req.json().catch(() => ({}))) as Record<string, unknown>;
-    exigirPinSesion(req, body.pin);
+    await exigirPinSesion(req, body.pin);
     const fechaIn = String(body.fecha || body.fecha_cierre || '');
     // El cajero solo puede cerrar el día de hoy, sin importar la fecha enviada.
     const esCajero = req.headers.get('x-session-role') === 'cajero';

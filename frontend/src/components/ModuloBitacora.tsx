@@ -16,6 +16,8 @@ const TIPOS: Record<string, string> = {
   CIERRE_DIARIO: 'Cierre de caja',
   RESOLUCION_CIERRE: 'Resolución en cierre',
   ANULACION_FACTURA: 'Anulación de factura',
+  USUARIO: 'Gestión de usuarios',
+  RECUPERACION_CLAVE: 'Recuperación de clave',
 };
 
 const fechaHora = (iso: string) =>

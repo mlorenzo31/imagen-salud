@@ -27,7 +27,7 @@ export async function POST(req: NextRequest) {
   try {
     if (req.headers.get('x-session-role') !== 'admin') throw new ApiError(403, 'Solo el administrador puede vincular o desvincular WhatsApp.');
     const b = await parseBody(req, Schema);
-    exigirPinSesion(req, b.pin);
+    await exigirPinSesion(req, b.pin);
     await asegurarTablasWhatsapp(pool);
     const e = await leerEstadoBot(pool);
     if (e.estado === 'APAGADO') throw new ApiError(409, 'El bot de WhatsApp no está en ejecución en el equipo de la clínica. Inícielo (npm start en whatsapp-worker) y vuelva a intentar.', 'BOT_APAGADO');

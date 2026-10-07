@@ -18,6 +18,7 @@ const TITULOS: Record<string, { titulo: string; detalle: string }> = {
   divisas: { titulo: 'Cambio de divisas', detalle: 'Cobertura cambiaria en bolívares y dólares' },
   honorarios: { titulo: 'Honorarios médicos', detalle: 'Liquidación pendiente por especialista' },
   cierre: { titulo: 'Cierre diario', detalle: 'Auditoría y cierre de caja' },
+  usuarios: { titulo: 'Usuarios', detalle: 'Cuentas de acceso, roles y WhatsApp de recuperación' },
   bitacora: { titulo: 'Bitácora', detalle: 'Cierres tardíos, resoluciones y anulaciones de jornadas anteriores' },
   dashboard: { titulo: 'Dashboard', detalle: 'Resumen financiero del centro' },
   analiticas: { titulo: 'Analíticas', detalle: 'Indicadores por médico, área y período' },
