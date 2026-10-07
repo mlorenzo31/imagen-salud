@@ -379,3 +379,43 @@ ON CONFLICT DO NOTHING;
 CREATE UNIQUE INDEX IF NOT EXISTS ux_pacientes_cedula ON pacientes (cedula);
 CREATE UNIQUE INDEX IF NOT EXISTS ux_cuentas_bancarias_codigo ON cuentas_bancarias (codigo);
 CREATE UNIQUE INDEX IF NOT EXISTS ux_usuarios_login ON usuarios (user_login);
+
+
+-- Tabla: usuarios (acceso individual; se siembran admin/asistente/cajero desde AUTH_PIN_* la primera vez)
+CREATE TABLE IF NOT EXISTS usuarios (
+  id SERIAL PRIMARY KEY,
+  usuario VARCHAR(40) NOT NULL UNIQUE,
+  nombre VARCHAR(100) NOT NULL,
+  rol VARCHAR(20) NOT NULL CHECK (rol IN ('admin','asistente','cajero')),
+  password_hash TEXT NOT NULL,
+  telefono VARCHAR(20),
+  email VARCHAR(120),
+  activo BOOLEAN NOT NULL DEFAULT TRUE,
+  intentos_fallidos INT NOT NULL DEFAULT 0,
+  bloqueado_hasta TIMESTAMPTZ,
+  creado_en TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+
+-- Tabla: recuperacion_clave (código de 6 dígitos por WhatsApp, guardado con HMAC; vence a los 10 min)
+CREATE TABLE IF NOT EXISTS recuperacion_clave (
+  id SERIAL PRIMARY KEY,
+  usuario_id INT NOT NULL REFERENCES usuarios(id),
+  codigo_hash TEXT NOT NULL,
+  expira TIMESTAMPTZ NOT NULL,
+  intentos INT NOT NULL DEFAULT 0,
+  usado BOOLEAN NOT NULL DEFAULT FALSE,
+  creado_en TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+
+-- Tabla: bitacora (hechos administrativos; "a_destiempo" = corresponde a una jornada anterior)
+CREATE TABLE IF NOT EXISTS bitacora (
+  id SERIAL PRIMARY KEY,
+  creado_en TIMESTAMPTZ NOT NULL DEFAULT now(),
+  tipo VARCHAR(40) NOT NULL,
+  fecha_afectada DATE,
+  a_destiempo BOOLEAN NOT NULL DEFAULT FALSE,
+  usuario VARCHAR(100),
+  rol VARCHAR(20),
+  descripcion TEXT NOT NULL,
+  detalle JSONB
+);

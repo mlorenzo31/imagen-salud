@@ -19,6 +19,7 @@ import { ModuloKanbanSalaEspera } from '@/components/ModuloKanbanSalaEspera';
 import { ModuloCajaDiaria } from '@/components/ModuloCajaDiaria';
 import { ModuloCierreDiario } from '@/components/ModuloCierreDiario';
 import { ModuloBitacora } from '@/components/ModuloBitacora';
+import { ModuloUsuarios } from '@/components/ModuloUsuarios';
 import { ModuloAdminCatalogos } from '@/components/ModuloAdminCatalogos';
 import { ModuloAnaliticas } from '@/components/ModuloAnaliticas';
 import { ModuloEgresosOperativos } from '@/components/ModuloEgresosOperativos';
@@ -117,7 +118,7 @@ export default function Home() {
         setActiveSection('facturacion');
       }
     } else if (role === 'asistente') {
-      const asistenteForbidden = ['tesoreria', 'ingresos-extra', 'egresos', 'divisas', 'honorarios', 'bitacora', 'admin', 'campanas'];
+      const asistenteForbidden = ['tesoreria', 'ingresos-extra', 'egresos', 'divisas', 'honorarios', 'bitacora', 'usuarios', 'admin', 'campanas'];
       if (asistenteForbidden.includes(activeSection)) {
         setActiveSection('facturacion');
       }
@@ -543,6 +544,13 @@ export default function Home() {
         {activeSection === 'cierre' && (
           <div className="animate-in fade-in-50 duration-300">
             <ModuloCierreDiario currentRole={role} />
+          </div>
+        )}
+
+        {/* USUARIOS (Exclusivo Admin) */}
+        {activeSection === 'usuarios' && role === 'admin' && (
+          <div className="animate-in fade-in-50 duration-300">
+            <ModuloUsuarios />
           </div>
         )}
 

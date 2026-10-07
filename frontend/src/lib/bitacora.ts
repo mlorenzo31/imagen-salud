@@ -3,7 +3,7 @@ import pool from '@/lib/db';
 import type { NextRequest } from 'next/server';
 import { fechaHoraLocal, sesionUsuario } from '@/lib/apiHelpers';
 
-export type TipoBitacora = 'CIERRE_DIARIO' | 'RESOLUCION_CIERRE' | 'ANULACION_FACTURA';
+export type TipoBitacora = 'CIERRE_DIARIO' | 'RESOLUCION_CIERRE' | 'ANULACION_FACTURA' | 'USUARIO' | 'RECUPERACION_CLAVE';
 
 export interface EventoBitacora {
   tipo: TipoBitacora;
@@ -34,6 +34,7 @@ export function asegurarBitacora(): Promise<void> {
           detalle JSONB
         )`);
       await pool.query('CREATE INDEX IF NOT EXISTS ix_bitacora_creado ON bitacora (creado_en DESC)');
+      await pool.query('ALTER TABLE bitacora ENABLE ROW LEVEL SECURITY'); // sin acceso por la API pública de Supabase
     })().catch((err) => { listo = null; throw err; });
   }
   return listo;

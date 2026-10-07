@@ -23,7 +23,7 @@ const schema = z.object({
 export async function POST(req: NextRequest) {
   try {
     const b = await parseBody(req, schema);
-    exigirPinSesion(req, b.pin);
+    await exigirPinSesion(req, b.pin);
     const usuario = sesionUsuario(req);
     const { fecha, hora, nota, diaCerrado, motivo } = await resolverFechaOperacion(b, req.headers.get('x-session-role') === 'admin');
     await asegurarDevoluciones(pool);

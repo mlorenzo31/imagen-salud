@@ -7,14 +7,14 @@ beforeAll(() => {
 
 describe('sesión firmada', () => {
   it('firma y verifica', async () => {
-    const token = await signSession({ role: 'admin', nombre: 'A', modo: 'operador' });
+    const token = await signSession({ uid: 1, role: 'admin', nombre: 'A', modo: 'operador' });
     const s = await verifySession(token);
     expect(s?.role).toBe('admin');
   });
   it('rechaza token manipulado, malformado o ausente', async () => {
-    const token = await signSession({ role: 'cajero', nombre: 'C', modo: 'operador' });
+    const token = await signSession({ uid: 1, role: 'cajero', nombre: 'C', modo: 'operador' });
     const [body, sig] = token.split('.');
-    const falso = btoa(JSON.stringify({ role: 'admin', nombre: 'C', modo: 'operador', exp: 9999999999 })).replace(/=+$/, '');
+    const falso = btoa(JSON.stringify({ uid: 1, role: 'admin', nombre: 'C', modo: 'operador', exp: 9999999999 })).replace(/=+$/, '');
     expect(await verifySession(`${falso}.${sig}`)).toBeNull();
     expect(await verifySession(`${body}.AAAA`)).toBeNull();
     expect(await verifySession('basura')).toBeNull();
@@ -23,7 +23,7 @@ describe('sesión firmada', () => {
   it('rechaza sesión expirada', async () => {
     const vieja = Date.now;
     Date.now = () => vieja() - 13 * 3600 * 1000;
-    const token = await signSession({ role: 'admin', nombre: 'A', modo: 'operador' });
+    const token = await signSession({ uid: 1, role: 'admin', nombre: 'A', modo: 'operador' });
     Date.now = vieja;
     expect(await verifySession(token)).toBeNull();
   });

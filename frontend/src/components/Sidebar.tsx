@@ -1,9 +1,10 @@
 'use client';
 
-import React from 'react';
+import React, { useState } from 'react';
 import Image from 'next/image';
-import { ShoppingCart, Receipt, Tv, CreditCard, FileCheck2, Wallet, TrendingUp, ArrowDownRight, ArrowLeftRight, Stethoscope, ShieldAlert, LayoutDashboard, BarChart3, Settings, FileSpreadsheet, LogOut, Eye, CheckCircle2, History, Megaphone, ScrollText } from 'lucide-react';
+import { ShoppingCart, Receipt, Tv, CreditCard, FileCheck2, Wallet, TrendingUp, ArrowDownRight, ArrowLeftRight, Stethoscope, ShieldAlert, LayoutDashboard, BarChart3, Settings, FileSpreadsheet, LogOut, Eye, CheckCircle2, History, Megaphone, ScrollText, Users, KeyRound } from 'lucide-react';
 import { UserRole, ModoOperacion } from '@/types';
+import { CambiarClaveDialog } from '@/components/CambiarClaveDialog';
 
 interface SidebarProps {
   currentRole: UserRole;
@@ -28,6 +29,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
   abierto = false,
   onCerrar
 }) => {
+  const [cambiandoClave, setCambiandoClave] = useState(false);
   const isAdmin = currentRole === 'admin';
   const isAsistente = currentRole === 'asistente';
 
@@ -59,6 +61,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
         { id: 'egresos', label: 'Egresos', icon: ArrowDownRight, allowed: ['admin'] },
         { id: 'divisas', label: 'Cambio Divisas', icon: ArrowLeftRight, allowed: ['admin'] },
         { id: 'honorarios', label: 'Honorarios', icon: Stethoscope, allowed: ['admin'] },
+        { id: 'usuarios', label: 'Usuarios', icon: Users, allowed: ['admin'] },
         { id: 'bitacora', label: 'Bitácora', icon: ScrollText, allowed: ['admin'] },
         { id: 'cierre', label: 'Cierre Diario', icon: ShieldAlert, allowed: ['admin', 'asistente', 'cajero'] },
       ]
@@ -148,6 +151,14 @@ export const Sidebar: React.FC<SidebarProps> = ({
 
       {/* Pie */}
       <div className="px-3 py-3 border-t border-slate-200/80">
+        <button
+          onClick={() => setCambiandoClave(true)}
+          className="w-full flex items-center gap-3 px-3 py-2 rounded-lg text-[13px] font-medium text-slate-500 hover:text-slate-900 hover:bg-slate-50 transition-colors"
+        >
+          <KeyRound className="w-[18px] h-[18px]" strokeWidth={1.75} />
+          <span>Cambiar mi clave</span>
+        </button>
+        <CambiarClaveDialog open={cambiandoClave} onCerrar={() => setCambiandoClave(false)} />
         {onLogout && (
           <button
             onClick={onLogout}

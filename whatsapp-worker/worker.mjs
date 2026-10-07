@@ -20,7 +20,16 @@ const MAX_INTENTOS = 3;
 const pausa = (ms) => new Promise((r) => setTimeout(r, ms));
 const jitter = () => 4000 + Math.floor(Math.random() * 5000); // 4–9 s entre mensajes (anti-bloqueo)
 const jitterCampana = () => 20000 + Math.floor(Math.random() * 20000); // 20–40 s entre mensajes de campaña
-const VERSION = 2; // 2 = campañas (espaciado, tope diario y bajas)
+const VERSION = 3; // 2 = campañas (espaciado, tope diario y bajas); 3 = mensajes del sistema (códigos de recuperación de clave)
+/** Pausa entre mensajes de campaña; se interrumpe si llega un mensaje del sistema (código de recuperación), que no debe esperar. */
+async function pausaCampana() {
+  const fin = Date.now() + jitterCampana();
+  while (Date.now() < fin) {
+    await pausa(2000);
+    const { rowCount } = await db.query(`SELECT 1 FROM wa_outbox WHERE estado = 'PENDIENTE' AND factura_id IS NULL AND campana_id IS NULL LIMIT 1`);
+    if (rowCount) return;
+  }
+}
 const MAX_CAMPANA_DIA = Number(process.env.WA_MAX_CAMPANA_DIA ?? 150); // tope de mensajes de campaña por día
 
 async function asegurarTablas() {
@@ -78,7 +87,7 @@ async function conectar() {
         if (!jid.endsWith('@s.whatsapp.net')) { console.warn('BAJA recibida desde un identificador no resoluble:', jid); continue; }
         const t10 = jid.split('@')[0].replace(/\D/g, '').slice(-10);
         await db.query(`INSERT INTO wa_baja (telefono) VALUES ($1) ON CONFLICT DO NOTHING`, [t10]);
-        await db.query(`UPDATE wa_outbox SET estado = 'FALLIDO', error = 'Baja solicitada' WHERE estado = 'PENDIENTE' AND factura_id IS NULL AND right(telefono, 10) = $1`, [t10]);
+        await db.query(`UPDATE wa_outbox SET estado = 'FALLIDO', error = 'Baja solicitada' WHERE estado = 'PENDIENTE' AND campana_id IS NOT NULL AND right(telefono, 10) = $1`, [t10]);
         await sock.sendMessage(jid, { text: 'Listo, no recibirá más mensajes promocionales de Imagen Salud. Sus resultados médicos se seguirán enviando con normalidad.' });
         console.log('Baja registrada:', t10);
       } catch (e) { console.error('baja', e.message); }
@@ -149,18 +158,27 @@ async function procesarCola() {
     if (estado !== 'CONECTADO' || !sock) return;
     // Resultados primero; las campañas solo mientras no se alcance el tope diario (el resto sigue al día siguiente).
     const { rows: [hoy] } = await db.query(
-      `SELECT COUNT(*)::int AS n FROM wa_outbox WHERE factura_id IS NULL AND estado = 'ENVIADO'
+      `SELECT COUNT(*)::int AS n FROM wa_outbox WHERE campana_id IS NOT NULL AND estado = 'ENVIADO'
           AND (enviado AT TIME ZONE 'America/Caracas')::date = (now() AT TIME ZONE 'America/Caracas')::date`);
     const permitirCampana = hoy.n < MAX_CAMPANA_DIA;
     const { rows } = await db.query(
       `UPDATE wa_outbox SET estado = 'ENVIANDO', intentos = intentos + 1
-        WHERE id = (SELECT id FROM wa_outbox WHERE estado = 'PENDIENTE' AND (factura_id IS NOT NULL OR $1::boolean)
-                     ORDER BY (factura_id IS NULL), id FOR UPDATE SKIP LOCKED LIMIT 1)
+        WHERE id = (SELECT id FROM wa_outbox WHERE estado = 'PENDIENTE' AND (factura_id IS NOT NULL OR campana_id IS NULL OR $1::boolean)
+                     ORDER BY (factura_id IS NULL AND campana_id IS NOT NULL), (factura_id IS NOT NULL), id FOR UPDATE SKIP LOCKED LIMIT 1)
         RETURNING *`, [permitirCampana]);
     const m = rows[0];
     if (!m) return;
     try {
       const jid = m.telefono + '@s.whatsapp.net';
+      if (m.factura_id === null && m.campana_id === null) { // mensaje del sistema (código de recuperación): de inmediato, sin tope ni bajas
+        const [sis] = await sock.onWhatsApp(jid);
+        if (!sis?.exists) throw new Error('El número no tiene WhatsApp');
+        await sock.sendMessage(jid, { text: m.mensaje });
+        await db.query(`UPDATE wa_outbox SET estado = 'ENVIADO', enviado = now(), error = NULL WHERE id = $1`, [m.id]);
+        console.log('Mensaje del sistema enviado', m.telefono);
+        await pausa(1500);
+        continue;
+      }
       if (m.factura_id === null) {
         const baja = await db.query(`SELECT 1 FROM wa_baja WHERE telefono = right($1, 10)`, [m.telefono]);
         if (baja.rowCount) {
@@ -174,7 +192,7 @@ async function procesarCola() {
         await sock.sendMessage(jid, { text: m.mensaje });
         await db.query(`UPDATE wa_outbox SET estado = 'ENVIADO', enviado = now(), error = NULL WHERE id = $1`, [m.id]);
         console.log('Campaña enviada', m.campana_id, m.telefono);
-        await pausa(jitterCampana());
+        await pausaCampana();
         continue;
       }
       const archivos = await archivosDe(m); // se descargan antes de enviar nada: si falla, no queda a medias

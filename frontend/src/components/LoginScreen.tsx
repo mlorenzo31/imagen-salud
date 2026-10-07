@@ -6,14 +6,16 @@ import { Card, CardContent, CardHeader, CardTitle, CardFooter } from '@/componen
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
-import { Lock, ShieldCheck, Eye, EyeOff, AlertCircle, KeyRound, CheckCircle2, Briefcase, Receipt } from 'lucide-react';import { UserRole, ModoOperacion } from '@/types';
+import { Lock, Eye, EyeOff, AlertCircle, KeyRound, CheckCircle2 } from 'lucide-react';
+import { RecuperarClave } from '@/components/RecuperarClave';import { UserRole, ModoOperacion } from '@/types';
 
 interface LoginScreenProps {
   onLoginSuccess: (role: UserRole, nombreUsuario: string, modo: ModoOperacion) => void;
 }
 
 export const LoginScreen: React.FC<LoginScreenProps> = ({ onLoginSuccess }) => {
-  const [rolSeleccionado, setRolSeleccionado] = useState<UserRole>('admin');
+  const [usuario, setUsuario] = useState<string>('');
+  const [recuperando, setRecuperando] = useState<boolean>(false);
   const [modoSeleccionado, setModoSeleccionado] = useState<ModoOperacion>('operador');
   const [pin, setPin] = useState<string>('');
   const [mostrarPin, setMostrarPin] = useState<boolean>(false);
@@ -28,7 +30,7 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({ onLoginSuccess }) => {
       const res = await fetch('/api/auth/login', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ rol: rolSeleccionado, pin, modo: modoSeleccionado })
+        body: JSON.stringify({ usuario, clave: pin, modo: modoSeleccionado })
       });
       const data = await res.json().catch(() => ({}));
       if (!res.ok) {
@@ -83,54 +85,22 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({ onLoginSuccess }) => {
                 </div>
               )}
 
-              {/* 1. Selector de Rol Clínico (RBAC) */}
+              {/* 1. Usuario */}
               <div className="space-y-1.5">
-                <label className="text-xs font-black text-slate-700 uppercase tracking-wider">
-                  Perfil de Usuario Clínico
+                <label htmlFor="login-usuario" className="text-xs font-black text-slate-700 uppercase tracking-wider">
+                  Usuario
                 </label>
-                <div className="grid grid-cols-3 gap-2">
-                  {/* Admin */}
-                  <button
-                    type="button"
-                    onClick={() => { setRolSeleccionado('admin'); setError(null); }}
-                    className={`p-3 rounded-2xl border text-center transition-all flex flex-col items-center justify-center gap-1.5 ${
-                      rolSeleccionado === 'admin'
-                        ? 'border-clinica-primary bg-clinica-selection shadow-sm text-clinica-dark'
-                        : 'border-slate-200 bg-slate-50/70 hover:bg-slate-100 text-slate-600'
-                    }`}
-                  >
-                    <ShieldCheck className={`w-5 h-5 ${rolSeleccionado === 'admin' ? 'text-clinica-primary' : 'text-slate-500'}`} />
-                    <span className="text-[11px] font-bold leading-tight">Director / Admin</span>
-                  </button>
-
-                  {/* Asistente Administrativo */}
-                  <button
-                    type="button"
-                    onClick={() => { setRolSeleccionado('asistente'); setError(null); }}
-                    className={`p-3 rounded-2xl border text-center transition-all flex flex-col items-center justify-center gap-1.5 ${
-                      rolSeleccionado === 'asistente'
-                        ? 'border-clinica-primary bg-clinica-selection shadow-sm text-clinica-dark'
-                        : 'border-slate-200 bg-slate-50/70 hover:bg-slate-100 text-slate-600'
-                    }`}
-                  >
-                    <Briefcase className={`w-5 h-5 ${rolSeleccionado === 'asistente' ? 'text-clinica-primary' : 'text-slate-500'}`} />
-                    <span className="text-[11px] font-bold leading-tight">Asistente Admin</span>
-                  </button>
-
-                  {/* Cajero */}
-                  <button
-                    type="button"
-                    onClick={() => { setRolSeleccionado('cajero'); setError(null); }}
-                    className={`p-3 rounded-2xl border text-center transition-all flex flex-col items-center justify-center gap-1.5 ${
-                      rolSeleccionado === 'cajero'
-                        ? 'border-clinica-primary bg-clinica-selection shadow-sm text-clinica-dark'
-                        : 'border-slate-200 bg-slate-50/70 hover:bg-slate-100 text-slate-600'
-                    }`}
-                  >
-                    <Receipt className={`w-5 h-5 ${rolSeleccionado === 'cajero' ? 'text-clinica-primary' : 'text-slate-500'}`} />
-                    <span className="text-[11px] font-bold leading-tight">Caja & Admisión</span>
-                  </button>
-                </div>
+                <Input
+                  id="login-usuario"
+                  autoFocus
+                  autoComplete="username"
+                  autoCapitalize="none"
+                  placeholder="Ej. cajero"
+                  value={usuario}
+                  onChange={(e) => { setUsuario(e.target.value); setError(null); }}
+                  required
+                  className="text-xs rounded-xl bg-slate-50 border-slate-200 h-10 font-mono"
+                />
               </div>
 
               {/* 2. Selector de Modo de Operación (Operador vs Vista Read-Only) */}
@@ -171,13 +141,13 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({ onLoginSuccess }) => {
               {(
                 <div className="space-y-1.5">
                   <label className="text-xs font-bold text-slate-700 flex items-center justify-between">
-                    <span>PIN / Contraseña de Seguridad</span>
+                    <span>Clave</span>
                   </label>
                   <div className="relative">
                     <KeyRound className="w-4 h-4 absolute left-3 top-3 text-slate-500" />
                     <Input
                       type={mostrarPin ? 'text' : 'password'}
-                      placeholder="Ingrese su PIN..."
+                      placeholder="Ingrese su clave..."
                       value={pin}
                       onChange={(e) => setPin(e.target.value)}
                       required
@@ -213,9 +183,18 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({ onLoginSuccess }) => {
                   </span>
                 )}
               </Button>
+              <button
+                type="button"
+                onClick={() => setRecuperando(true)}
+                className="text-[11px] font-bold text-clinica-primary hover:underline"
+              >
+                ¿Olvidó su clave?
+              </button>
             </CardFooter>
           </form>
         </Card>
+
+        <RecuperarClave open={recuperando} usuarioInicial={usuario} onCerrar={() => setRecuperando(false)} />
 
         {/* Footer Institucional */}
         <div className="text-center space-y-1 text-[11px] text-slate-500">

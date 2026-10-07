@@ -1,7 +1,7 @@
 import { NextResponse, type NextRequest } from 'next/server';
 import { SESSION_COOKIE, isAllowed, verifySession } from '@/lib/auth';
 
-const PUBLICAS = ['/api/auth/login', '/api/bcv', '/api/tv/turnos'];
+const PUBLICAS = ['/api/auth/login', '/api/auth/recuperar/solicitar', '/api/auth/recuperar/confirmar', '/api/bcv', '/api/tv/turnos'];
 
 export async function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl;
@@ -17,6 +17,8 @@ export async function proxy(request: NextRequest) {
   const headers = new Headers(request.headers);
   headers.delete('x-user-rol');
   headers.delete('x-user-role');
+  headers.delete('x-session-uid');
+  headers.set('x-session-uid', String(session.uid));
   headers.set('x-session-role', session.role);
   headers.set('x-session-user', encodeURIComponent(session.nombre));
   return NextResponse.next({ request: { headers } });

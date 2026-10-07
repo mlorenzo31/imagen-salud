@@ -1,18 +1,15 @@
 import { NextResponse, type NextRequest } from 'next/server';
 import { SESSION_COOKIE, SESSION_TTL_SECONDS, signSession } from '@/lib/auth';
-import { PIN_ENV, pinCoincide } from '@/lib/pin';
-import type { ModoOperacion, UserRole } from '@/types';
-
-const NOMBRES: Record<UserRole, string> = {
-  admin: 'Dr. Director Médico',
-  asistente: 'Lcda. Asistente Administrativo',
-  cajero: 'Cajero(a) de Turno',
-};
+import { verificarClave } from '@/lib/clave';
+import pool from '@/lib/db';
+import { buscarUsuario } from '@/lib/usuariosDb';
+import type { ModoOperacion } from '@/types';
 
 // Limitador en memoria por IP: 5 fallos / 15 min (suficiente para una instancia; usar Redis si se escala).
 const intentos = new Map<string, { n: number; hasta: number }>();
 const MAX_FALLOS = 5;
 const VENTANA_MS = 15 * 60 * 1000;
+const BLOQUEO_USUARIO_MIN = 15;
 
 export async function POST(request: NextRequest) {
   const ip = request.headers.get('x-forwarded-for')?.split(',')[0].trim() || 'local';
@@ -21,32 +18,43 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: 'Demasiados intentos. Intente más tarde.' }, { status: 429 });
   }
 
-  let body: { rol?: unknown; pin?: unknown; modo?: unknown };
+  let body: { usuario?: unknown; clave?: unknown; modo?: unknown };
   try {
     body = await request.json();
   } catch {
     return NextResponse.json({ error: 'Solicitud inválida.' }, { status: 400 });
   }
 
-  const rol = body.rol as UserRole;
-  if (!(rol in PIN_ENV)) return NextResponse.json({ error: 'Rol inválido.' }, { status: 400 });
+  const usuario = typeof body.usuario === 'string' ? body.usuario.trim().toLowerCase() : '';
+  const clave = typeof body.clave === 'string' ? body.clave : '';
   const modo: ModoOperacion = body.modo === 'vista' ? 'vista' : 'operador';
+  if (!usuario || !clave) return NextResponse.json({ error: 'Ingrese usuario y clave.' }, { status: 400 });
 
-  const esperado = process.env[PIN_ENV[rol]];
-  if (!esperado) {
-    return NextResponse.json({ error: `Servidor sin configurar (${PIN_ENV[rol]}).` }, { status: 500 });
-  }
-
-  const pin = typeof body.pin === 'string' ? body.pin : '';
-  if (!pinCoincide(pin, esperado)) {
+  const fallar = () => {
     const vigente = estado && estado.hasta > Date.now() ? estado : { n: 0, hasta: Date.now() + VENTANA_MS };
     intentos.set(ip, { n: vigente.n + 1, hasta: vigente.hasta });
-    return NextResponse.json({ error: 'PIN incorrecto.' }, { status: 401 });
+    return NextResponse.json({ error: 'Usuario o clave incorrectos.' }, { status: 401 });
+  };
+
+  const u = await buscarUsuario(usuario);
+  if (!u || !u.activo) return fallar();
+  if (u.bloqueado_hasta && new Date(u.bloqueado_hasta).getTime() > Date.now()) {
+    return NextResponse.json({ error: `Usuario bloqueado por intentos fallidos. Intente en ${BLOQUEO_USUARIO_MIN} minutos o recupere su clave.` }, { status: 423 });
+  }
+  if (!verificarClave(clave, u.password_hash)) {
+    await pool.query(
+      `UPDATE usuarios SET intentos_fallidos = intentos_fallidos + 1,
+              bloqueado_hasta = CASE WHEN intentos_fallidos + 1 >= $2 THEN now() + make_interval(mins => $3) ELSE bloqueado_hasta END
+        WHERE id = $1`,
+      [u.id, MAX_FALLOS, BLOQUEO_USUARIO_MIN],
+    );
+    return fallar();
   }
   intentos.delete(ip);
+  await pool.query('UPDATE usuarios SET intentos_fallidos = 0, bloqueado_hasta = NULL WHERE id = $1', [u.id]);
 
-  const token = await signSession({ role: rol, nombre: NOMBRES[rol], modo });
-  const res = NextResponse.json({ role: rol, nombre: NOMBRES[rol], modo });
+  const token = await signSession({ uid: u.id, role: u.rol, nombre: u.nombre, modo });
+  const res = NextResponse.json({ role: u.rol, nombre: u.nombre, modo });
   res.cookies.set(SESSION_COOKIE, token, {
     httpOnly: true,
     sameSite: 'strict',
