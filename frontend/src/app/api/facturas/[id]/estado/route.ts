@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { ApiError, errorResponse, sesionUsuario, withTransaction } from '@/lib/apiHelpers';
 import { esAnulada } from '@/lib/estados';
 import { revertirTesoreriaPorAnulacion } from '@/lib/anulacion';
+import { actorSesion, registrarBitacora } from '@/lib/bitacora';
 
 const ALLOWED_FIELDS = [
   'estado',
@@ -60,6 +61,13 @@ export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: 
       if (!yaAnulada && esAnulada(nuevoEstado)) {
         const motivo = typeof body.motivo_anulacion === 'string' ? body.motivo_anulacion : '';
         ({ advertencias } = await revertirTesoreriaPorAnulacion(client, id, sesionUsuario(req), motivo));
+        const f = result.rows[0] as { fecha: string | Date; nombre_paciente: string | null; turno_num: number | null };
+        const fechaFac = f.fecha instanceof Date ? f.fecha.toISOString() : String(f.fecha);
+        await registrarBitacora(client, {
+          tipo: 'ANULACION_FACTURA', fechaAfectada: fechaFac, ...actorSesion(req),
+          descripcion: `Factura de ${f.nombre_paciente ?? '#' + id} (turno ${f.turno_num ?? '-'}, jornada ${fechaFac.slice(0, 10)}) anulada${motivo ? `: ${motivo}` : ''}.`,
+          detalle: { factura_id: id, motivo },
+        });
       }
       return { factura: result.rows[0], advertencias };
     });

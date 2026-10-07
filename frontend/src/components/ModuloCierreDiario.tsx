@@ -149,7 +149,7 @@ export const ModuloCierreDiario: React.FC<ModuloCierreDiarioProps> = ({ currentR
           </p>
         </div>
         <div className="flex items-center gap-3">
-          {isAdmin ? (
+          {currentRole !== 'cajero' ? (
             <div className="flex items-center gap-1.5 bg-slate-50 p-1 rounded-xl border border-slate-200">
               <Calendar className="w-4 h-4 text-slate-500 ml-2" />
               <Input 

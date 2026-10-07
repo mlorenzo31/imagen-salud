@@ -3,6 +3,7 @@ import { ApiError, errorResponse, fechaHoraLocal, sesionUsuario, withTransaction
 import { consolidarCierre, evaluarDia, leerConteo } from '@/lib/cierre';
 import { centsToStr } from '@/lib/money';
 import { exigirPinSesion } from '@/lib/pin';
+import { actorSesion, esADestiempo, registrarBitacora } from '@/lib/bitacora';
 
 export async function POST(req: NextRequest) {
   try {
@@ -32,6 +33,12 @@ export async function POST(req: NextRequest) {
       if (r.arqueo.some((l) => l.diferencia !== 0) && !(typeof body.observaciones === 'string' && body.observaciones.trim())) {
         throw new ApiError(400, 'Hay sobrante o faltante en el arqueo: escriba en observaciones la explicación.');
       }
+      const hayDif = r.arqueo.some((l) => l.diferencia !== 0);
+      await registrarBitacora(client, {
+        tipo: 'CIERRE_DIARIO', fechaAfectada: fecha, ...actorSesion(req),
+        descripcion: `Cierre de caja del ${fecha}${esADestiempo(fecha) ? ' realizado a destiempo' : ''}${hayDif ? ' con diferencias en el arqueo' : ''}.`,
+        detalle: { observaciones, hay_diferencia: hayDif },
+      });
       return r;
     });
     const hayDiferencia = out.arqueo.some((l) => l.diferencia !== 0);

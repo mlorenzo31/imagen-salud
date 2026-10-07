@@ -69,6 +69,7 @@ const SOLO_ADMIN = [
   '/api/tesoreria/honorarios/liquidar',
   '/api/admin',
   '/api/campanas',
+  '/api/bitacora',
   '/api/excel',
 ];
 
@@ -80,8 +81,6 @@ export function isAllowed(role: UserRole, path: string, method: string = 'GET'):
   // El catálogo se consulta libremente, pero solo el administrador lo modifica.
   if (matches(path, ['/api/catalogo']) && method !== 'GET') return false;
   if (path === '/api/pacientes' && method === 'PUT') return false;
-  // Cerrar caja: administrador y cajero (este último solo el día de hoy; ver la ruta). El asistente no.
-  if (role === 'asistente' && matches(path, ['/api/cierres/ejecutar-cierre'])) return false;
   if (role === 'cajero') return matches(path, CAJERO_API);
   // Asistente: lectura de tesorería permitida; cualquier escritura en tesorería queda reservada al admin.
   if (matches(path, ['/api/tesoreria']) && method !== 'GET') return false;

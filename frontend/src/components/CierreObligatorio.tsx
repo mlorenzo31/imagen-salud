@@ -44,7 +44,8 @@ export const CierreObligatorio: React.FC<Props> = ({ role, onResuelto }) => {
   const [estado, setEstado] = useState<EstadoJornada | null>(null);
   const [cerrando, setCerrando] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const esAdmin = role === 'admin';
+  // Admin y asistente cierran la caja (también días anteriores); el cajero espera.
+  const esAdmin = role === 'admin' || role === 'asistente';
   const [abierto, setAbierto] = useState(false);
   const [pidiendoPin, setPidiendoPin] = useState(false);
   const [conteo, setConteo] = useState<Record<string, string>>({ divisas_usd: '', efectivo_bs: '', punto_bs: '', pago_movil_bs: '' });
@@ -200,7 +201,7 @@ export const CierreObligatorio: React.FC<Props> = ({ role, onResuelto }) => {
           ) : (
             <>
               <p className="text-xs font-bold text-clinica-coral">
-                Solo el administrador puede cerrar la caja. Avísele para continuar{pendientesParaOtros > 0 ? ` (hay ${pendientesParaOtros} paciente(s) por resolver)` : ''}.
+                Solo el administrador o el asistente pueden cerrar la caja. Avíseles para continuar{pendientesParaOtros > 0 ? ` (hay ${pendientesParaOtros} paciente(s) por resolver)` : ''}.
               </p>
               <Button variant="outline" onClick={refrescar} className="w-full rounded-xl font-bold">Verificar de nuevo</Button>
             </>

@@ -3,6 +3,7 @@ import pool from '@/lib/db';
 import { errorResponse, fechaHoraLocal, sesionUsuario } from '@/lib/apiHelpers';
 import { esAnulada } from '@/lib/estados';
 import { revertirTesoreriaPorAnulacion } from '@/lib/anulacion';
+import { actorSesion, registrarBitacora } from '@/lib/bitacora';
 
 export async function POST(req: NextRequest) {
   try {
@@ -12,6 +13,16 @@ export async function POST(req: NextRequest) {
     const client = await pool.connect();
     try {
       await client.query('BEGIN');
+
+      const fac = await client.query('SELECT to_char(fecha, \'YYYY-MM-DD\') AS fecha, nombre_paciente, turno_num FROM facturas_caja WHERE id = $1', [registro_id]);
+      if (fac.rows.length > 0) {
+        const f = fac.rows[0] as { fecha: string; nombre_paciente: string | null; turno_num: number | null };
+        await registrarBitacora(client, {
+          tipo: 'RESOLUCION_CIERRE', fechaAfectada: f.fecha, ...actorSesion(req),
+          descripcion: `Paciente ${f.nombre_paciente ?? '#' + registro_id} (turno ${f.turno_num ?? '-'}, jornada ${f.fecha}) resuelto en el cierre: ${String(accion)}.`,
+          detalle: { factura_id: registro_id, accion },
+        });
+      }
 
       if (accion === 'CULMINAR') {
         await client.query("UPDATE facturas_caja SET estado = 'FINALIZADO', etapa_actual = 2 WHERE id = $1", [registro_id]);
