@@ -25,6 +25,7 @@ import { ModuloIngresosExtraordinarios } from '@/components/ModuloIngresosExtrao
 import { ModuloConciliacionPOS } from '@/components/ModuloConciliacionPOS';
 import { ModuloRetencionesSeniat } from '@/components/ModuloRetencionesSeniat';
 import { ModuloHistorialPacientes } from '@/components/ModuloHistorialPacientes';
+import { ModuloCampanas } from '@/components/ModuloCampanas';
 import { LoginScreen } from '@/components/LoginScreen';
 
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -115,7 +116,7 @@ export default function Home() {
         setActiveSection('facturacion');
       }
     } else if (role === 'asistente') {
-      const asistenteForbidden = ['tesoreria', 'ingresos-extra', 'egresos', 'divisas', 'honorarios', 'cierre', 'admin'];
+      const asistenteForbidden = ['tesoreria', 'ingresos-extra', 'egresos', 'divisas', 'honorarios', 'cierre', 'admin', 'campanas'];
       if (asistenteForbidden.includes(activeSection)) {
         setActiveSection('facturacion');
       }
@@ -307,6 +308,12 @@ export default function Home() {
         {activeSection === 'historial-pacientes' && (
           <div className="animate-in fade-in-50 duration-300">
             <ModuloHistorialPacientes currentRole={role} />
+          </div>
+        )}
+
+        {activeSection === 'campanas' && role === 'admin' && (
+          <div className="animate-in fade-in-50 duration-300">
+            <ModuloCampanas />
           </div>
         )}
 

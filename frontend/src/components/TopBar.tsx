@@ -21,6 +21,7 @@ const TITULOS: Record<string, { titulo: string; detalle: string }> = {
   dashboard: { titulo: 'Dashboard', detalle: 'Resumen financiero del centro' },
   analiticas: { titulo: 'Analíticas', detalle: 'Indicadores por médico, área y período' },
   admin: { titulo: 'Catálogos', detalle: 'Pacientes, especialistas y estudios' },
+  campanas: { titulo: 'Campañas de WhatsApp', detalle: 'Segmentación de pacientes y envíos promocionales' },
   excel: { titulo: 'Carga masiva', detalle: 'Importación de atenciones históricas' },
 };
 
