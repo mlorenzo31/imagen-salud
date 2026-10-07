@@ -19,7 +19,7 @@ export const PinCierreDialog: React.FC<Props> = ({ open, cargando, error, onCanc
   const [pin, setPin] = useState('');
   return (
     <Dialog open={open} onOpenChange={(o) => { if (!o) { setPin(''); onCancelar(); } }}>
-      <DialogContent className="sm:max-w-sm rounded-3xl p-6">
+      <DialogContent className="sm:max-w-sm rounded-3xl p-6 bg-white shadow-2xl">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2 font-black"><Lock className="w-5 h-5" />Confirmar cierre de caja</DialogTitle>
         </DialogHeader>
