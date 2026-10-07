@@ -3,13 +3,16 @@ import { ApiError, errorResponse, fechaHoraLocal, sesionUsuario, withTransaction
 import { consolidarCierre, evaluarDia, leerConteo } from '@/lib/cierre';
 import { centsToStr } from '@/lib/money';
 import { exigirPinSesion } from '@/lib/pin';
+import { actorSesion, esADestiempo, registrarBitacora } from '@/lib/bitacora';
 
 export async function POST(req: NextRequest) {
   try {
     const body = (await req.json().catch(() => ({}))) as Record<string, unknown>;
     exigirPinSesion(req, body.pin);
     const fechaIn = String(body.fecha || body.fecha_cierre || '');
-    const fecha = /^\d{4}-\d{2}-\d{2}$/.test(fechaIn) ? fechaIn : fechaHoraLocal().fecha;
+    // El cajero solo puede cerrar el día de hoy, sin importar la fecha enviada.
+    const esCajero = req.headers.get('x-session-role') === 'cajero';
+    const fecha = !esCajero && /^\d{4}-\d{2}-\d{2}$/.test(fechaIn) ? fechaIn : fechaHoraLocal().fecha;
     const usuario = sesionUsuario(req);
     const observaciones = typeof body.observaciones === 'string' && body.observaciones ? body.observaciones : 'Cierre auditado conforme';
 
@@ -30,6 +33,12 @@ export async function POST(req: NextRequest) {
       if (r.arqueo.some((l) => l.diferencia !== 0) && !(typeof body.observaciones === 'string' && body.observaciones.trim())) {
         throw new ApiError(400, 'Hay sobrante o faltante en el arqueo: escriba en observaciones la explicación.');
       }
+      const hayDif = r.arqueo.some((l) => l.diferencia !== 0);
+      await registrarBitacora(client, {
+        tipo: 'CIERRE_DIARIO', fechaAfectada: fecha, ...actorSesion(req),
+        descripcion: `Cierre de caja del ${fecha}${esADestiempo(fecha) ? ' realizado a destiempo' : ''}${hayDif ? ' con diferencias en el arqueo' : ''}.`,
+        detalle: { observaciones, hay_diferencia: hayDif },
+      });
       return r;
     });
     const hayDiferencia = out.arqueo.some((l) => l.diferencia !== 0);

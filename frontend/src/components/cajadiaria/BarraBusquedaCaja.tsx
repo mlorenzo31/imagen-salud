@@ -21,14 +21,23 @@ interface BarraBusquedaCajaProps {
   setBusquedaTexto: React.Dispatch<React.SetStateAction<string>>;
   setMenuFiltrosAbierto: React.Dispatch<React.SetStateAction<boolean>>;
   menuFiltrosAbierto: boolean;
+  /** Cajero: solo operaciones del día, sin chips ni menú de filtros. */
+  soloHoy?: boolean;
 }
 
-export const BarraBusquedaCaja: React.FC<BarraBusquedaCajaProps> = ({ filtroPeriodo, setFiltroPeriodo, filtroEstados, toggleFiltroEstado, filtroSoloDivisas, setFiltroSoloDivisas, filtroSoloBs, setFiltroSoloBs, filtroMontoMayor50, setFiltroMontoMayor50, agruparPor, setAgruparPor, busquedaTexto, setBusquedaTexto, setMenuFiltrosAbierto, menuFiltrosAbierto }) => (
+export const BarraBusquedaCaja: React.FC<BarraBusquedaCajaProps> = ({ filtroPeriodo, setFiltroPeriodo, filtroEstados, toggleFiltroEstado, filtroSoloDivisas, setFiltroSoloDivisas, filtroSoloBs, setFiltroSoloBs, filtroMontoMayor50, setFiltroMontoMayor50, agruparPor, setAgruparPor, busquedaTexto, setBusquedaTexto, setMenuFiltrosAbierto, menuFiltrosAbierto, soloHoy = false }) => (
   <div className="relative flex flex-wrap items-center gap-2 p-2 rounded-xl bg-slate-50 border-2 border-slate-300 focus-within:border-cyan-500 focus-within:bg-white transition-all">
     <Search className="w-5 h-5 text-slate-500 shrink-0 ml-1" />
 
     {/* Chips de Filtros Activos (Etiquetas de Filtrado) */}
-    {filtroPeriodo !== 'TODOS' && (
+    {soloHoy && (
+      <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-cyan-100 text-cyan-900 text-xs font-bold border border-cyan-300">
+        <CalendarDays className="w-3 h-3" />
+        <span>Hoy</span>
+      </span>
+    )}
+
+    {!soloHoy && filtroPeriodo !== 'TODOS' && (
       <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-cyan-100 text-cyan-900 text-xs font-bold border border-cyan-300">
         <CalendarDays className="w-3 h-3" />
         <span>{filtroPeriodo === 'HOY' ? 'Hoy' : filtroPeriodo === 'SEMANA' ? 'Últimos 7 Días' : 'Mes Actual'}</span>
@@ -94,7 +103,7 @@ export const BarraBusquedaCaja: React.FC<BarraBusquedaCajaProps> = ({ filtroPeri
     />
 
     {/* Botón Desplegable Clinico (Filtros & Agrupaciones) */}
-    <button
+    {!soloHoy && <button
       type="button"
       onClick={() => setMenuFiltrosAbierto(!menuFiltrosAbierto)}
       className={`px-3 py-1.5 rounded-lg text-xs font-bold flex items-center gap-1.5 transition-all ${
@@ -106,6 +115,6 @@ export const BarraBusquedaCaja: React.FC<BarraBusquedaCajaProps> = ({ filtroPeri
       <SlidersHorizontal className="w-3.5 h-3.5" />
       <span>Filtros & Agrupaciones</span>
       <ChevronDown className={`w-3 h-3 transition-transform ${menuFiltrosAbierto ? 'rotate-180' : ''}`} />
-    </button>
+    </button>}
   </div>
 );

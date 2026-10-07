@@ -38,6 +38,11 @@ describe('RBAC por ruta', () => {
     expect(isAllowed('cajero', '/api/facturas/5/estado', 'PUT')).toBe(true);
     expect(isAllowed('cajero', '/api/tesoreria/cuentas', 'GET')).toBe(false);
     expect(isAllowed('cajero', '/api/tesoreria/cambio-divisa', 'POST')).toBe(false);
+    expect(isAllowed('cajero', '/api/cierres/ejecutar-cierre', 'POST')).toBe(true);
+    expect(isAllowed('asistente', '/api/cierres/ejecutar-cierre', 'POST')).toBe(true);
+    expect(isAllowed('asistente', '/api/bitacora', 'GET')).toBe(false);
+    expect(isAllowed('cajero', '/api/bitacora', 'GET')).toBe(false);
+    expect(isAllowed('admin', '/api/bitacora', 'GET')).toBe(true);
   });
   it('asistente lee tesorería pero no escribe ni liquida', () => {
     expect(isAllowed('asistente', '/api/tesoreria/cuentas', 'GET')).toBe(true);

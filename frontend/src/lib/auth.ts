@@ -62,15 +62,15 @@ export async function verifySession(token: string | undefined): Promise<SessionP
 }
 
 /** Prefijos de API por rol. El admin tiene acceso total. */
-const CAJERO_API = ['/api/facturas', '/api/pacientes', '/api/medicos', '/api/bcv', '/api/cierres/verificar-estado-diario', '/api/cierres/estado-jornada', '/api/catalogo', '/api/auth', '/api/whatsapp', '/api/sala'];
+const CAJERO_API = ['/api/facturas', '/api/pacientes', '/api/medicos', '/api/bcv', '/api/cierres/verificar-estado-diario', '/api/cierres/estado-jornada', '/api/cierres/ejecutar-cierre', '/api/catalogo', '/api/auth', '/api/whatsapp', '/api/sala'];
 const SOLO_ADMIN = [
   '/api/tesoreria/cambio-divisa',
   '/api/tesoreria/conciliacion/ejecutar',
   '/api/tesoreria/honorarios/liquidar',
   '/api/admin',
   '/api/campanas',
+  '/api/bitacora',
   '/api/excel',
-  '/api/cierres/ejecutar-cierre',
 ];
 
 const matches = (path: string, prefixes: string[]) => prefixes.some((p) => path === p || path.startsWith(p + '/'));

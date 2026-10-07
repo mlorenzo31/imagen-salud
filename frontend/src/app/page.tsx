@@ -18,6 +18,7 @@ import { ModuloFacturacion } from '@/components/ModuloFacturacion';
 import { ModuloKanbanSalaEspera } from '@/components/ModuloKanbanSalaEspera';
 import { ModuloCajaDiaria } from '@/components/ModuloCajaDiaria';
 import { ModuloCierreDiario } from '@/components/ModuloCierreDiario';
+import { ModuloBitacora } from '@/components/ModuloBitacora';
 import { ModuloAdminCatalogos } from '@/components/ModuloAdminCatalogos';
 import { ModuloAnaliticas } from '@/components/ModuloAnaliticas';
 import { ModuloEgresosOperativos } from '@/components/ModuloEgresosOperativos';
@@ -111,12 +112,12 @@ export default function Home() {
   // Guard Estricto de RBAC para navegacin segura
   useEffect(() => diferir(() => {
     if (role === 'cajero') {
-      const cajeroAllowed = ['facturacion', 'caja', 'kanban', 'historial-pacientes'];
+      const cajeroAllowed = ['facturacion', 'caja', 'kanban', 'historial-pacientes', 'cierre'];
       if (!cajeroAllowed.includes(activeSection)) {
         setActiveSection('facturacion');
       }
     } else if (role === 'asistente') {
-      const asistenteForbidden = ['tesoreria', 'ingresos-extra', 'egresos', 'divisas', 'honorarios', 'cierre', 'admin', 'campanas'];
+      const asistenteForbidden = ['tesoreria', 'ingresos-extra', 'egresos', 'divisas', 'honorarios', 'bitacora', 'admin', 'campanas'];
       if (asistenteForbidden.includes(activeSection)) {
         setActiveSection('facturacion');
       }
@@ -254,7 +255,7 @@ export default function Home() {
       <main className="flex-1 w-full p-4 sm:p-6 lg:p-8 max-w-7xl mx-auto space-y-6">
 
         {/* Banner Crítico de Atenciones Abiertas de Fecha Anterior (Pillar 4) */}
-        {pacientesPendientes.length > 0 && role === 'admin' && (
+        {pacientesPendientes.length > 0 && (role === 'admin' || role === 'asistente') && (
           <div className="bg-clinica-coral-soft border-2 border-clinica-coral/40 p-4 rounded-3xl flex items-start justify-between gap-4 shadow-sm animate-in fade-in-50">
             <div className="flex items-start gap-3">
               <div className="p-2 bg-clinica-coral text-white rounded-xl">
@@ -538,10 +539,17 @@ export default function Home() {
           </div>
         )}
 
-        {/* 11. AUDITORÍA DE CIERRE DIARIO (Exclusivo Admin) */}
-        {activeSection === 'cierre' && role === 'admin' && (
+        {/* 11. CIERRE DIARIO (admin y asistente: cualquier fecha; cajero: solo el día de hoy) */}
+        {activeSection === 'cierre' && (
           <div className="animate-in fade-in-50 duration-300">
             <ModuloCierreDiario currentRole={role} />
+          </div>
+        )}
+
+        {/* BITÁCORA (Exclusivo Admin) */}
+        {activeSection === 'bitacora' && role === 'admin' && (
+          <div className="animate-in fade-in-50 duration-300">
+            <ModuloBitacora />
           </div>
         )}
 

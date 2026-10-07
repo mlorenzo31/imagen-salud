@@ -149,15 +149,22 @@ export const ModuloCierreDiario: React.FC<ModuloCierreDiarioProps> = ({ currentR
           </p>
         </div>
         <div className="flex items-center gap-3">
-          <div className="flex items-center gap-1.5 bg-slate-50 p-1 rounded-xl border border-slate-200">
-            <Calendar className="w-4 h-4 text-slate-500 ml-2" />
-            <Input 
-              type="date"
-              value={fechaCierre}
-              onChange={(e) => setFechaCierre(e.target.value)}
-              className="h-8 text-xs border-0 bg-transparent"
-            />
-          </div>
+          {currentRole !== 'cajero' ? (
+            <div className="flex items-center gap-1.5 bg-slate-50 p-1 rounded-xl border border-slate-200">
+              <Calendar className="w-4 h-4 text-slate-500 ml-2" />
+              <Input 
+                type="date"
+                value={fechaCierre}
+                onChange={(e) => setFechaCierre(e.target.value)}
+                className="h-8 text-xs border-0 bg-transparent"
+              />
+            </div>
+          ) : (
+            <span className="inline-flex items-center gap-1.5 bg-slate-50 px-3 h-10 rounded-xl border border-slate-200 text-xs font-bold text-slate-700">
+              <Calendar className="w-4 h-4 text-slate-500" />
+              Hoy
+            </span>
+          )}
           <Button 
             variant="outline" 
             size="sm" 

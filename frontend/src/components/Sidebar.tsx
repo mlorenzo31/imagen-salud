@@ -2,7 +2,7 @@
 
 import React from 'react';
 import Image from 'next/image';
-import { ShoppingCart, Receipt, Tv, CreditCard, FileCheck2, Wallet, TrendingUp, ArrowDownRight, ArrowLeftRight, Stethoscope, ShieldAlert, LayoutDashboard, BarChart3, Settings, FileSpreadsheet, LogOut, Eye, CheckCircle2, History, Megaphone } from 'lucide-react';
+import { ShoppingCart, Receipt, Tv, CreditCard, FileCheck2, Wallet, TrendingUp, ArrowDownRight, ArrowLeftRight, Stethoscope, ShieldAlert, LayoutDashboard, BarChart3, Settings, FileSpreadsheet, LogOut, Eye, CheckCircle2, History, Megaphone, ScrollText } from 'lucide-react';
 import { UserRole, ModoOperacion } from '@/types';
 
 interface SidebarProps {
@@ -59,7 +59,8 @@ export const Sidebar: React.FC<SidebarProps> = ({
         { id: 'egresos', label: 'Egresos', icon: ArrowDownRight, allowed: ['admin'] },
         { id: 'divisas', label: 'Cambio Divisas', icon: ArrowLeftRight, allowed: ['admin'] },
         { id: 'honorarios', label: 'Honorarios', icon: Stethoscope, allowed: ['admin'] },
-        { id: 'cierre', label: 'Cierre Diario', icon: ShieldAlert, allowed: ['admin'] },
+        { id: 'bitacora', label: 'Bitácora', icon: ScrollText, allowed: ['admin'] },
+        { id: 'cierre', label: 'Cierre Diario', icon: ShieldAlert, allowed: ['admin', 'asistente', 'cajero'] },
       ]
     },
     {
