@@ -40,6 +40,12 @@
   --color-clinica-coral: #E76F3D;
   --color-clinica-coral-soft: #FDF2EC;
 
+  /* Superficies opacas: sin esto, bg-background / bg-popover (diálogos, menús, botones "outline") quedaban transparentes */
+  --color-background: #FFFFFF;
+  --color-foreground: #15201F;
+  --color-popover: #FFFFFF;
+  --color-popover-foreground: #15201F;
+
   /* Neutros con un matiz verde azulado, en armonía con el isotipo */
   --color-slate-50: #F6F9F9;
   --color-slate-100: #EEF3F3;
