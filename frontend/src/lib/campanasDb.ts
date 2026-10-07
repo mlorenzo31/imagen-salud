@@ -44,8 +44,11 @@ export async function consultarSegmento(db: Db, f: Filtros): Promise<{ pacientes
   const params: unknown[] = [];
   const p = (v: unknown) => { params.push(v); return `$${params.length}`; };
   const donde: string[] = [];
-  if (f.edadMin != null) donde.push(`s.edad >= ${p(f.edadMin)}`);
-  if (f.edadMax != null) donde.push(`s.edad <= ${p(f.edadMax)}`);
+  // Con filtro de edad, quien no tiene fecha de nacimiento solo entra si se pidió incluirlo.
+  const conEdad: string[] = [];
+  if (f.edadMin != null) conEdad.push(`s.edad >= ${p(f.edadMin)}`);
+  if (f.edadMax != null) conEdad.push(`s.edad <= ${p(f.edadMax)}`);
+  if (conEdad.length) donde.push(f.incluirSinFecha ? `(${conEdad.join(' AND ')} OR s.edad IS NULL)` : conEdad.join(' AND '));
   if (f.estudios.length) donde.push(`EXISTS (SELECT 1 FROM unnest(s.estudios) e WHERE e ILIKE ANY(${p(f.estudios.map((e) => `%${escapeLike(e)}%`))}::text[]))`);
   if (f.areas.length) donde.push(`s.areas && ${p(f.areas)}::text[]`);
   if (f.medicos.length) donde.push(`s.medicos && ${p(f.medicos)}::text[]`);
@@ -75,15 +78,15 @@ export async function consultarSegmento(db: Db, f: Filtros): Promise<{ pacientes
       SELECT ced, COUNT(*)::int AS visitas,
              COALESCE(SUM(ROUND(COALESCE(precio_usd, 0) * 100)), 0)::bigint AS gasto_cents,
              MAX(fecha) AS ultima,
-             array_remove(array_agg(DISTINCT estudio), NULL) AS estudios,
-             array_remove(array_agg(DISTINCT medico), NULL) AS medicos,
+             array_remove(array_agg(DISTINCT estudio::text), NULL) AS estudios,
+             array_remove(array_agg(DISTINCT medico::text), NULL) AS medicos,
              (array_agg(tel ORDER BY id DESC) FILTER (WHERE tel IS NOT NULL))[1] AS tel,
              (array_agg(fnac ORDER BY id DESC) FILTER (WHERE fnac IS NOT NULL))[1] AS fnac,
              (array_agg(nombre_paciente ORDER BY id DESC))[1] AS nombre
         FROM fac GROUP BY ced
     ),
     areas AS (
-      SELECT fac.ced, array_agg(DISTINCT d.area) FILTER (WHERE d.area IS NOT NULL) AS areas
+      SELECT fac.ced, array_agg(DISTINCT d.area::text) FILTER (WHERE d.area IS NOT NULL) AS areas
         FROM fac JOIN facturas_servicios_detalle d ON d.factura_id = fac.id GROUP BY fac.ced
     ),
     pac AS (

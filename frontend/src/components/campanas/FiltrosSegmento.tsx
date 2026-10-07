@@ -6,7 +6,7 @@ import { Button } from '@/components/ui/button';
 import { RANGOS_ETARIOS, type Filtros } from '@/lib/segmentos';
 
 export interface FormFiltros {
-  edadMin: string; edadMax: string;
+  edadMin: string; edadMax: string; incluirSinFecha: boolean;
   estudios: string[]; areas: string[]; medicos: string[];
   desde: string; hasta: string; inactivoDias: string;
   visitasMin: string; visitasMax: string; gastoMin: string; gastoMax: string;
@@ -14,7 +14,7 @@ export interface FormFiltros {
 }
 
 export const FORM_VACIO: FormFiltros = {
-  edadMin: '', edadMax: '', estudios: [], areas: [], medicos: [], desde: '', hasta: '', inactivoDias: '',
+  edadMin: '', edadMax: '', incluirSinFecha: false, estudios: [], areas: [], medicos: [], desde: '', hasta: '', inactivoDias: '',
   visitasMin: '', visitasMax: '', gastoMin: '', gastoMax: '', busqueda: '',
 };
 
@@ -28,7 +28,7 @@ const num = (s: string): number | null => {
 export function aFiltros(f: FormFiltros): Filtros {
   const ent = (s: string) => { const n = num(s); return n === null ? null : Math.floor(n); };
   return {
-    edadMin: ent(f.edadMin), edadMax: ent(f.edadMax),
+    edadMin: ent(f.edadMin), edadMax: ent(f.edadMax), incluirSinFecha: f.incluirSinFecha,
     estudios: f.estudios, areas: f.areas, medicos: f.medicos,
     ultimaVisitaDesde: f.desde || null, ultimaVisitaHasta: f.hasta || null,
     inactivoDias: ent(f.inactivoDias),
@@ -90,6 +90,10 @@ export const FiltrosSegmento: React.FC<Props> = ({ form, setForm, opciones, busc
             <Campo etiqueta="Edad mínima">{entrada('edadMin', 'Ej. 40')}</Campo>
             <Campo etiqueta="Edad máxima">{entrada('edadMax', 'Ej. 65')}</Campo>
           </div>
+          <label className="flex items-center gap-2 text-[11px] text-slate-600">
+            <input type="checkbox" checked={form.incluirSinFecha} onChange={(e) => set('incluirSinFecha', e.target.checked)} />
+            Incluir pacientes sin fecha de nacimiento
+          </label>
         </div>
         <div className="md:col-span-6 space-y-2">
           <div className="grid grid-cols-2 gap-2">

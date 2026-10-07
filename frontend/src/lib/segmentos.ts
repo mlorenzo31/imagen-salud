@@ -8,6 +8,7 @@ const lista = z.array(z.string().trim().min(1).max(150)).max(40).default([]);
 export const FiltrosSchema = z.object({
   edadMin: entero(0, 120),
   edadMax: entero(0, 120),
+  incluirSinFecha: z.boolean().default(false),
   estudios: lista,
   areas: lista,
   medicos: lista,

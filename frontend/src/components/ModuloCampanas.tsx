@@ -91,7 +91,9 @@ export const ModuloCampanas: React.FC = () => {
   const aplicarRango = (etiqueta: string) => {
     const m = etiqueta.match(/^(\d+)[–-](\d+)$/) ?? etiqueta.match(/^(\d+)\+$/);
     if (!m) return;
-    setForm((p) => ({ ...p, edadMin: m[1], edadMax: m[2] ?? '' }));
+    const nuevo = { ...form, edadMin: m[1], edadMax: m[2] ?? '' };
+    setForm(nuevo);
+    void buscar(nuevo);
   };
 
   const enviar = async () => {
