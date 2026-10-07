@@ -68,6 +68,7 @@ const SOLO_ADMIN = [
   '/api/tesoreria/conciliacion/ejecutar',
   '/api/tesoreria/honorarios/liquidar',
   '/api/admin',
+  '/api/campanas',
   '/api/excel',
   '/api/cierres/ejecutar-cierre',
 ];

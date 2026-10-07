@@ -1,5 +1,5 @@
 // Bot de WhatsApp (Baileys). Debe ejecutarse en un equipo siempre encendido.
-// Lee la cola wa_outbox, envía los resultados y marca facturas_caja.whatsapp_enviado.
+// Lee la cola wa_outbox, envía los resultados (y campañas) y marca facturas_caja.whatsapp_enviado.
 // Uso: DATABASE_URL=... APP_URL=https://tu-sistema.vercel.app node worker.mjs   (ver README.md)
 import makeWASocket, { useMultiFileAuthState, DisconnectReason, fetchLatestBaileysVersion } from '@whiskeysockets/baileys';
 import { rmSync } from 'node:fs';
@@ -19,6 +19,9 @@ const log = pino({ level: 'warn' });
 const MAX_INTENTOS = 3;
 const pausa = (ms) => new Promise((r) => setTimeout(r, ms));
 const jitter = () => 4000 + Math.floor(Math.random() * 5000); // 4–9 s entre mensajes (anti-bloqueo)
+const jitterCampana = () => 20000 + Math.floor(Math.random() * 20000); // 20–40 s entre mensajes de campaña
+const VERSION = 2; // 2 = campañas (espaciado, tope diario y bajas)
+const MAX_CAMPANA_DIA = Number(process.env.WA_MAX_CAMPANA_DIA ?? 150); // tope de mensajes de campaña por día
 
 async function asegurarTablas() {
   await db.query(`CREATE TABLE IF NOT EXISTS wa_estado (id INT PRIMARY KEY DEFAULT 1 CHECK (id = 1), estado TEXT NOT NULL DEFAULT 'APAGADO', qr TEXT, numero TEXT, latido TIMESTAMPTZ)`);
@@ -27,6 +30,10 @@ async function asegurarTablas() {
   await db.query(`CREATE INDEX IF NOT EXISTS wa_outbox_pend_idx ON wa_outbox (estado, id)`);
   await db.query(`CREATE UNIQUE INDEX IF NOT EXISTS wa_outbox_factura_uk ON wa_outbox (factura_id) WHERE estado IN ('PENDIENTE','ENVIANDO','ENVIADO')`);
   await db.query(`ALTER TABLE wa_estado ADD COLUMN IF NOT EXISTS comando TEXT`);
+  await db.query(`ALTER TABLE wa_estado ADD COLUMN IF NOT EXISTS version INT`);
+  await db.query(`ALTER TABLE wa_outbox ALTER COLUMN factura_id DROP NOT NULL`);
+  await db.query(`ALTER TABLE wa_outbox ADD COLUMN IF NOT EXISTS campana_id INT`);
+  await db.query(`CREATE TABLE IF NOT EXISTS wa_baja (telefono TEXT PRIMARY KEY, creado TIMESTAMPTZ NOT NULL DEFAULT now())`);
   await db.query(`INSERT INTO wa_estado (id) VALUES (1) ON CONFLICT DO NOTHING`);
 }
 
@@ -36,7 +43,7 @@ let numero = null;
 let sock = null;
 
 async function publicar() {
-  await db.query(`UPDATE wa_estado SET estado = $1, qr = $2, numero = $3, latido = now() WHERE id = 1`, [estado, qr, numero]).catch((e) => console.error('latido', e.message));
+  await db.query(`UPDATE wa_estado SET estado = $1, qr = $2, numero = $3, latido = now(), version = $4 WHERE id = 1`, [estado, qr, numero, VERSION]).catch((e) => console.error('latido', e.message));
 }
 
 let generacion = 0; // cada conexión nueva invalida los eventos de la anterior
@@ -60,6 +67,23 @@ async function conectar() {
   const { version } = await fetchLatestBaileysVersion();
   sock = makeWASocket({ version, auth: state, logger: log, browser: ['Imagen Salud', 'Chrome', '1.0'], markOnlineOnConnect: false });
   sock.ev.on('creds.update', saveCreds);
+  // Baja de campañas: el paciente responde BAJA/STOP y no vuelve a recibir mensajes promocionales.
+  sock.ev.on('messages.upsert', async ({ messages }) => {
+    for (const msg of messages) {
+      try {
+        if (msg.key.fromMe) continue;
+        const texto = (msg.message?.conversation || msg.message?.extendedTextMessage?.text || '').trim();
+        if (!/^(baja|stop|no m[aá]s)$/i.test(texto)) continue;
+        const jid = msg.key.senderPn || msg.key.remoteJidAlt || msg.key.remoteJid || '';
+        if (!jid.endsWith('@s.whatsapp.net')) { console.warn('BAJA recibida desde un identificador no resoluble:', jid); continue; }
+        const t10 = jid.split('@')[0].replace(/\D/g, '').slice(-10);
+        await db.query(`INSERT INTO wa_baja (telefono) VALUES ($1) ON CONFLICT DO NOTHING`, [t10]);
+        await db.query(`UPDATE wa_outbox SET estado = 'FALLIDO', error = 'Baja solicitada' WHERE estado = 'PENDIENTE' AND factura_id IS NULL AND right(telefono, 10) = $1`, [t10]);
+        await sock.sendMessage(jid, { text: 'Listo, no recibirá más mensajes promocionales de Imagen Salud. Sus resultados médicos se seguirán enviando con normalidad.' });
+        console.log('Baja registrada:', t10);
+      } catch (e) { console.error('baja', e.message); }
+    }
+  });
   sock.ev.on('connection.update', async (u) => {
     if (mia !== generacion) return; // evento de una conexión ya reemplazada
     if (u.qr) {
@@ -123,16 +147,36 @@ async function archivosDe(m) {
 async function procesarCola() {
   for (;;) {
     if (estado !== 'CONECTADO' || !sock) return;
+    // Resultados primero; las campañas solo mientras no se alcance el tope diario (el resto sigue al día siguiente).
+    const { rows: [hoy] } = await db.query(
+      `SELECT COUNT(*)::int AS n FROM wa_outbox WHERE factura_id IS NULL AND estado = 'ENVIADO'
+          AND (enviado AT TIME ZONE 'America/Caracas')::date = (now() AT TIME ZONE 'America/Caracas')::date`);
+    const permitirCampana = hoy.n < MAX_CAMPANA_DIA;
     const { rows } = await db.query(
       `UPDATE wa_outbox SET estado = 'ENVIANDO', intentos = intentos + 1
-        WHERE id = (SELECT id FROM wa_outbox WHERE estado = 'PENDIENTE' ORDER BY id FOR UPDATE SKIP LOCKED LIMIT 1)
-        RETURNING *`);
+        WHERE id = (SELECT id FROM wa_outbox WHERE estado = 'PENDIENTE' AND (factura_id IS NOT NULL OR $1::boolean)
+                     ORDER BY (factura_id IS NULL), id FOR UPDATE SKIP LOCKED LIMIT 1)
+        RETURNING *`, [permitirCampana]);
     const m = rows[0];
     if (!m) return;
     try {
       const jid = m.telefono + '@s.whatsapp.net';
+      if (m.factura_id === null) {
+        const baja = await db.query(`SELECT 1 FROM wa_baja WHERE telefono = right($1, 10)`, [m.telefono]);
+        if (baja.rowCount) {
+          await db.query(`UPDATE wa_outbox SET estado = 'FALLIDO', error = 'Baja solicitada' WHERE id = $1`, [m.id]);
+          continue;
+        }
+      }
       const [chk] = await sock.onWhatsApp(jid);
       if (!chk?.exists) throw new Error('El número no tiene WhatsApp');
+      if (m.factura_id === null) { // campaña: solo texto, sin tocar facturas
+        await sock.sendMessage(jid, { text: m.mensaje });
+        await db.query(`UPDATE wa_outbox SET estado = 'ENVIADO', enviado = now(), error = NULL WHERE id = $1`, [m.id]);
+        console.log('Campaña enviada', m.campana_id, m.telefono);
+        await pausa(jitterCampana());
+        continue;
+      }
       const archivos = await archivosDe(m); // se descargan antes de enviar nada: si falla, no queda a medias
       await sock.sendMessage(jid, { text: m.mensaje });
       for (const a of archivos) {
@@ -151,7 +195,7 @@ async function procesarCola() {
     } catch (e) {
       const definitivo = /no tiene whatsapp/i.test(e.message) || m.intentos >= MAX_INTENTOS;
       await db.query(`UPDATE wa_outbox SET estado = $2, error = $3 WHERE id = $1`, [m.id, definitivo ? 'FALLIDO' : 'PENDIENTE', String(e.message).slice(0, 300)]);
-      console.error('Fallo factura', m.factura_id, e.message);
+      console.error('Fallo', m.factura_id ?? 'campaña ' + m.campana_id, e.message);
     }
     await pausa(jitter());
   }

@@ -54,6 +54,11 @@ export async function asegurarTablasWhatsapp(db: Db): Promise<void> {
   await db.query(`ALTER TABLE wa_estado ADD COLUMN IF NOT EXISTS comando TEXT`);
   await db.query(`INSERT INTO wa_estado (id) VALUES (1) ON CONFLICT DO NOTHING`);
   await db.query(`ALTER TABLE wa_outbox ADD COLUMN IF NOT EXISTS token TEXT`);
+  // Campañas: mensajes sin factura asociada y versión del bot (el sistema exige un bot que sepa espaciar y respetar bajas).
+  await db.query(`ALTER TABLE wa_outbox ALTER COLUMN factura_id DROP NOT NULL`);
+  await db.query(`ALTER TABLE wa_outbox ADD COLUMN IF NOT EXISTS campana_id INT`);
+  await db.query(`CREATE INDEX IF NOT EXISTS wa_outbox_campana_idx ON wa_outbox (campana_id)`);
+  await db.query(`ALTER TABLE wa_estado ADD COLUMN IF NOT EXISTS version INT`);
   await db.query(`CREATE INDEX IF NOT EXISTS wa_outbox_pend_idx ON wa_outbox (estado, id)`);
   await db.query(`
     CREATE UNIQUE INDEX IF NOT EXISTS wa_outbox_factura_uk ON wa_outbox (factura_id)

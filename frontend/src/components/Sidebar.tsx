@@ -2,7 +2,8 @@
 
 import React from 'react';
 import Image from 'next/image';
-import { ShoppingCart, Receipt, Tv, CreditCard, FileCheck2, Wallet, TrendingUp, ArrowDownRight, ArrowLeftRight, Stethoscope, ShieldAlert, LayoutDashboard, BarChart3, Settings, FileSpreadsheet, LogOut, Eye, CheckCircle2, History } from 'lucide-react';import { UserRole, ModoOperacion } from '@/types';
+import { ShoppingCart, Receipt, Tv, CreditCard, FileCheck2, Wallet, TrendingUp, ArrowDownRight, ArrowLeftRight, Stethoscope, ShieldAlert, LayoutDashboard, BarChart3, Settings, FileSpreadsheet, LogOut, Eye, CheckCircle2, History, Megaphone } from 'lucide-react';
+import { UserRole, ModoOperacion } from '@/types';
 
 interface SidebarProps {
   currentRole: UserRole;
@@ -67,6 +68,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
         { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard, allowed: ['admin', 'asistente'] },
         { id: 'analiticas', label: 'Analíticas', icon: BarChart3, allowed: ['admin', 'asistente'] },
         { id: 'admin', label: 'Catálogos', icon: Settings, allowed: ['admin'] },
+        { id: 'campanas', label: 'Campañas WhatsApp', icon: Megaphone, allowed: ['admin'] },
         { id: 'excel', label: 'Carga Masiva', icon: FileSpreadsheet, allowed: ['admin', 'asistente'] },
       ]
     }
