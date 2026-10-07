@@ -7,6 +7,7 @@ import { AlertTriangle } from 'lucide-react';
 import { aFormatoInputDate, calcularEdadReal, hoyLocal } from '@/lib/date';
 import { limpiarCedulaInput, limpiarNombreInput, limpiarTelefonoInput } from '@/lib/pacienteValidation';
 import { PacienteCatalogo } from '@/types';
+import { inferirSexo, ETIQUETA_SEXO } from '@/lib/sexo';
 
 interface ModalPacienteProps {
   modalPaciente: { visible: boolean; item?: PacienteCatalogo; };
@@ -60,10 +61,36 @@ export const ModalPaciente: React.FC<ModalPacienteProps> = ({ modalPaciente, err
           </label>
           <Input
             value={formPaciente.nombres || ''}
-            onChange={e => setFormPaciente({ ...formPaciente, nombres: limpiarNombreInput(e.target.value) })}
+            onChange={e => {
+              const nombres = limpiarNombreInput(e.target.value);
+              // Sugiere el sexo por el nombre salvo que el paciente ya lo tenga registrado.
+              setFormPaciente({ ...formPaciente, nombres, ...(modalPaciente.item?.sexo ? {} : { sexo: inferirSexo(nombres) }) });
+            }}
             placeholder="Nombre completo (sin números)"
             className="h-8 text-xs rounded-xl"
           />
+        </div>
+        <div>
+          <label className="text-[11px] font-bold text-slate-600 block mb-1">
+            Sexo <span className="text-rose-500">*</span>
+            {formPaciente.sexo && !modalPaciente.item?.sexo && (
+              <span className="ml-1 font-normal text-slate-500">(sugerido por el nombre; confirme)</span>
+            )}
+          </label>
+          <div className="flex gap-2">
+            {(['F', 'M'] as const).map(op => (
+              <button
+                key={op}
+                type="button"
+                onClick={() => setFormPaciente({ ...formPaciente, sexo: op })}
+                className={`flex-1 h-8 rounded-xl text-xs font-bold border transition-colors ${
+                  formPaciente.sexo === op ? 'bg-[#1D7A70] border-[#1D7A70] text-white' : 'border-slate-300 text-slate-600 hover:bg-slate-50'
+                }`}
+              >
+                {ETIQUETA_SEXO[op]}
+              </button>
+            ))}
+          </div>
         </div>
         <div className="grid grid-cols-2 gap-2">
           <div>

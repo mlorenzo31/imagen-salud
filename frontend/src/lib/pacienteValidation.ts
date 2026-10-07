@@ -49,6 +49,7 @@ export interface FichaPacienteDatos {
   cedula: string;
   nombre: string;
   fecha_nacimiento?: string;
+  sexo?: string;
   telefono: string;
   direccion: string;
 }
@@ -57,6 +58,7 @@ export interface FichaErrores {
   cedula?: string;
   nombre?: string;
   fecha_nacimiento?: string;
+  sexo?: string;
   telefono?: string;
   direccion?: string;
 }
@@ -117,6 +119,11 @@ export function validarFichaPaciente(datos: FichaPacienteDatos): { valido: boole
         }
       }
     }
+  }
+
+  // 3b. Sexo (obligatorio: M o F)
+  if (datos.sexo !== 'M' && datos.sexo !== 'F') {
+    errores.sexo = 'Seleccione el sexo (M o F).';
   }
 
   // 4. Validación de Teléfono / Celular (Obligatorio, solo dígitos numéricos)

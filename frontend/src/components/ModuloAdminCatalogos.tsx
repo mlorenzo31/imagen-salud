@@ -22,7 +22,7 @@ const SALA_POR_AREA: Record<string, string> = {
 
 /** Fila de /api/pacientes (con visitas y saldo calculados en el servidor). */
 interface PacienteApi {
-  id: number; cedula: string; nombre: string; telefono?: string | null; fecha_nacimiento?: string | null;
+  id: number; cedula: string; nombre: string; telefono?: string | null; fecha_nacimiento?: string | null; sexo?: 'M' | 'F' | null;
   direccion?: string | null; activo?: boolean; visitas?: number; saldo_pendiente_usd?: string | number;
 }
 
@@ -70,7 +70,7 @@ export const ModuloAdminCatalogos: React.FC<ModuloAdminCatalogosProps> = ({ curr
       setPacientes(data.map((p): PacienteCatalogo => {
         const fecha = p.fecha_nacimiento ? String(p.fecha_nacimiento).slice(0, 10) : '';
         return {
-          id: p.id, cedula: p.cedula, nombres: p.nombre, telefono: p.telefono || '', fecha_nacimiento: fecha,
+          id: p.id, cedula: p.cedula, nombres: p.nombre, telefono: p.telefono || '', fecha_nacimiento: fecha, sexo: p.sexo ?? null,
           edad: fecha ? calcularEdadReal(fecha) : undefined, direccion: p.direccion || '',
           historial_visitas: p.visitas ?? 0, saldo_pendiente_usd: Number(p.saldo_pendiente_usd) || 0, saldo_pendiente_bs: 0,
           activo: p.activo !== false,
@@ -117,6 +117,7 @@ export const ModuloAdminCatalogos: React.FC<ModuloAdminCatalogosProps> = ({ curr
         nombres: '',
         telefono: '',
         fecha_nacimiento: '',
+        sexo: null,
         direccion: '',
         historial_visitas: 0,
         saldo_pendiente_usd: 0,
@@ -135,6 +136,10 @@ export const ModuloAdminCatalogos: React.FC<ModuloAdminCatalogosProps> = ({ curr
     }
     if (/\d/.test(formPaciente.nombres)) {
       setErrorDuplicadoPaciente('El nombre solo puede contener letras (sin números).');
+      return;
+    }
+    if (formPaciente.sexo !== 'M' && formPaciente.sexo !== 'F') {
+      setErrorDuplicadoPaciente('Seleccione el sexo (M o F).');
       return;
     }
     if (formPaciente.telefono && /[a-zA-Z]/.test(formPaciente.telefono)) {
@@ -157,6 +162,7 @@ export const ModuloAdminCatalogos: React.FC<ModuloAdminCatalogosProps> = ({ curr
           cedula: normalizarCedulaRif(formPaciente.cedula),
           nombre: formPaciente.nombres.trim(),
           fecha_nacimiento: formPaciente.fecha_nacimiento || null,
+          sexo: formPaciente.sexo,
           direccion: (formPaciente.direccion || '').trim(),
           telefono: (formPaciente.telefono || '').trim(),
         }),

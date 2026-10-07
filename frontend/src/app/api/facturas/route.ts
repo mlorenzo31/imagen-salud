@@ -9,6 +9,7 @@ import { exigirJornadaAlDia, ultimaFechaCerrada } from '@/lib/cierre';
 import { asegurarMedioTransito } from '@/lib/transito';
 import { listarEstudios, repartoCents, type EstudioFila } from '@/lib/catalogoDb';
 import { BENEFICIARIO_PATOLOGO } from '@/lib/reparto';
+import { esSexo } from '@/lib/sexo';
 
 export async function GET(req: NextRequest) {
   try {
@@ -242,6 +243,7 @@ export async function POST(req: NextRequest) {
     const cedula = str(data.cedula || data.cedula_paciente);
     const nombre = str(data.nombre || data.nombre_paciente).trim().toUpperCase();
     const fechaNac = str(data.fecha_nacimiento || data.fecha_nacimiento_paciente) || null;
+    const sexo = esSexo(data.sexo) ? data.sexo : null;
 
     await asegurarMedioTransito(pool);
     const factura = await withTransaction(async (client) => {
@@ -303,14 +305,15 @@ export async function POST(req: NextRequest) {
 
       if (cedula && nombre) {
         await client.query(
-          `INSERT INTO pacientes (cedula, nombre, fecha_nacimiento, direccion, telefono)
-           VALUES ($1,$2,$3,$4,$5)
+          `INSERT INTO pacientes (cedula, nombre, fecha_nacimiento, direccion, telefono, sexo)
+           VALUES ($1,$2,$3,$4,$5,$6)
            ON CONFLICT (cedula) DO UPDATE
            SET nombre = COALESCE(NULLIF(EXCLUDED.nombre, ''), pacientes.nombre),
                fecha_nacimiento = COALESCE(EXCLUDED.fecha_nacimiento, pacientes.fecha_nacimiento),
                direccion = COALESCE(EXCLUDED.direccion, pacientes.direccion),
-               telefono = COALESCE(EXCLUDED.telefono, pacientes.telefono)`,
-          [cedula, nombre, fechaNac, str(data.direccion || data.direccion_paciente).trim().toUpperCase() || null, str(data.telefono || data.telefono_paciente).trim() || null]
+               telefono = COALESCE(EXCLUDED.telefono, pacientes.telefono),
+               sexo = COALESCE(EXCLUDED.sexo, pacientes.sexo)`,
+          [cedula, nombre, fechaNac, str(data.direccion || data.direccion_paciente).trim().toUpperCase() || null, str(data.telefono || data.telefono_paciente).trim() || null, sexo]
         );
       }
 

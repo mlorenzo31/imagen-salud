@@ -79,6 +79,7 @@ CREATE TABLE IF NOT EXISTS pacientes (
   direccion TEXT,
   telefono VARCHAR(30),
   fecha_nacimiento DATE,
+  sexo CHAR(1) CHECK (sexo IN ('M','F')),
   PRIMARY KEY (id)
 );
 

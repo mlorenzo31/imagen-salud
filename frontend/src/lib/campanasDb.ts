@@ -28,7 +28,7 @@ export async function asegurarTablasCampanas(db: Db): Promise<void> {
 const escapeLike = (s: string) => s.replace(/[\\%_]/g, (c) => '\\' + c);
 
 interface FilaSegmento {
-  cedula: string; nombre: string; telefono: string | null; fecha_nacimiento: string | null; edad: number | null;
+  cedula: string; nombre: string; telefono: string | null; fecha_nacimiento: string | null; sexo: 'M' | 'F' | null; edad: number | null;
   visitas: number; gasto_cents: string | number; ultima_visita: string | null;
   estudios: string[] | null; medicos: string[] | null; areas: string[] | null; baja: boolean;
 }
@@ -40,6 +40,9 @@ export async function consultarSegmento(db: Db, f: Filtros): Promise<{ pacientes
   const tieneActivo = (await db.query(
     `SELECT 1 FROM information_schema.columns WHERE table_name = 'pacientes' AND column_name = 'activo'`,
   )).rowCount! > 0;
+  const tieneSexo = (await db.query(
+    `SELECT 1 FROM information_schema.columns WHERE table_name = 'pacientes' AND column_name = 'sexo'`,
+  )).rowCount! > 0;
 
   const params: unknown[] = [];
   const p = (v: unknown) => { params.push(v); return `$${params.length}`; };
@@ -49,6 +52,8 @@ export async function consultarSegmento(db: Db, f: Filtros): Promise<{ pacientes
   if (f.edadMin != null) conEdad.push(`s.edad >= ${p(f.edadMin)}`);
   if (f.edadMax != null) conEdad.push(`s.edad <= ${p(f.edadMax)}`);
   if (conEdad.length) donde.push(f.incluirSinFecha ? `(${conEdad.join(' AND ')} OR s.edad IS NULL)` : conEdad.join(' AND '));
+  if (f.sexo === 'SIN') donde.push('s.sexo IS NULL');
+  else if (f.sexo) donde.push(`s.sexo = ${p(f.sexo)}`);
   if (f.estudios.length) donde.push(`EXISTS (SELECT 1 FROM unnest(s.estudios) e WHERE e ILIKE ANY(${p(f.estudios.map((e) => `%${escapeLike(e)}%`))}::text[]))`);
   if (f.areas.length) donde.push(`s.areas && ${p(f.areas)}::text[]`);
   if (f.medicos.length) donde.push(`s.medicos && ${p(f.medicos)}::text[]`);
@@ -92,6 +97,7 @@ export async function consultarSegmento(db: Db, f: Filtros): Promise<{ pacientes
     pac AS (
       SELECT DISTINCT ON (regexp_replace(p.cedula, '[^0-9]', '', 'g'))
              regexp_replace(p.cedula, '[^0-9]', '', 'g') AS ced, p.cedula, p.nombre, p.telefono, p.fecha_nacimiento,
+             ${tieneSexo ? 'p.sexo' : 'NULL::char(1)'} AS sexo,
              ${tieneActivo ? 'COALESCE(p.activo, TRUE)' : 'TRUE'} AS activo
         FROM pacientes p ORDER BY 1, p.id DESC
     ),
@@ -101,6 +107,7 @@ export async function consultarSegmento(db: Db, f: Filtros): Promise<{ pacientes
              COALESCE(NULLIF(pac.nombre, ''), agg.nombre, '') AS nombre,
              COALESCE(NULLIF(pac.telefono, ''), agg.tel) AS telefono,
              COALESCE(pac.fecha_nacimiento, agg.fnac) AS fnac,
+             pac.sexo AS sexo,
              COALESCE(agg.visitas, 0) AS visitas,
              COALESCE(agg.gasto_cents, 0) AS gasto_cents,
              agg.ultima AS ultima_visita,
@@ -112,7 +119,7 @@ export async function consultarSegmento(db: Db, f: Filtros): Promise<{ pacientes
         LEFT JOIN areas ON areas.ced = COALESCE(pac.ced, agg.ced)
        WHERE COALESCE(pac.activo, TRUE)
     )
-    SELECT s.cedula, s.nombre, s.telefono, to_char(s.fnac, 'YYYY-MM-DD') AS fecha_nacimiento,
+    SELECT s.cedula, s.nombre, s.telefono, to_char(s.fnac, 'YYYY-MM-DD') AS fecha_nacimiento, s.sexo,
            s.visitas, s.gasto_cents, to_char(s.ultima_visita, 'YYYY-MM-DD') AS ultima_visita,
            s.estudios, s.medicos, s.areas,
            EXISTS (SELECT 1 FROM wa_baja b WHERE b.telefono = right(regexp_replace(COALESCE(s.telefono, ''), '[^0-9]', '', 'g'), 10)) AS baja,
@@ -127,7 +134,7 @@ export async function consultarSegmento(db: Db, f: Filtros): Promise<{ pacientes
     if (r.baja) conBaja++;
     const edad = r.edad !== null && r.edad >= 0 && r.edad <= 120 ? r.edad : null;
     return {
-      cedula: r.cedula, nombre: r.nombre, telefono: r.telefono, fecha_nacimiento: r.fecha_nacimiento, edad,
+      cedula: r.cedula, nombre: r.nombre, telefono: r.telefono, fecha_nacimiento: r.fecha_nacimiento, sexo: r.sexo, edad,
       visitas: r.visitas, gasto_cents: Number(r.gasto_cents), ultima_visita: r.ultima_visita,
       estudios: r.estudios ?? [], medicos: r.medicos ?? [], areas: r.areas ?? [],
       contactable: !r.baja && normalizarTelefono(r.telefono) !== null,

@@ -6,7 +6,7 @@ import { Button } from '@/components/ui/button';
 import { RANGOS_ETARIOS, type Filtros } from '@/lib/segmentos';
 
 export interface FormFiltros {
-  edadMin: string; edadMax: string; incluirSinFecha: boolean;
+  edadMin: string; edadMax: string; incluirSinFecha: boolean; sexo: '' | 'M' | 'F' | 'SIN';
   estudios: string[]; areas: string[]; medicos: string[];
   desde: string; hasta: string; inactivoDias: string;
   visitasMin: string; visitasMax: string; gastoMin: string; gastoMax: string;
@@ -14,7 +14,7 @@ export interface FormFiltros {
 }
 
 export const FORM_VACIO: FormFiltros = {
-  edadMin: '', edadMax: '', incluirSinFecha: false, estudios: [], areas: [], medicos: [], desde: '', hasta: '', inactivoDias: '',
+  edadMin: '', edadMax: '', incluirSinFecha: false, sexo: '', estudios: [], areas: [], medicos: [], desde: '', hasta: '', inactivoDias: '',
   visitasMin: '', visitasMax: '', gastoMin: '', gastoMax: '', busqueda: '',
 };
 
@@ -29,6 +29,7 @@ export function aFiltros(f: FormFiltros): Filtros {
   const ent = (s: string) => { const n = num(s); return n === null ? null : Math.floor(n); };
   return {
     edadMin: ent(f.edadMin), edadMax: ent(f.edadMax), incluirSinFecha: f.incluirSinFecha,
+    sexo: f.sexo || null,
     estudios: f.estudios, areas: f.areas, medicos: f.medicos,
     ultimaVisitaDesde: f.desde || null, ultimaVisitaHasta: f.hasta || null,
     inactivoDias: ent(f.inactivoDias),
@@ -96,6 +97,22 @@ export const FiltrosSegmento: React.FC<Props> = ({ form, setForm, opciones, busc
           </label>
         </div>
         <div className="md:col-span-6 space-y-2">
+          <Campo etiqueta="Sexo">
+            <div className="flex flex-wrap gap-1.5">
+              {([['', 'Todos'], ['F', 'Mujeres'], ['M', 'Hombres'], ['SIN', 'Sin dato']] as const).map(([v, t]) => (
+                <button
+                  key={v || 'todos'}
+                  type="button"
+                  onClick={() => set('sexo', v)}
+                  className={`px-2.5 h-7 rounded-lg text-[11px] font-bold border ${
+                    form.sexo === v ? 'bg-teal-600 border-teal-600 text-white' : 'border-slate-300 text-slate-600 hover:bg-slate-50'
+                  }`}
+                >
+                  {t}
+                </button>
+              ))}
+            </div>
+          </Campo>
           <div className="grid grid-cols-2 gap-2">
             <Campo etiqueta="Última visita desde"><Input type="date" value={form.desde} onChange={(e) => set('desde', e.target.value)} className="h-8 text-xs rounded-xl font-mono" /></Campo>
             <Campo etiqueta="Última visita hasta"><Input type="date" value={form.hasta} onChange={(e) => set('hasta', e.target.value)} className="h-8 text-xs rounded-xl font-mono" /></Campo>

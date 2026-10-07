@@ -3,6 +3,7 @@ import pool from '@/lib/db';
 import { errorResponse } from '@/lib/apiHelpers';
 import { asegurarCatalogo } from '@/lib/catalogoDb';
 import { normalizarCedulaRif, extraerDigitos } from '@/lib/cedulaRif';
+import { esSexo } from '@/lib/sexo';
 
 export async function GET(req: NextRequest) {
   try {
@@ -13,8 +14,9 @@ export async function GET(req: NextRequest) {
       const digitos = extraerDigitos(cedula);
       if (!digitos) return NextResponse.json(null);
 
+      await asegurarCatalogo().catch(() => {});
       const result = await pool.query(
-        `SELECT p.id, p.cedula, COALESCE(NULLIF(p.nombre, ''), u.nombre_paciente, '') AS nombre,
+        `SELECT p.id, p.cedula, p.sexo, COALESCE(NULLIF(p.nombre, ''), u.nombre_paciente, '') AS nombre,
                 COALESCE(p.fecha_nacimiento, u.fecha_nacimiento_paciente) AS fecha_nacimiento,
                 COALESCE(NULLIF(p.direccion, ''), '') AS direccion,
                 COALESCE(NULLIF(p.telefono, ''), u.telefono_paciente, '') AS telefono
@@ -37,7 +39,7 @@ export async function GET(req: NextRequest) {
     try { await asegurarCatalogo(); } catch { tieneActivo = false; }
     const result = await pool.query(`
       SELECT DISTINCT ON (regexp_replace(p.cedula, '[^0-9]', '', 'g'))
-        p.id, p.cedula, p.nombre, p.fecha_nacimiento, p.direccion, p.telefono,
+        p.id, p.cedula, p.nombre, p.fecha_nacimiento, p.direccion, p.telefono, ${tieneActivo ? 'p.sexo' : 'NULL::char(1)'} AS sexo,
         ${tieneActivo ? 'COALESCE(p.activo, TRUE)' : 'TRUE'} AS activo,
         (SELECT COUNT(*)::int FROM facturas_caja f
            WHERE regexp_replace(f.cedula_paciente, '[^0-9]', '', 'g') = regexp_replace(p.cedula, '[^0-9]', '', 'g')
@@ -63,7 +65,7 @@ export async function GET(req: NextRequest) {
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json();
-    const { nombre, fecha_nacimiento, direccion, telefono } = body;
+    const { nombre, fecha_nacimiento, direccion, telefono, sexo } = body;
     const cedulaRaw = body.cedula;
 
     if (!cedulaRaw) {
@@ -78,6 +80,9 @@ export async function POST(req: NextRequest) {
     }
     if (!fecha_nacimiento) {
       return NextResponse.json({ error: 'La fecha de nacimiento es obligatoria' }, { status: 400 });
+    }
+    if (!esSexo(sexo)) {
+      return NextResponse.json({ error: 'El sexo es obligatorio (M o F)' }, { status: 400 });
     }
     if (!telefono || !telefono.trim()) {
       return NextResponse.json({ error: 'El teléfono es obligatorio' }, { status: 400 });
@@ -111,20 +116,21 @@ export async function POST(req: NextRequest) {
             nombre = COALESCE(NULLIF($2, ''), nombre),
             fecha_nacimiento = COALESCE($3::DATE, fecha_nacimiento),
             direccion = COALESCE(NULLIF($4, ''), direccion),
-            telefono = COALESCE(NULLIF($5, ''), telefono)
+            telefono = COALESCE(NULLIF($5, ''), telefono),
+            sexo = $7
         WHERE id = $6
-        RETURNING id, cedula, nombre, fecha_nacimiento, direccion, telefono
-      `, [cedulaCanonica, nombreUpper, fecha_nacimiento || null, direccionUpper, telefono, idExistente]);
+        RETURNING id, cedula, nombre, fecha_nacimiento, direccion, telefono, sexo
+      `, [cedulaCanonica, nombreUpper, fecha_nacimiento || null, direccionUpper, telefono, idExistente, sexo]);
 
       return NextResponse.json(updateRes.rows[0]);
     }
 
     // 2. Si no existe, insertar nuevo paciente con cédula canónica, fecha_nacimiento y MAYÚSCULAS
     const insertRes = await pool.query(`
-      INSERT INTO pacientes (cedula, nombre, fecha_nacimiento, direccion, telefono)
-      VALUES ($1, $2, $3::DATE, $4, $5)
-      RETURNING id, cedula, nombre, fecha_nacimiento, direccion, telefono
-    `, [cedulaCanonica, nombreUpper, fecha_nacimiento || null, direccionUpper, telefono]);
+      INSERT INTO pacientes (cedula, nombre, fecha_nacimiento, direccion, telefono, sexo)
+      VALUES ($1, $2, $3::DATE, $4, $5, $6)
+      RETURNING id, cedula, nombre, fecha_nacimiento, direccion, telefono, sexo
+    `, [cedulaCanonica, nombreUpper, fecha_nacimiento || null, direccionUpper, telefono, sexo]);
 
     return NextResponse.json(insertRes.rows[0]);
   } catch (err) {

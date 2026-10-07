@@ -239,6 +239,7 @@ export interface PacienteCatalogo {
   apellidos?: string;
   telefono: string;
   fecha_nacimiento?: string;
+  sexo?: 'M' | 'F' | null;
   edad?: number;
   direccion?: string;
   historial_visitas: number;

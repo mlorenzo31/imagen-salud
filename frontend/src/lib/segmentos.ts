@@ -9,6 +9,7 @@ export const FiltrosSchema = z.object({
   edadMin: entero(0, 120),
   edadMax: entero(0, 120),
   incluirSinFecha: z.boolean().default(false),
+  sexo: z.enum(['M', 'F', 'SIN']).nullish(),
   estudios: lista,
   areas: lista,
   medicos: lista,
@@ -28,6 +29,7 @@ export interface PacienteSegmento {
   nombre: string;
   telefono: string | null;
   fecha_nacimiento: string | null;
+  sexo: 'M' | 'F' | null;
   edad: number | null;
   visitas: number;
   gasto_cents: number;
@@ -69,6 +71,7 @@ export interface ResumenSegmento {
   sinTelefono: number;
   conBaja: number;
   porRango: { etiqueta: string; total: number }[];
+  porSexo: { etiqueta: string; total: number }[];
   porArea: { etiqueta: string; total: number }[];
   porMedico: { etiqueta: string; total: number }[];
 }
@@ -88,6 +91,7 @@ export function resumirSegmento(pacientes: PacienteSegmento[], conBaja: number):
     sinTelefono: pacientes.filter((p) => !normalizarTelefono(p.telefono)).length,
     conBaja,
     porRango,
+    porSexo: contar(pacientes.map((p) => (p.sexo === 'F' ? 'Mujeres' : p.sexo === 'M' ? 'Hombres' : 'Sin dato'))),
     porArea: contar(pacientes.flatMap((p) => p.areas)).slice(0, 12),
     porMedico: contar(pacientes.flatMap((p) => p.medicos)).slice(0, 12),
   };
