@@ -231,3 +231,33 @@ export async function marcarCierreModificado(client: PoolClient, fecha: string, 
   if (asign.length === 0) return;
   await client.query(`UPDATE cierres_diarios SET ${asign.join(', ')} WHERE id = $${params.length + 1}`, [...params, previo.rows[0].id]);
 }
+
+/**
+ * Reabre un día cerrado (solo admin): guarda una copia íntegra del cierre y de su arqueo en `cierres_reabiertos`
+ * y quita el cierre vigente, de modo que la jornada vuelve a quedar pendiente y debe cerrarse de nuevo.
+ */
+export async function reabrirCierre(client: PoolClient, fecha: string, motivo: string, usuario: string) {
+  await client.query('SELECT pg_advisory_xact_lock(hashtext($1))', [`cierre:${fecha}`]);
+  await client.query(`CREATE TABLE IF NOT EXISTS cierres_reabiertos (
+    id SERIAL PRIMARY KEY, fecha DATE NOT NULL, cierre JSONB NOT NULL, arqueo JSONB, motivo TEXT NOT NULL,
+    usuario VARCHAR(100), reabierto_en TIMESTAMPTZ NOT NULL DEFAULT now())`);
+  await client.query('ALTER TABLE cierres_reabiertos ENABLE ROW LEVEL SECURITY');
+
+  const cols = await columnasCierre(client);
+  if (cols.size === 0) throw new ApiError(500, 'La tabla cierres_diarios no existe.');
+  const colFecha = cols.has('fecha_cierre') ? 'fecha_cierre' : 'fecha';
+  const previo = await client.query(`SELECT COALESCE(jsonb_agg(to_jsonb(c)), '[]'::jsonb) AS filas, COUNT(*)::int AS n FROM cierres_diarios c WHERE ${colFecha} = $1`, [fecha]);
+  if (previo.rows[0].n === 0) throw new ApiError(409, `La caja del ${fecha} no está cerrada.`, 'CIERRE_NO_EXISTE');
+
+  const hayArqueos = (await client.query("SELECT to_regclass('cierre_arqueos') AS t")).rows[0].t !== null;
+  const arqueo = hayArqueos
+    ? (await client.query("SELECT COALESCE(jsonb_agg(to_jsonb(a)), '[]'::jsonb) AS filas FROM cierre_arqueos a WHERE fecha = $1", [fecha])).rows[0].filas
+    : [];
+
+  await client.query(
+    'INSERT INTO cierres_reabiertos (fecha, cierre, arqueo, motivo, usuario) VALUES ($1, $2, $3, $4, $5)',
+    [fecha, JSON.stringify(previo.rows[0].filas), JSON.stringify(arqueo), motivo, usuario],
+  );
+  if (hayArqueos) await client.query('DELETE FROM cierre_arqueos WHERE fecha = $1', [fecha]);
+  await client.query(`DELETE FROM cierres_diarios WHERE ${colFecha} = $1`, [fecha]);
+}
