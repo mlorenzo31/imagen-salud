@@ -18,6 +18,7 @@ const TIPOS: Record<string, string> = {
   ANULACION_FACTURA: 'Anulación de factura',
   USUARIO: 'Gestión de usuarios',
   RECUPERACION_CLAVE: 'Recuperación de clave',
+  REAPERTURA_CIERRE: 'Reapertura de caja',
 };
 
 const fechaHora = (iso: string) =>

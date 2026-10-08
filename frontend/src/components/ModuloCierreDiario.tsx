@@ -23,6 +23,7 @@ import {
 } from 'lucide-react';
 import { UserRole, PacientePendiente, ResumenCierre } from '@/types';
 import { BloqueoCierrePendiente } from './BloqueoCierrePendiente';
+import { ReabrirDiaDialog } from './ReabrirDiaDialog';
 import { PinCierreDialog } from './PinCierreDialog';
 import { hoyLocal } from '@/lib/date';
 import { diferir } from '@/lib/diferir';
@@ -90,6 +91,33 @@ export const ModuloCierreDiario: React.FC<ModuloCierreDiarioProps> = ({ currentR
   const [pidiendoPin, setPidiendoPin] = useState(false);
   const [errorPin, setErrorPin] = useState<string | null>(null);
 
+  const [reabriendo, setReabriendo] = useState(false);
+  const [cargandoReapertura, setCargandoReapertura] = useState(false);
+  const [errorReapertura, setErrorReapertura] = useState<string | null>(null);
+
+  const confirmarReapertura = async (motivo: string, pin: string) => {
+    setCargandoReapertura(true);
+    setErrorReapertura(null);
+    try {
+      const res = await fetch('/api/cierres/reabrir', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ fecha: fechaCierre, motivo, pin }),
+      });
+      const data = (await res.json().catch(() => ({}))) as { error?: string };
+      if (res.ok) {
+        setReabriendo(false);
+        verificarEstado();
+      } else {
+        setErrorReapertura(data.error ?? 'No se pudo reabrir la caja.');
+      }
+    } catch {
+      setErrorReapertura('Sin conexión con el servidor. Reintente.');
+    } finally {
+      setCargandoReapertura(false);
+    }
+  };
+
   const handleEjecutarCierre = () => {
     if (!estadoDiario?.puedeCerrar) {
       setMostrarModalBloqueo(true);
@@ -137,6 +165,7 @@ export const ModuloCierreDiario: React.FC<ModuloCierreDiarioProps> = ({ currentR
 
   return (
     <div className="space-y-6">
+      <ReabrirDiaDialog open={reabriendo} fecha={fechaCierre} cargando={cargandoReapertura} error={errorReapertura} onCancelar={() => setReabriendo(false)} onConfirmar={confirmarReapertura} />
       <PinCierreDialog open={pidiendoPin} cargando={ejecutandoCierre} error={errorPin} onCancelar={() => setPidiendoPin(false)} onConfirmar={confirmarCierre} />
       {/* Header */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 bg-white p-5 rounded-2xl border border-slate-200 shadow-sm">
@@ -181,9 +210,16 @@ export const ModuloCierreDiario: React.FC<ModuloCierreDiarioProps> = ({ currentR
 
       {estadoDiario?.yaCerrado && (
         <Card className="bg-slate-50 border-2 border-slate-300">
-          <CardContent className="p-4 flex items-center gap-3">
-            <Lock className="w-5 h-5 text-slate-600 shrink-0" />
-            <p className="text-xs text-slate-700 font-semibold">La caja de esta fecha ya fue cerrada. No puede cerrarse de nuevo.</p>
+          <CardContent className="p-4 flex flex-col md:flex-row md:items-center justify-between gap-3">
+            <div className="flex items-center gap-3">
+              <Lock className="w-5 h-5 text-slate-600 shrink-0" />
+              <p className="text-xs text-slate-700 font-semibold">La caja de esta fecha ya fue cerrada. No puede cerrarse de nuevo.</p>
+            </div>
+            {isAdmin && (
+              <Button variant="outline" onClick={() => { setErrorReapertura(null); setReabriendo(true); }} className="rounded-xl text-xs font-bold">
+                Reabrir día
+              </Button>
+            )}
           </CardContent>
         </Card>
       )}
