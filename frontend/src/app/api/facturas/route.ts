@@ -10,6 +10,12 @@ import { asegurarMedioTransito } from '@/lib/transito';
 import { listarEstudios, repartoCents, type EstudioFila } from '@/lib/catalogoDb';
 import { BENEFICIARIO_PATOLOGO } from '@/lib/reparto';
 import { esSexo } from '@/lib/sexo';
+import { z } from 'zod';
+import { DescuentoError, calcularFactura, porcentajeEfectivoBp, type DescuentoManual, type ModoReparto } from '@/lib/descuento';
+import { asegurarDescuentos, promosActivas } from '@/lib/descuentosDb';
+import { exigirAutorizacionDescuento } from '@/lib/autorizacionDescuento';
+import { exigirPinSesion } from '@/lib/pin';
+import { actorSesion, registrarBitacora } from '@/lib/bitacora';
 
 export async function GET(req: NextRequest) {
   try {
@@ -85,6 +91,10 @@ interface Servicio {
   honMedico: number; // centavos USD
   honPatologo: number; // centavos USD
   ganancia: number; // centavos USD (imagen + eco)
+  precioLista: number; // centavos USD antes de descuento (precio = neto cobrado)
+  descuento: number; // centavos USD
+  promoId: number | null;
+  modoDescuento: ModoReparto | null;
   orden: number;
   raw: Raw; // campos adicionales del cliente (se conservan en el JSON de la factura)
 }
@@ -152,6 +162,10 @@ function normalizarServicios(data: Raw, catalogo: EstudioFila[]): Servicio[] {
       honMedico,
       honPatologo,
       ganancia,
+      precioLista: precio,
+      descuento: 0,
+      promoId: null,
+      modoDescuento: null,
       orden: idx + 1,
       raw: s,
     };
@@ -178,6 +192,26 @@ async function acreditar(
      VALUES ($1, 'INGRESO_FACTURA', $2, $3, 0, $2, $4, $5, $6, $7, $8, $9, $10, $11)`,
     [cuenta.id, centsToStr(cents), moneda, centsToStr(saldoAnt), centsToStr(saldoPost), `FACT-${ctx.facturaId}`, descripcion, ctx.facturaId, ctx.fecha, ctx.hora, ctx.usuario]
   );
+}
+
+const descuentoSchema = z.object({
+  tipo: z.enum(['PCT', 'USD']),
+  valor: z.number().positive('El descuento debe ser mayor a cero.'),
+  modo: z.enum(['CLINICA', 'PROPORCIONAL']),
+  motivo: z.string().trim().min(5, 'Indique el motivo del descuento (mínimo 5 caracteres).'),
+  pin: z.string().min(1, 'Ingrese su clave para confirmar el descuento.'),
+  autorizador: z.object({ usuario: z.string(), clave: z.string() }).nullish(),
+});
+
+/** Lee el descuento manual: `valor` viene en % (PCT) o en dólares (USD) y se convierte a puntos básicos / centavos. */
+function leerDescuentoManual(raw: unknown) {
+  if (raw === undefined || raw === null) return null;
+  const r = descuentoSchema.safeParse(raw);
+  if (!r.success) throw new ApiError(400, r.error.issues[0]?.message ?? 'Descuento inválido.');
+  const d = r.data;
+  if (d.tipo === 'PCT' && d.valor >= 100) throw new ApiError(400, 'El porcentaje de descuento debe ser menor a 100.');
+  const manual: DescuentoManual = { tipo: d.tipo, modo: d.modo, valor: d.tipo === 'PCT' ? Math.round(d.valor * 100) : toCents(d.valor) };
+  return { manual, motivo: d.motivo, pin: d.pin, autorizador: d.autorizador ?? null };
 }
 
 export async function POST(req: NextRequest) {
@@ -213,14 +247,43 @@ export async function POST(req: NextRequest) {
     }
 
     const { filas: catalogo } = await listarEstudios(false);
-    const servicios = normalizarServicios(data, catalogo);
+    const serviciosLista = normalizarServicios(data, catalogo);
+    const totalLista = serviciosLista.reduce((a, s) => a + s.precio, 0);
+    if (data.precioUSD !== undefined && data.precioUSD !== null && data.precioUSD !== '' && toCents(data.precioUSD) !== totalLista) {
+      throw new ApiError(400, 'El precio total no coincide con la suma de los servicios.');
+    }
+
+    // Descuentos: el servidor recalcula todo (promociones vigentes o descuento manual) y cobra el neto.
+    await asegurarDescuentos();
+    const manualIn = leerDescuentoManual(data.descuento);
+    const promos = await promosActivas(fecha);
+    let netos;
+    try {
+      netos = calcularFactura(serviciosLista.map((s) => ({ area: s.area, estudio: s.estudio, precio: s.precio, honorarios: s.honorarios, honPatologo: s.honPatologo })), promos, fecha, manualIn?.manual ?? null);
+    } catch (err) {
+      if (err instanceof DescuentoError) throw new ApiError(400, err.message);
+      throw err;
+    }
+    const servicios: Servicio[] = serviciosLista.map((s, i) => ({
+      ...s, precio: netos[i].precio, honorarios: netos[i].honorarios, honMedico: netos[i].honMedico, honPatologo: netos[i].honPatologo,
+      ganancia: netos[i].ganancia, precioLista: netos[i].precioLista, descuento: netos[i].descuento, promoId: netos[i].promoId, modoDescuento: netos[i].modo,
+    }));
     const totalPrecio = servicios.reduce((a, s) => a + s.precio, 0);
     const totalHonorarios = servicios.reduce((a, s) => a + s.honorarios, 0);
     const totalGanancia = totalPrecio - totalHonorarios;
+    const totalDescuento = totalLista - totalPrecio;
     if (totalPrecio <= 0) throw new ApiError(400, 'El total de la factura debe ser mayor a 0.');
-    if (data.precioUSD !== undefined && data.precioUSD !== null && data.precioUSD !== '' && toCents(data.precioUSD) !== totalPrecio) {
-      throw new ApiError(400, 'El precio total no coincide con la suma de los servicios.');
+    let autorizadoPor: string | null = null;
+    if (manualIn) {
+      await exigirPinSesion(req, manualIn.pin);
+      autorizadoPor = (await exigirAutorizacionDescuento({
+        rol: req.headers.get('x-session-role') ?? '', porcentajeBp: porcentajeEfectivoBp(totalLista, totalDescuento), autorizador: manualIn.autorizador,
+      })) ?? usuario;
     }
+    const promosUsadas = Array.from(new Set(servicios.map((s) => s.promoId).filter((x): x is number => x !== null)));
+    const descuentoOrigen = totalDescuento > 0 ? (manualIn ? 'MANUAL' : 'PROMO') : null;
+    const descuentoModo = manualIn?.manual.modo ?? servicios.find((s) => s.modoDescuento)?.modoDescuento ?? null;
+    const descuentoMotivo = manualIn?.motivo ?? (promosUsadas.length ? promos.filter((p) => promosUsadas.includes(p.id)).map((p) => p.nombre).join(' + ') : null);
 
     const pagos = (data.pagos ?? {}) as Raw;
     const punto = toCents(pagos.punto ?? data.pago_punto);
@@ -257,7 +320,7 @@ export async function POST(req: NextRequest) {
 
       const serviciosJson = servicios.map((s) => ({
         ...s.raw, estudio: s.estudio, medico: s.medico, area: s.area, sala: s.sala, estado: s.estado, orden: s.orden,
-        precioUSD: Number(centsToStr(s.precio)), honorariosMedico: Number(centsToStr(s.honorarios)), gananciaClinica: Number(centsToStr(s.ganancia)),
+        precioUSD: Number(centsToStr(s.precio)), precioLista: Number(centsToStr(s.precioLista)), descuento: Number(centsToStr(s.descuento)), honorariosMedico: Number(centsToStr(s.honorarios)), gananciaClinica: Number(centsToStr(s.ganancia)),
       }));
 
       const resFactura = await client.query(
@@ -265,8 +328,9 @@ export async function POST(req: NextRequest) {
          (fecha, hora, cedula_paciente, nombre_paciente, estudio, medico, precio_usd, tasa_bcv,
           pago_punto, pago_movil, pago_efectivo_bs, pago_divisas, estado,
           servicios, total_honorarios, total_ganancia, turno_num, etapa_actual,
-          telefono_paciente, estudio_principal_id, prioridad, grupo_clinico, fecha_nacimiento_paciente)
-         VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18,$19,$20,$21,$22,$23)
+          telefono_paciente, estudio_principal_id, prioridad, grupo_clinico, fecha_nacimiento_paciente,
+          precio_lista_usd, descuento_usd, descuento_modo, descuento_origen, descuento_motivo, descuento_promo_id, descuento_autorizado_por)
+         VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18,$19,$20,$21,$22,$23,$24,$25,$26,$27,$28,$29,$30)
          RETURNING *`,
         [
           fecha, hora, cedula, nombre, estudioResumen, medicoResumen, centsToStr(totalPrecio), tasaNum,
@@ -275,6 +339,7 @@ export async function POST(req: NextRequest) {
           parseInt(str(data.etapaActual ?? data.etapa_actual), 10) || 0,
           str(data.telefono_paciente || data.telefono) || null, data.estudio_principal_id || null,
           str(data.prioridad) || 'NORMAL', str(data.grupo_clinico) || clasificarServicio(servicios[0]?.estudio ?? '', servicios[0]?.area).grupo, fechaNac,
+          centsToStr(totalLista), centsToStr(totalDescuento), descuentoModo, descuentoOrigen, descuentoMotivo, promosUsadas[0] ?? null, autorizadoPor,
         ]
       );
       const f = resFactura.rows[0];
@@ -282,10 +347,10 @@ export async function POST(req: NextRequest) {
       for (const s of servicios) {
         await client.query(
           `INSERT INTO facturas_servicios_detalle
-           (factura_id, estudio, medico, area, sala, precio_usd, honorarios_medico, ganancia_clinica, estado, orden)
-           VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10)`,
+           (factura_id, estudio, medico, area, sala, precio_usd, honorarios_medico, ganancia_clinica, estado, orden, precio_lista_usd)
+           VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11)`,
           [f.id, s.estudio.toUpperCase(), (s.medico || 'DE GUARDIA').toUpperCase(), s.area.toUpperCase(), s.sala.toUpperCase(),
-           centsToStr(s.precio), centsToStr(s.honorarios), centsToStr(s.ganancia), s.estado || 'ESPERA', s.orden]
+           centsToStr(s.precio), centsToStr(s.honorarios), centsToStr(s.ganancia), s.estado || 'ESPERA', s.orden, centsToStr(s.precioLista)]
         );
         if (s.honMedico > 0 && s.medico && s.medico !== 'De Guardia') {
           await client.query(
@@ -345,6 +410,13 @@ export async function POST(req: NextRequest) {
       }
       if (efBs > 0) await acreditar(client, 'EFECTIVO_BS', efBs, 'BS', ctx, `Ingreso efectivo Bs factura ${f.id} (${f.nombre_paciente})`);
       if (divisas > 0) await acreditar(client, 'EFECTIVO_USD', divisas, 'USD', ctx, `Ingreso efectivo USD factura ${f.id} (${f.nombre_paciente})`);
+      if (totalDescuento > 0) {
+        await registrarBitacora(client, {
+          tipo: 'DESCUENTO', fechaAfectada: fecha, ...actorSesion(req),
+          descripcion: `Descuento de $${centsToStr(totalDescuento)} (${(porcentajeEfectivoBp(totalLista, totalDescuento) / 100).toFixed(2)} %) en la factura ${f.id} (${f.nombre_paciente}), origen ${descuentoOrigen}.`,
+          detalle: { factura_id: f.id, lista: centsToStr(totalLista), descuento: centsToStr(totalDescuento), neto: centsToStr(totalPrecio), modo: descuentoModo, origen: descuentoOrigen, motivo: descuentoMotivo, autorizado_por: autorizadoPor },
+        });
+      }
       return f;
     });
 

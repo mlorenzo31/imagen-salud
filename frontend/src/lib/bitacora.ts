@@ -3,7 +3,7 @@ import pool from '@/lib/db';
 import type { NextRequest } from 'next/server';
 import { fechaHoraLocal, sesionUsuario } from '@/lib/apiHelpers';
 
-export type TipoBitacora = 'CIERRE_DIARIO' | 'RESOLUCION_CIERRE' | 'ANULACION_FACTURA' | 'USUARIO' | 'RECUPERACION_CLAVE' | 'REAPERTURA_CIERRE';
+export type TipoBitacora = 'CIERRE_DIARIO' | 'RESOLUCION_CIERRE' | 'ANULACION_FACTURA' | 'USUARIO' | 'RECUPERACION_CLAVE' | 'REAPERTURA_CIERRE' | 'DESCUENTO';
 
 export interface EventoBitacora {
   tipo: TipoBitacora;
