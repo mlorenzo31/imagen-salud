@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { ApiError, errorResponse, fechaHoraLocal, sesionUsuario, withTransaction } from '@/lib/apiHelpers';
-import { consolidarCierre, evaluarDia, leerConteo } from '@/lib/cierre';
+import { consolidarCierre, evaluarDia, fechasCerradas, leerConteo } from '@/lib/cierre';
 import { centsToStr } from '@/lib/money';
 import { exigirPinSesion } from '@/lib/pin';
 import { actorSesion, esADestiempo, registrarBitacora } from '@/lib/bitacora';
@@ -28,6 +28,9 @@ export async function POST(req: NextRequest) {
     }
 
     const out = await withTransaction(async (client) => {
+      // Un día cerrado no se vuelve a cerrar (el arqueo y los totales quedan como se auditaron).
+      await client.query('SELECT pg_advisory_xact_lock(hashtext($1))', [`cierre:${fecha}`]);
+      if ((await fechasCerradas(client)).has(fecha)) throw new ApiError(409, `La caja del ${fecha} ya fue cerrada y no puede cerrarse de nuevo.`, 'CIERRE_YA_REALIZADO');
       const r = await consolidarCierre(client, fecha, usuario, observaciones, conteo);
       // Con sobrante o faltante el cierre exige una nota que lo explique (se revierte todo si falta).
       if (r.arqueo.some((l) => l.diferencia !== 0) && !(typeof body.observaciones === 'string' && body.observaciones.trim())) {

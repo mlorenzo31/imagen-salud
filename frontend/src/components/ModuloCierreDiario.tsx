@@ -43,6 +43,7 @@ export const ModuloCierreDiario: React.FC<ModuloCierreDiarioProps> = ({ currentR
   const [fechaCierre, setFechaCierre] = useState(() => hoyLocal());
   const [estadoDiario, setEstadoDiario] = useState<{
     puedeCerrar: boolean;
+    yaCerrado?: boolean;
     pacientesPendientes: PacientePendiente[];
     pacientesWhatsAppPendientes?: PacientePendiente[];
     totalWhatsAppPendientes?: number;
@@ -177,6 +178,15 @@ export const ModuloCierreDiario: React.FC<ModuloCierreDiarioProps> = ({ currentR
           </Button>
         </div>
       </div>
+
+      {estadoDiario?.yaCerrado && (
+        <Card className="bg-slate-50 border-2 border-slate-300">
+          <CardContent className="p-4 flex items-center gap-3">
+            <Lock className="w-5 h-5 text-slate-600 shrink-0" />
+            <p className="text-xs text-slate-700 font-semibold">La caja de esta fecha ya fue cerrada. No puede cerrarse de nuevo.</p>
+          </CardContent>
+        </Card>
+      )}
 
       {/* Alerta de Estado del Día: Bloqueo Crítico si hay pendientes en sala o WhatsApp */}
       {estadoDiario && !estadoDiario.puedeCerrar && (
@@ -317,10 +327,10 @@ export const ModuloCierreDiario: React.FC<ModuloCierreDiarioProps> = ({ currentR
             </p>
 
             <Button 
-              disabled={!estadoDiario?.puedeCerrar || ejecutandoCierre || !conteoCompleto || (hayDif && !observacionesCierre.trim())}
+              disabled={!estadoDiario?.puedeCerrar || !!estadoDiario?.yaCerrado || ejecutandoCierre || !conteoCompleto || (hayDif && !observacionesCierre.trim())}
               onClick={handleEjecutarCierre}
               className={`w-full md:w-auto px-6 py-2.5 rounded-xl font-bold text-xs flex items-center justify-center gap-2 shadow-md ${
-                estadoDiario?.puedeCerrar 
+                estadoDiario?.puedeCerrar && !estadoDiario?.yaCerrado
                   ? 'bg-emerald-600 hover:bg-emerald-700 text-white shadow-emerald-600/20' 
                   : 'bg-slate-300 text-slate-500 cursor-not-allowed shadow-none'
               }`}
@@ -329,6 +339,8 @@ export const ModuloCierreDiario: React.FC<ModuloCierreDiarioProps> = ({ currentR
               <span>
                 {ejecutandoCierre 
                   ? 'Consolidando Cierre...' 
+                  : estadoDiario?.yaCerrado
+                    ? 'Día ya cerrado'
                   : !estadoDiario?.puedeCerrar 
                     ? 'Cierre Bloqueado (Hay Pendientes)' 
                     : 'Ejecutar Cierre Diario Definitivo'}
