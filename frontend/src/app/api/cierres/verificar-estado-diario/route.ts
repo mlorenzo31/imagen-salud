@@ -1,14 +1,16 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { errorResponse, fechaHoraLocal } from '@/lib/apiHelpers';
-import { evaluarDia } from '@/lib/cierre';
+import { evaluarDia, fechasCerradas } from '@/lib/cierre';
 
 export async function GET(req: NextRequest) {
   try {
     // El cajero solo ve el día de hoy.
     const fechaParam = req.headers.get('x-session-role') === 'cajero' ? fechaHoraLocal().fecha : new URL(req.url).searchParams.get('fecha');
     const dia = await evaluarDia(fechaParam);
+    const yaCerrado = (await fechasCerradas()).has(fechaParam || fechaHoraLocal().fecha);
     return NextResponse.json({
       puedeCerrar: dia.puedeCerrar,
+      yaCerrado,
       cierre_pendiente: !dia.puedeCerrar,
       fecha_evaluada: fechaParam || fechaHoraLocal().fecha,
       pacientesPendientes: dia.pacientesPendientes,
