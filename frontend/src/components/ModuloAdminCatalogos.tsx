@@ -1,13 +1,14 @@
 'use client';
 
 import React, { useState } from 'react';import { UserRole, PacienteCatalogo, DoctorCatalogo, ServicioCatalogo } from '@/types';import { Badge } from '@/components/ui/badge';
-import { Users, Stethoscope, Activity, FileSpreadsheet, Building2 } from 'lucide-react';import { normalizarCedulaRif, extraerDigitos, validarEstructuraCedulaRif } from '@/lib/cedulaRif';import { calcularEdadReal } from '@/lib/date';import { getErrorMessage } from '@/lib/utils';
+import { Users, Stethoscope, Activity, FileSpreadsheet, Building2, BadgePercent } from 'lucide-react';import { normalizarCedulaRif, extraerDigitos, validarEstructuraCedulaRif } from '@/lib/cedulaRif';import { calcularEdadReal } from '@/lib/date';import { getErrorMessage } from '@/lib/utils';
 import { ModalEstudio } from '@/components/admincatalogos/ModalEstudio';
 import { ModalEspecialista } from '@/components/admincatalogos/ModalEspecialista';
 import { ModalPaciente } from '@/components/admincatalogos/ModalPaciente';
 import { TabCargaMasiva } from '@/components/admincatalogos/TabCargaMasiva';
 import { ModalCargaMasivaExcel } from '@/components/ModalCargaMasivaExcel';
 import { TabEstudios } from '@/components/admincatalogos/TabEstudios';
+import { PanelPromociones } from '@/components/admincatalogos/PanelPromociones';
 import { TabEspecialistas } from '@/components/admincatalogos/TabEspecialistas';
 import { TabPacientes } from '@/components/admincatalogos/TabPacientes';
 
@@ -27,7 +28,7 @@ interface PacienteApi {
 }
 
 export const ModuloAdminCatalogos: React.FC<ModuloAdminCatalogosProps> = ({ currentRole }) => {
-  const [tabActiva, setTabActiva] = useState<'pacientes' | 'doctores' | 'servicios' | 'carga_masiva'>('pacientes');
+  const [tabActiva, setTabActiva] = useState<'pacientes' | 'doctores' | 'servicios' | 'promociones' | 'carga_masiva'>('pacientes');
   const [busqueda, setBusqueda] = useState('');
 
   // Estados de Catálogos
@@ -433,6 +434,20 @@ export const ModuloAdminCatalogos: React.FC<ModuloAdminCatalogosProps> = ({ curr
             <span>Estudios & Tarifas ({servicios.length})</span>
           </button>
 
+          {!isReadOnly && (
+            <button
+              onClick={() => { setTabActiva('promociones'); setBusqueda(''); }}
+              className={`px-3.5 py-1.5 rounded-lg transition-all flex items-center gap-1.5 ${
+                tabActiva === 'promociones'
+                  ? 'bg-white text-[#1D7A70] shadow-sm font-black'
+                  : 'text-slate-500 hover:text-slate-800'
+              }`}
+            >
+              <BadgePercent className="w-3.5 h-3.5" />
+              <span>Promociones</span>
+            </button>
+          )}
+
           <button
             onClick={() => { setTabActiva('carga_masiva'); setBusqueda(''); }}
             className={`px-3.5 py-1.5 rounded-lg transition-all flex items-center gap-1.5 ${
@@ -451,6 +466,8 @@ export const ModuloAdminCatalogos: React.FC<ModuloAdminCatalogosProps> = ({ curr
       {tabActiva === 'pacientes' && (
         <TabPacientes busqueda={busqueda} setBusqueda={setBusqueda} isReadOnly={isReadOnly} handleAbrirEditarPaciente={handleAbrirEditarPaciente} pacientes={pacientes} handleToggleEstadoPaciente={handleToggleEstadoPaciente} />
       )}
+
+      {tabActiva === 'promociones' && !isReadOnly && <PanelPromociones />}
 
       {/* 2. PESTAÑA: ESPECIALISTAS MÉDICOS EN TARJETAS INTERACTIVAS */}
       {tabActiva === 'doctores' && (
