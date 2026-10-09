@@ -19,9 +19,14 @@ import {
 import { FormasDePago } from '@/components/facturacion/FormasDePago';
 import { SeleccionEstudios } from '@/components/facturacion/SeleccionEstudios';
 import { diferir } from '@/lib/diferir';
+import { DescuentoPanel } from '@/components/DescuentoPanel';
+import { calcularNetosUI, type DescuentoUI } from '@/lib/descuentoUI';
+import type { Promo } from '@/lib/descuento';
 
 interface ModuloFacturacionProps {
   onFacturaEmitida?: () => void;
+  /** Rol de la sesión: el cajero necesita autorización para descuentos mayores al tope. */
+  rol?: string;
 }
 
 interface CarritoItem {
@@ -42,7 +47,7 @@ interface CarritoItem {
 
 const FEATURE_IMPRENTA_DIGITAL = process.env.NEXT_PUBLIC_FEATURE_IMPRENTA_DIGITAL === 'true';
 
-export const ModuloFacturacion: React.FC<ModuloFacturacionProps> = ({ onFacturaEmitida }) => {
+export const ModuloFacturacion: React.FC<ModuloFacturacionProps> = ({ onFacturaEmitida, rol }) => {
   // Estado para gestión multi-estudio y prioridad inicial
   const [estudioPrincipalId, setEstudioPrincipalId] = useState<string | null>(null);
   const [mostrarModalPrioridad, setMostrarModalPrioridad] = useState<boolean>(false);
@@ -141,6 +146,9 @@ export const ModuloFacturacion: React.FC<ModuloFacturacionProps> = ({ onFacturaE
 
   // Carrito de Estudios
   const [carrito, setCarrito] = useState<CarritoItem[]>([]);
+  // Descuentos: promociones vigentes (las aplica el sistema) y descuento manual confirmado con clave.
+  const [promos, setPromos] = useState<Promo[]>([]);
+  const [descuento, setDescuento] = useState<DescuentoUI | null>(null);
 
   // Desglose Multimoneda Simultáneo
   const [pagoDivisas, setPagoDivisas] = useState<string>('');
@@ -184,6 +192,16 @@ export const ModuloFacturacion: React.FC<ModuloFacturacionProps> = ({ onFacturaE
     const cancelar = diferir(() => { void sincronizarTasaBCV(false); });
     const id = setInterval(() => { if (!tasaManualRef.current) sincronizarTasaBCV(false); }, 5 * 60 * 1000);
     return () => { cancelar(); clearInterval(id); };
+  }, []);
+
+  // Promociones vigentes hoy (se aplican solas a los estudios que corresponden).
+  useEffect(() => {
+    let vivo = true;
+    fetch(`/api/promociones/activas?fecha=${hoyLocal()}`)
+      .then((r) => (r.ok ? r.json() : { promociones: [] }))
+      .then((j: { promociones?: Promo[] }) => { if (vivo) setPromos(j.promociones ?? []); })
+      .catch(() => { /* sin promociones: se cobra el precio de lista */ });
+    return () => { vivo = false; };
   }, []);
 
   // Si el catálogo se actualiza y el estudio elegido ya no existe, se vuelve al primero del área.
@@ -377,8 +395,26 @@ export const ModuloFacturacion: React.FC<ModuloFacturacionProps> = ({ onFacturaE
     }
   };
 
-  // Cálculos Financieros Multimoneda en Vivo
-  const totalUSD = carrito.reduce((sum, item) => sum + item.precioUSD, 0);
+  // Cálculos Financieros Multimoneda en Vivo (el total es lo que se cobra: precio de lista menos descuentos)
+  const fechaFactura = hoyLocal();
+  const totalListaUSD = carrito.reduce((sum, item) => sum + item.precioUSD, 0);
+  const calculoDescuento = calcularNetosUI(carrito, promos, fechaFactura, descuento);
+  const netosCarrito = calculoDescuento.netos;
+  const totalUSD = netosCarrito ? netosCarrito.reduce((sum, n) => sum + n.precio, 0) / 100 : totalListaUSD;
+  const descuentoTotalUSD = Math.round((totalListaUSD - totalUSD) * 100) / 100;
+  const hayPromoAplicable = calcularNetosUI(carrito, promos, fechaFactura, null).netos?.some((n) => n.promoId !== null) ?? false;
+  // Si el carrito pasa a tener una promoción aplicable, el descuento manual se descarta (una factura no mezcla ambos).
+  useEffect(() => diferir(() => { if (hayPromoAplicable) setDescuento(null); }), [hayPromoAplicable]);
+  const vistaDescuento = (d: DescuentoUI) => {
+    const r = calcularNetosUI(carrito, promos, fechaFactura, d);
+    const n = r.netos ?? [];
+    const lista = Math.round(totalListaUSD * 100);
+    const desc = n.reduce((a, x) => a + x.descuento, 0);
+    return {
+      error: r.error, descuentoUSD: desc / 100, netoUSD: (lista - desc) / 100, honorariosUSD: n.reduce((a, x) => a + x.honorarios, 0) / 100,
+      gananciaUSD: n.reduce((a, x) => a + x.ganancia, 0) / 100, bp: lista > 0 ? Math.round((desc * 10000) / lista) : 0,
+    };
+  };
   const totalBs = totalUSD * tasaBcv;
 
   const numDivisas = parseFloat(pagoDivisas) || 0;
@@ -410,6 +446,11 @@ export const ModuloFacturacion: React.FC<ModuloFacturacionProps> = ({ onFacturaE
   const handleProcesarFactura = async (e: React.FormEvent) => {
     e.preventDefault();
     setErroresValidacion([]);
+    if (calculoDescuento.error) {
+      setErroresValidacion([calculoDescuento.error]);
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+      return;
+    }
 
     // Validación preventiva de ficha de paciente
     const valFicha = validarFichaPaciente({
@@ -440,11 +481,11 @@ export const ModuloFacturacion: React.FC<ModuloFacturacionProps> = ({ onFacturaE
       telefono: telefono.trim(),
       direccion: direccion.trim(),
       tasaBcv: Number(tasaBcv),
-      servicios: carrito.map(c => ({
+      servicios: carrito.map((c, i) => ({
         area: c.area,
         estudio: c.estudio,
         medico: c.medico,
-        precioUSD: c.precioUSD,
+        precioUSD: netosCarrito ? netosCarrito[i].precio / 100 : c.precioUSD,
         sala: c.sala,
         dist: c.dist
       })),
@@ -501,6 +542,7 @@ export const ModuloFacturacion: React.FC<ModuloFacturacionProps> = ({ onFacturaE
           prioridad: 'ALTA',
           grupo_clinico: carrito[0] ? mapearEstudioAGrupo(carrito[0].estudio) : 'A',
           servicios: carrito,
+          descuento: descuento ? { tipo: descuento.tipo, valor: descuento.valor, modo: descuento.modo, motivo: descuento.motivo, pin: descuento.pin, autorizador: descuento.autorizador } : undefined,
           total_honorarios: totalHonorarios,
           total_ganancia: totalGanancia
         })
@@ -531,6 +573,7 @@ export const ModuloFacturacion: React.FC<ModuloFacturacionProps> = ({ onFacturaE
       setDireccion('');
       setPacienteExiste(null);
       setCarrito([]);
+      setDescuento(null);
       setEstudioPrincipalId(null);
       setPagoDivisas('');
       setPagoEfectivoBs('');
@@ -909,7 +952,7 @@ export const ModuloFacturacion: React.FC<ModuloFacturacionProps> = ({ onFacturaE
                     <span>Estudios en Carrito ({carrito.length})</span>
                   </h4>
                   <p className="text-xs font-mono font-black text-cyan-800">
-                    Subtotal: ${totalUSD.toFixed(2)} (Bs. {totalBs.toLocaleString('es-VE', { minimumFractionDigits: 2, maximumFractionDigits: 2 })})
+                    Total: ${totalUSD.toFixed(2)} (Bs. {totalBs.toLocaleString('es-VE', { minimumFractionDigits: 2, maximumFractionDigits: 2 })})
                   </p>
                 </div>
 
@@ -919,8 +962,10 @@ export const ModuloFacturacion: React.FC<ModuloFacturacionProps> = ({ onFacturaE
                   </div>
                 ) : (
                   <div className="space-y-2">
-                    {carrito.map((item) => {
-                      const itemBs = item.precioUSD * tasaBcv;
+                    {carrito.map((item, idx) => {
+                      const neto = netosCarrito?.[idx] ?? null;
+                      const itemNetoUSD = neto ? neto.precio / 100 : item.precioUSD;
+                      const itemBs = itemNetoUSD * tasaBcv;
                       return (
                         <div 
                           key={item.id} 
@@ -945,9 +990,17 @@ export const ModuloFacturacion: React.FC<ModuloFacturacionProps> = ({ onFacturaE
                           </div>
                           <div className="flex items-center gap-3">
                             <div className="text-right">
+                              {neto && neto.descuento > 0 && (
+                                <p className="font-mono text-[10px] text-slate-600 line-through">${item.precioUSD.toFixed(2)}</p>
+                              )}
                               <p className="font-mono font-black text-slate-900 text-sm">
-                                ${item.precioUSD.toFixed(2)}
+                                ${itemNetoUSD.toFixed(2)}
                               </p>
+                              {neto && neto.promoId !== null && (
+                                <p className="text-[9px] font-bold text-emerald-800">
+                                  Promo: {promos.find((p) => p.id === neto.promoId)?.nombre ?? 'vigente'}
+                                </p>
+                              )}
                               <p className="font-mono text-[10px] text-slate-500 font-semibold">
                                 Bs. {itemBs.toLocaleString('es-VE', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                               </p>
@@ -963,6 +1016,24 @@ export const ModuloFacturacion: React.FC<ModuloFacturacionProps> = ({ onFacturaE
                         </div>
                       );
                     })}
+                  </div>
+                )}
+                {carrito.length > 0 && (
+                  <div className="mt-3 space-y-2">
+                    {descuentoTotalUSD > 0 && (
+                      <p className="font-mono text-[11px] font-bold text-slate-800">
+                        Lista ${totalListaUSD.toFixed(2)} − Descuento ${descuentoTotalUSD.toFixed(2)} = Total a cobrar ${totalUSD.toFixed(2)}
+                      </p>
+                    )}
+                    {calculoDescuento.error && <p className="text-xs font-bold text-rose-700">{calculoDescuento.error}</p>}
+                    <DescuentoPanel
+                      deshabilitado={hayPromoAplicable}
+                      rol={rol}
+                      aplicado={descuento}
+                      vista={vistaDescuento}
+                      onAplicar={setDescuento}
+                      onQuitar={() => setDescuento(null)}
+                    />
                   </div>
                 )}
               </div>

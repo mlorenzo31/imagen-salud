@@ -3,6 +3,7 @@ import pool from '@/lib/db';
 import { ApiError, fechaHoraLocal } from '@/lib/apiHelpers';
 import { sumarDias } from '@/lib/date';
 import { centsToStr, toCents } from '@/lib/money';
+import { asegurarDescuentos } from '@/lib/descuentosDb';
 
 type Db = Pick<PoolClient, 'query'>;
 type Valor = string | number | boolean | null;
@@ -102,6 +103,7 @@ export async function exigirJornadaAlDia(esAdmin = false): Promise<void> {
 
 /** Pacientes en espera/atención y resultados sin enviar por WhatsApp de un día (o de todos si fecha es null). */
 export async function evaluarDia(fecha: string | null) {
+  await asegurarDescuentos(); // el resumen suma descuento_usd
   const where = fecha ? ' AND fecha = $1' : '';
   const params = fecha ? [fecha] : [];
   const sala = await pool.query(`
@@ -122,7 +124,8 @@ export async function evaluarDia(fecha: string | null) {
   const resumen = await pool.query(`
     SELECT COUNT(*) AS total_facturas, COALESCE(SUM(precio_usd), 0) AS total_usd,
            COALESCE(SUM(pago_divisas), 0) AS "totalDivisasUSD", COALESCE(SUM(pago_efectivo_bs), 0) AS "totalEfectivoBs",
-           COALESCE(SUM(pago_punto), 0) AS "totalPuntoBs", COALESCE(SUM(pago_movil), 0) AS "totalPagoMovilBs"
+           COALESCE(SUM(pago_punto), 0) AS "totalPuntoBs", COALESCE(SUM(pago_movil), 0) AS "totalPagoMovilBs",
+           COALESCE(SUM(descuento_usd), 0) AS "totalDescuentosUSD"
     FROM facturas_caja WHERE estado NOT IN ('ANULADA', 'ANULADA_SALA')${where}`, params);
   return {
     pacientesPendientes: sala.rows,
