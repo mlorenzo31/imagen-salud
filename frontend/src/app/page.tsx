@@ -285,6 +285,7 @@ export default function Home() {
         {activeSection === 'facturacion' && (
           <div className="animate-in fade-in-50 duration-300">
             <ModuloFacturacion 
+              rol={role}
               onFacturaEmitida={() => {
                 loadInitialData();
               }}
