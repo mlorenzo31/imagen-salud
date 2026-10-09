@@ -313,6 +313,12 @@ export const ModuloCierreDiario: React.FC<ModuloCierreDiarioProps> = ({ currentR
         </Card>
       </div>
 
+      {Number(estadoDiario?.resumen?.totalDescuentosUSD ?? 0) > 0 && (
+        <p className="text-xs font-bold text-slate-800">
+          Descuentos otorgados en el día: ${Number(estadoDiario?.resumen?.totalDescuentosUSD).toFixed(2)} (el total facturado ya los descuenta).
+        </p>
+      )}
+
       {/* Formulario de Arqueo Físico y Ejecución de Cierre */}
       <Card className="bg-white border-slate-200 shadow-sm">
         <CardHeader className="py-4 px-6 border-b border-slate-100">

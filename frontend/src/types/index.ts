@@ -206,6 +206,11 @@ export interface FacturaCaja {
   estudio: string;
   medico?: string;
   precio_usd: number;
+  /** Precio de lista antes del descuento (facturas anteriores a los descuentos no lo tienen). */
+  precio_lista_usd?: number | string | null;
+  descuento_usd?: number | string | null;
+  descuento_motivo?: string | null;
+  descuento_origen?: string | null;
   tasa_bcv: number;
   pago_punto?: number;
   pago_movil?: number;

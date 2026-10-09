@@ -9,6 +9,7 @@ import { esAnulada } from '@/lib/estados';
 import { FacturaCaja } from '@/types';
 import React from 'react';
 import { parseFechaLocal } from '@/lib/date';
+import { precioListaCents } from '@/lib/descuento';
 
 interface DetalleFacturaDialogProps {
   facturaDetalle: FacturaCaja | null;
@@ -57,6 +58,13 @@ export const DetalleFacturaDialog: React.FC<DetalleFacturaDialogProps> = ({ fact
                 <span>{facturaDetalle.estudio}</span>
                 <span className="font-mono text-emerald-700">{formatUSD(facturaDetalle.precio_usd)}</span>
               </div>
+              {Number(facturaDetalle.descuento_usd ?? 0) > 0 && (
+                <div className="text-[11px] text-slate-700 border-t border-slate-100 pt-1.5">
+                  Precio de lista <strong>{formatUSD(precioListaCents(facturaDetalle) / 100)}</strong> − descuento <strong>{formatUSD(facturaDetalle.descuento_usd)}</strong>
+                  {facturaDetalle.descuento_origen === 'PROMO' ? ' (promoción)' : ' (manual)'}
+                  {facturaDetalle.descuento_motivo ? ` · ${facturaDetalle.descuento_motivo}` : ''}
+                </div>
+              )}
               <div className="text-[11px] text-slate-500 flex items-center justify-between border-t border-slate-100 pt-1.5">
                 <span>Médico Asignado: <strong>{facturaDetalle.medico || 'De Guardia'}</strong></span>
                 <span>Tasa BCV: <strong>{formatBs(facturaDetalle.tasa_bcv || 0)}</strong></span>
