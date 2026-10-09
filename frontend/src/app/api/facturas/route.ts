@@ -15,6 +15,7 @@ import { DescuentoError, calcularFactura, porcentajeEfectivoBp, type DescuentoMa
 import { asegurarDescuentos, promosActivas } from '@/lib/descuentosDb';
 import { exigirAutorizacionDescuento } from '@/lib/autorizacionDescuento';
 import { exigirPinSesion } from '@/lib/pin';
+import { decidirTasa } from '@/lib/tasaFactura';
 import { actorSesion, registrarBitacora } from '@/lib/bitacora';
 
 export async function GET(req: NextRequest) {
@@ -230,21 +231,14 @@ export async function POST(req: NextRequest) {
     const fecha = esAdmin && /^\d{4}-\d{2}-\d{2}$/.test(str(data.fecha)) ? str(data.fecha) : ahora.fecha;
     const hora = str(data.hora) || ahora.hora;
 
-    // La tasa la gobierna el servidor: si el cliente no la envía se usa la vigente (sin intervención humana);
-    // si la envía y la vigente es reciente, no puede desviarse más de 5 % (evita tasas manipuladas o pestañas obsoletas).
+    // La tasa la gobierna el servidor: la vigente por defecto; la enviada solo si coincide (±1 %); solo un admin con su clave puede fijarla a mano.
     const tasaCliente = Number(data.tasaBCV ?? data.tasa_bcv);
     const vigente = await obtenerTasaBcv();
-    let tasaNum: number;
-    if (Number.isFinite(tasaCliente) && tasaCliente > 0) {
-      if (vigente?.exito && Math.abs(tasaCliente - vigente.tasa) / vigente.tasa > 0.05) {
-        throw new ApiError(400, `La tasa enviada (${tasaCliente}) difiere de la tasa BCV vigente (${vigente.tasa}). Recargue la pantalla.`);
-      }
-      tasaNum = tasaCliente;
-    } else if (vigente) {
-      tasaNum = vigente.tasa;
-    } else {
-      throw new ApiError(503, 'No hay tasa BCV disponible (proveedores caídos y sin historial).');
-    }
+    const tasaManualIn = data.tasa_manual && typeof data.tasa_manual === 'object' ? (data.tasa_manual as Raw) : null;
+    const rolSesion = req.headers.get('x-session-role') ?? '';
+    const decision = decidirTasa({ cliente: tasaCliente, vigente: vigente?.tasa ?? null, rol: rolSesion, manual: tasaManualIn !== null });
+    if (decision.manual) await exigirPinSesion(req, tasaManualIn?.pin);
+    const tasaNum = decision.tasa;
 
     const { filas: catalogo } = await listarEstudios(false);
     const serviciosLista = normalizarServicios(data, catalogo);
@@ -410,6 +404,13 @@ export async function POST(req: NextRequest) {
       }
       if (efBs > 0) await acreditar(client, 'EFECTIVO_BS', efBs, 'BS', ctx, `Ingreso efectivo Bs factura ${f.id} (${f.nombre_paciente})`);
       if (divisas > 0) await acreditar(client, 'EFECTIVO_USD', divisas, 'USD', ctx, `Ingreso efectivo USD factura ${f.id} (${f.nombre_paciente})`);
+      if (decision.manual) {
+        await registrarBitacora(client, {
+          tipo: 'TASA_MANUAL', fechaAfectada: fecha, ...actorSesion(req),
+          descripcion: `Tasa BCV fijada a mano en ${tasaNum} (vigente ${vigente?.tasa ?? 'sin dato'}) para la factura ${f.id} (${f.nombre_paciente}).`,
+          detalle: { factura_id: f.id, tasa_usada: tasaNum, tasa_vigente: vigente?.tasa ?? null },
+        });
+      }
       if (totalDescuento > 0) {
         await registrarBitacora(client, {
           tipo: 'DESCUENTO', fechaAfectada: fecha, ...actorSesion(req),
