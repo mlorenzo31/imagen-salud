@@ -68,6 +68,7 @@ const SOLO_ADMIN = [
   '/api/tesoreria/cambio-divisa',
   '/api/tesoreria/conciliacion/ejecutar',
   '/api/tesoreria/honorarios/liquidar',
+  '/api/tesoreria/honorarios/matriz',
   '/api/cierres/reabrir',
   '/api/admin',
   '/api/campanas',
