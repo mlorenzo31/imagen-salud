@@ -5,7 +5,7 @@ import type { Promo } from './descuento';
 const item = (estudio: string, precioUSD: number, medico: number, area = 'ECOGRAFIA_AM') =>
   ({ area, estudio, precioUSD, dist: { imagen: precioUSD - medico, medico, eco: 0, patologo: 0 } });
 const manual = (p: Partial<DescuentoUI> = {}): DescuentoUI => ({ tipo: 'PCT', valor: 25, modo: 'CLINICA', motivo: 'Paciente frecuente', pin: 'x', autorizador: null, ...p });
-const promo: Promo = { id: 1, nombre: 'Mes Rosa', porcentajeBp: 2000, modo: 'CLINICA', areas: ['MAMOGRAFIA'], estudios: [], desde: '2026-10-01', hasta: '2026-10-31', activa: true };
+const promo: Promo = { id: 1, nombre: 'Mes Rosa', tipo: 'PCT', valor: 2000, modo: 'CLINICA', areas: ['MAMOGRAFIA'], estudios: [], requiere: [], desde: '2026-10-01', hasta: '2026-10-31', activa: true };
 
 describe('carritoABase', () => {
   it('convierte dólares a centavos sin errores de coma flotante', () => {
