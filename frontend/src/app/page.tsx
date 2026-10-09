@@ -9,6 +9,7 @@ import { BloqueoCierrePendiente } from '@/components/BloqueoCierrePendiente';
 import { CierreObligatorio } from '@/components/CierreObligatorio';
 import { TopBar } from '@/components/TopBar';
 import { TablaHonorarios } from '@/components/TablaHonorarios';
+import { MatrizHonorarios } from '@/components/MatrizHonorarios';
 import { DashboardFinanciero } from '@/components/DashboardFinanciero';
 import { TremorDashboard } from '@/components/TremorDashboard';
 import { ModalCargaMasivaExcel } from '@/components/ModalCargaMasivaExcel';
@@ -538,6 +539,7 @@ export default function Home() {
               modoOperacion={modoOperacion}
               currentRole={role}
             />
+            <MatrizHonorarios />
           </div>
         )}
 
