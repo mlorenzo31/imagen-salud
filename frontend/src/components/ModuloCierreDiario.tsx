@@ -24,6 +24,7 @@ import {
 import { UserRole, PacientePendiente, ResumenCierre } from '@/types';
 import { BloqueoCierrePendiente } from './BloqueoCierrePendiente';
 import { ReabrirDiaDialog } from './ReabrirDiaDialog';
+import { ResumenPeriodo } from './ResumenPeriodo';
 import { PinCierreDialog } from './PinCierreDialog';
 import { hoyLocal } from '@/lib/date';
 import { diferir } from '@/lib/diferir';
@@ -318,6 +319,8 @@ export const ModuloCierreDiario: React.FC<ModuloCierreDiarioProps> = ({ currentR
           Descuentos otorgados en el día: ${Number(estadoDiario?.resumen?.totalDescuentosUSD).toFixed(2)} (el total facturado ya los descuenta).
         </p>
       )}
+
+      {currentRole !== 'cajero' && <ResumenPeriodo fechaInicial={fechaCierre} />}
 
       {/* Formulario de Arqueo Físico y Ejecución de Cierre */}
       <Card className="bg-white border-slate-200 shadow-sm">

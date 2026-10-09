@@ -46,6 +46,9 @@ describe('RBAC por ruta', () => {
     expect(isAllowed('cajero', '/api/admin/promociones', 'POST')).toBe(false);
     expect(isAllowed('asistente', '/api/admin/promociones', 'POST')).toBe(false);
     expect(isAllowed('admin', '/api/admin/promociones', 'POST')).toBe(true);
+    expect(isAllowed('cajero', '/api/cierres/resumen-servicios', 'GET')).toBe(false);
+    expect(isAllowed('asistente', '/api/cierres/resumen-servicios', 'GET')).toBe(true);
+    expect(isAllowed('admin', '/api/cierres/resumen-servicios', 'GET')).toBe(true);
     expect(isAllowed('admin', '/api/cierres/reabrir', 'POST')).toBe(true);
     expect(isAllowed('asistente', '/api/cierres/reabrir', 'POST')).toBe(false);
     expect(isAllowed('cajero', '/api/cierres/reabrir', 'POST')).toBe(false);
