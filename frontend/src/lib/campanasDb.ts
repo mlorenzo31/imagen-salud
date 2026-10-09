@@ -43,6 +43,9 @@ export async function consultarSegmento(db: Db, f: Filtros): Promise<{ pacientes
   const tieneSexo = (await db.query(
     `SELECT 1 FROM information_schema.columns WHERE table_name = 'pacientes' AND column_name = 'sexo'`,
   )).rowCount! > 0;
+  const tieneEdadAprox = (await db.query(
+    `SELECT 1 FROM information_schema.columns WHERE table_name = 'pacientes' AND column_name = 'edad_aprox_fecha'`,
+  )).rowCount! > 0;
 
   const params: unknown[] = [];
   const p = (v: unknown) => { params.push(v); return `$${params.length}`; };
@@ -98,6 +101,8 @@ export async function consultarSegmento(db: Db, f: Filtros): Promise<{ pacientes
       SELECT DISTINCT ON (regexp_replace(p.cedula, '[^0-9]', '', 'g'))
              regexp_replace(p.cedula, '[^0-9]', '', 'g') AS ced, p.cedula, p.nombre, p.telefono, p.fecha_nacimiento,
              ${tieneSexo ? 'p.sexo' : 'NULL::char(1)'} AS sexo,
+             ${tieneEdadAprox ? 'p.edad_aprox' : 'NULL::int'} AS edad_aprox,
+             ${tieneEdadAprox ? 'p.edad_aprox_fecha' : 'NULL::date'} AS edad_aprox_fecha,
              ${tieneActivo ? 'COALESCE(p.activo, TRUE)' : 'TRUE'} AS activo
         FROM pacientes p ORDER BY 1, p.id DESC
     ),
@@ -108,6 +113,7 @@ export async function consultarSegmento(db: Db, f: Filtros): Promise<{ pacientes
              COALESCE(NULLIF(pac.telefono, ''), agg.tel) AS telefono,
              COALESCE(pac.fecha_nacimiento, agg.fnac) AS fnac,
              pac.sexo AS sexo,
+             pac.edad_aprox, pac.edad_aprox_fecha,
              COALESCE(agg.visitas, 0) AS visitas,
              COALESCE(agg.gasto_cents, 0) AS gasto_cents,
              agg.ultima AS ultima_visita,
@@ -124,7 +130,10 @@ export async function consultarSegmento(db: Db, f: Filtros): Promise<{ pacientes
            s.estudios, s.medicos, s.areas,
            EXISTS (SELECT 1 FROM wa_baja b WHERE b.telefono = right(regexp_replace(COALESCE(s.telefono, ''), '[^0-9]', '', 'g'), 10)) AS baja,
            s.edad
-      FROM (SELECT s.*, CASE WHEN s.fnac IS NULL THEN NULL ELSE date_part('year', age(s.hoy, s.fnac))::int END AS edad FROM s) s
+      FROM (SELECT s.*, CASE
+                     WHEN s.fnac IS NOT NULL THEN date_part('year', age(s.hoy, s.fnac))::int
+                     WHEN s.edad_aprox IS NOT NULL AND s.edad_aprox_fecha IS NOT NULL THEN s.edad_aprox + date_part('year', age(s.hoy, s.edad_aprox_fecha))::int
+                     ELSE NULL END AS edad FROM s) s
      ${donde.length ? 'WHERE ' + donde.join(' AND ') : ''}
      ORDER BY s.nombre
      LIMIT 5000`, params);
