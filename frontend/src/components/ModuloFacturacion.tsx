@@ -20,6 +20,7 @@ import { FormasDePago } from '@/components/facturacion/FormasDePago';
 import { SeleccionEstudios } from '@/components/facturacion/SeleccionEstudios';
 import { diferir } from '@/lib/diferir';
 import { DescuentoPanel } from '@/components/DescuentoPanel';
+import { TasaManualDialog } from '@/components/TasaManualDialog';
 import { calcularNetosUI, type DescuentoUI } from '@/lib/descuentoUI';
 import type { Promo } from '@/lib/descuento';
 
@@ -143,6 +144,9 @@ export const ModuloFacturacion: React.FC<ModuloFacturacionProps> = ({ onFacturaE
   const [cargandoTasaBcv, setCargandoTasaBcv] = useState<boolean>(false);
   const [fuenteTasaBcv, setFuenteTasaBcv] = useState<string>('Consultando BCV...');
   const [tasaManualEditada, setTasaManualEditada] = useState<boolean>(false);
+  // Tasa fijada a mano por un admin: se envía con su clave (verificada) y vale solo para la factura en curso.
+  const [tasaPin, setTasaPin] = useState<string | null>(null);
+  const [fijandoTasa, setFijandoTasa] = useState<boolean>(false);
 
   // Carrito de Estudios
   const [carrito, setCarrito] = useState<CarritoItem[]>([]);
@@ -174,6 +178,7 @@ export const ModuloFacturacion: React.FC<ModuloFacturacionProps> = ({ onFacturaE
           setTasaBcv(tasaNum);
           setFuenteTasaBcv(data.fuente || 'BCV Oficial');
           setTasaManualEditada(false);
+          setTasaPin(null);
           if (notificar) alert(`Tasa oficial del BCV sincronizada con éxito: Bs. ${tasaNum.toFixed(2)}`);
         }
       }
@@ -446,6 +451,10 @@ export const ModuloFacturacion: React.FC<ModuloFacturacionProps> = ({ onFacturaE
   const handleProcesarFactura = async (e: React.FormEvent) => {
     e.preventDefault();
     setErroresValidacion([]);
+    if (tasaManualEditada && !tasaPin) {
+      setErroresValidacion(['La tasa manual requiere la clave del administrador. Vuelva a fijarla o sincronice la tasa oficial.']);
+      return;
+    }
     if (calculoDescuento.error) {
       setErroresValidacion([calculoDescuento.error]);
       window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -542,6 +551,7 @@ export const ModuloFacturacion: React.FC<ModuloFacturacionProps> = ({ onFacturaE
           prioridad: 'ALTA',
           grupo_clinico: carrito[0] ? mapearEstudioAGrupo(carrito[0].estudio) : 'A',
           servicios: carrito,
+          tasa_manual: tasaManualEditada && tasaPin ? { pin: tasaPin } : undefined,
           descuento: descuento ? { tipo: descuento.tipo, valor: descuento.valor, modo: descuento.modo, motivo: descuento.motivo, pin: descuento.pin, autorizador: descuento.autorizador } : undefined,
           total_honorarios: totalHonorarios,
           total_ganancia: totalGanancia
@@ -574,6 +584,7 @@ export const ModuloFacturacion: React.FC<ModuloFacturacionProps> = ({ onFacturaE
       setPacienteExiste(null);
       setCarrito([]);
       setDescuento(null);
+      void sincronizarTasaBCV(false);
       setEstudioPrincipalId(null);
       setPagoDivisas('');
       setPagoEfectivoBs('');
@@ -1099,22 +1110,25 @@ export const ModuloFacturacion: React.FC<ModuloFacturacionProps> = ({ onFacturaE
                       </span>
                     )}
                   </span>
-                  <p className="text-[9px] text-slate-500 mt-0.5">Automático vía API oficial BCV</p>
+                  <p className="text-[9px] text-slate-600 mt-0.5">{tasaManualEditada ? 'Fijada por el administrador (solo esta factura)' : 'Automática vía API oficial BCV'}</p>
                 </div>
                 <div className="flex items-center gap-1.5">
                   <span className="text-[10px] text-slate-500 font-mono">Bs.</span>
-                  <input
-                    type="number"
-                    step="0.01"
-                    value={tasaBcv}
-                    onChange={(e) => {
-                      setTasaBcv(parseFloat(e.target.value) || 1);
-                      setTasaManualEditada(true);
-                    }}
-                    className="w-24 px-2 py-1 text-xs font-mono font-bold text-right border border-slate-300 rounded-lg bg-white focus:ring-2 focus:ring-cyan-500"
-                  />
+                  <span className="w-24 px-2 py-1 text-xs font-mono font-bold text-right text-slate-900" aria-label="Tasa BCV (solo lectura)">{tasaBcv.toFixed(2)}</span>
+                  {rol === 'admin' && (
+                    <button type="button" onClick={() => setFijandoTasa(true)} className="px-2 py-1 text-[10px] font-bold text-cyan-800 border border-cyan-300 rounded-lg hover:bg-cyan-50">
+                      Modificar
+                    </button>
+                  )}
                 </div>
               </div>
+
+              <TasaManualDialog
+                open={fijandoTasa}
+                tasaActual={tasaBcv}
+                onCancelar={() => setFijandoTasa(false)}
+                onConfirmar={(t, pin) => { setTasaBcv(t); setTasaManualEditada(true); setTasaPin(pin); setFijandoTasa(false); }}
+              />
 
               {/* Formas de Pago Simultáneas con Doble Moneda */}
               <FormasDePago handleAutocompletar={handleAutocompletar} pagoDivisas={pagoDivisas} setPagoDivisas={setPagoDivisas} numDivisas={numDivisas} tasaBcv={tasaBcv} pagoEfectivoBs={pagoEfectivoBs} setPagoEfectivoBs={setPagoEfectivoBs} numEfectivoBs={numEfectivoBs} pagoPuntoBs={pagoPuntoBs} setPagoPuntoBs={setPagoPuntoBs} numPuntoBs={numPuntoBs} pagoMovilBs={pagoMovilBs} setPagoMovilBs={setPagoMovilBs} numPagoMovilBs={numPagoMovilBs} />

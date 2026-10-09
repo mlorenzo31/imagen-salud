@@ -20,6 +20,7 @@ const TIPOS: Record<string, string> = {
   RECUPERACION_CLAVE: 'Recuperación de clave',
   REAPERTURA_CIERRE: 'Reapertura de caja',
   DESCUENTO: 'Descuento',
+  TASA_MANUAL: 'Tasa BCV manual',
 };
 
 const fechaHora = (iso: string) =>
