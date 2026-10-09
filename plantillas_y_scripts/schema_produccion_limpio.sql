@@ -433,10 +433,13 @@ CREATE TABLE IF NOT EXISTS bitacora (
 CREATE TABLE IF NOT EXISTS promociones (
   id SERIAL PRIMARY KEY,
   nombre VARCHAR(80) NOT NULL,
-  porcentaje NUMERIC(5,2) NOT NULL CHECK (porcentaje > 0 AND porcentaje <= 100),
+  porcentaje NUMERIC(5,2) CHECK (porcentaje > 0 AND porcentaje <= 100), -- solo tipo PCT (heredado de `valor`)
+  tipo VARCHAR(5) NOT NULL DEFAULT 'PCT', -- PCT = %, USD = descuento en $, FIJO = precio final en $
+  valor NUMERIC(12,2),
   modo VARCHAR(12) NOT NULL CHECK (modo IN ('CLINICA','PROPORCIONAL')),
   areas TEXT[] NOT NULL DEFAULT '{}',
   estudios TEXT[] NOT NULL DEFAULT '{}',
+  requiere TEXT[] NOT NULL DEFAULT '{}', -- estudios que deben ir también en la factura
   fecha_desde DATE NOT NULL,
   fecha_hasta DATE NOT NULL,
   activa BOOLEAN NOT NULL DEFAULT TRUE,

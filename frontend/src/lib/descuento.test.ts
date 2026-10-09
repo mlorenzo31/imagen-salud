@@ -8,7 +8,7 @@ const srv = (estudio: string, precio: number, honorarios: number, area = 'ECOGRA
   ({ area, estudio, precio, honorarios, honPatologo });
 
 const promo = (p: Partial<Promo> = {}): Promo => ({
-  id: 1, nombre: 'Mes Rosa', porcentajeBp: 2000, modo: 'CLINICA', areas: ['MAMOGRAFIA'], estudios: [],
+  id: 1, nombre: 'Mes Rosa', tipo: 'PCT', valor: 2000, modo: 'CLINICA', areas: ['MAMOGRAFIA'], estudios: [], requiere: [],
   desde: '2026-10-01', hasta: '2026-10-31', activa: true, ...p,
 });
 
@@ -111,5 +111,51 @@ describe('precioListaCents', () => {
   it('facturas antiguas (sin lista) usan el neto como lista', () => {
     expect(precioListaCents({ precio_lista_usd: null, precio_usd: '20.00' })).toBe(2000);
     expect(precioListaCents({ precio_lista_usd: '25.00', precio_usd: '20.00' })).toBe(2500);
+  });
+});
+
+describe('promociones con monto y con servicios requeridos', () => {
+  const mamo = srv('Mamografia Digital', 5000, 0, 'MAMOGRAFIA');
+  const eco = srv('ECO MAMARIO', 3500, 0, 'ECOGRAFIA_AM');
+  const mesRosa = promo({ tipo: 'FIJO', valor: 2500, areas: [], estudios: ['Mamografia Digital'], requiere: ['Eco Mamario'] });
+
+  it('precio fijo: la mamografía queda en $25 solo si va con el eco', () => {
+    const r = calcularFactura([mamo, eco], [mesRosa], '2026-10-15', null);
+    expect(r[0]).toMatchObject({ precio: 2500, descuento: 2500, promoId: 1 });
+    expect(r[1]).toMatchObject({ precio: 3500, descuento: 0, promoId: null });
+  });
+  it('sin el servicio requerido no aplica', () => {
+    const r = calcularFactura([mamo], [mesRosa], '2026-10-15', null);
+    expect(r[0]).toMatchObject({ precio: 5000, descuento: 0, promoId: null });
+  });
+  it('el servicio requerido es otra línea, no la misma', () => {
+    const solo = promo({ tipo: 'FIJO', valor: 2500, estudios: ['Mamografia Digital'], requiere: ['Mamografia Digital'] });
+    expect(promoAplicable([solo], mamo, '2026-10-15', ['Eco Mamario'])).toBeNull();
+  });
+  it('exige todos los requeridos', () => {
+    const p = promo({ tipo: 'FIJO', valor: 2500, estudios: ['Mamografia Digital'], requiere: ['Eco Mamario', 'Citologia'] });
+    expect(promoAplicable([p], mamo, '2026-10-15', ['Eco Mamario'])).toBeNull();
+    expect(promoAplicable([p], mamo, '2026-10-15', ['eco mamario', 'CITOLOGIA'])?.id).toBe(1);
+  });
+  it('descuento en dólares', () => {
+    const p = promo({ tipo: 'USD', valor: 500, areas: ['MAMOGRAFIA'] });
+    expect(calcularFactura([mamo], [p], '2026-10-15', null)[0]).toMatchObject({ precio: 4500, descuento: 500 });
+  });
+  it('precio fijo mayor o igual al precio de lista no aplica', () => {
+    const p = promo({ tipo: 'FIJO', valor: 5000, areas: ['MAMOGRAFIA'] });
+    expect(calcularFactura([mamo], [p], '2026-10-15', null)[0]).toMatchObject({ precio: 5000, descuento: 0, promoId: null });
+  });
+  it('gana la promoción de mayor descuento en dólares', () => {
+    const a = promo({ id: 1, tipo: 'PCT', valor: 1000, areas: ['MAMOGRAFIA'] }); // $5
+    const b = promo({ id: 2, tipo: 'USD', valor: 800, areas: ['MAMOGRAFIA'] }); // $8
+    expect(promoAplicable([a, b], mamo, '2026-10-15', [])?.id).toBe(2);
+  });
+  it('reparto proporcional con precio fijo ajusta honorarios', () => {
+    const m = srv('Mamografia Digital', 5000, 1000, 'MAMOGRAFIA');
+    const p = promo({ tipo: 'FIJO', valor: 2500, modo: 'PROPORCIONAL', areas: ['MAMOGRAFIA'] });
+    expect(calcularFactura([m], [p], '2026-10-15', null)[0]).toMatchObject({ precio: 2500, honorarios: 500, ganancia: 2000 });
+  });
+  it('promo + manual sigue rechazado', () => {
+    expect(() => calcularFactura([mamo, eco], [mesRosa], '2026-10-15', { tipo: 'PCT', valor: 500, modo: 'CLINICA' })).toThrow(/ya tiene una promoción/);
   });
 });

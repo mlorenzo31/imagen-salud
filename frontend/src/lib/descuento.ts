@@ -17,9 +17,16 @@ export interface ServicioNeto {
 /** `valor`: puntos básicos si es PCT (2000 = 20 %), centavos si es USD. */
 export interface DescuentoManual { tipo: 'PCT' | 'USD'; valor: number; modo: ModoReparto }
 
+/** PCT: descuento en % · USD: descuento en dólares · FIJO: el servicio queda en ese precio. */
+export type TipoPromo = 'PCT' | 'USD' | 'FIJO';
+
+/**
+ * `valor`: puntos básicos si es PCT (2000 = 20 %), centavos si es USD o FIJO.
+ * `areas`/`estudios`: servicios que reciben el descuento. `requiere`: estudios que deben ir también en la factura.
+ */
 export interface Promo {
-  id: number; nombre: string; porcentajeBp: number; modo: ModoReparto;
-  areas: string[]; estudios: string[]; desde: string; hasta: string; activa: boolean;
+  id: number; nombre: string; tipo: TipoPromo; valor: number; modo: ModoReparto;
+  areas: string[]; estudios: string[]; requiere: string[]; desde: string; hasta: string; activa: boolean;
 }
 
 export class DescuentoError extends Error {}
@@ -80,14 +87,27 @@ export function aplicarDescuento(servicios: ServicioBase[], descuentos: number[]
   return servicios.map((s, i) => netoDe(s, descuentos[i] ?? 0, modo, promoIds[i] ?? null));
 }
 
-/** Promo vigente que aplica a un servicio (la de mayor porcentaje si hay varias), o null. */
-export function promoAplicable(promos: Promo[], s: { area: string; estudio: string }, fecha: string): Promo | null {
+/** Descuento en centavos que la promo da a un servicio de `precio` centavos (0 si no baja el precio). */
+export function descuentoDePromo(p: Pick<Promo, 'tipo' | 'valor'>, precio: number): number {
+  if (p.tipo === 'PCT') return Math.round((precio * p.valor) / 10000);
+  const d = p.tipo === 'USD' ? p.valor : precio - p.valor;
+  return d > 0 && d < precio ? d : 0;
+}
+
+/**
+ * Promo vigente que aplica a un servicio (la de mayor descuento en dinero si hay varias), o null.
+ * `otros`: nombres de los demás estudios de la factura, para las promos que exigen compañía.
+ */
+export function promoAplicable(promos: Promo[], s: { area: string; estudio: string; precio?: number }, fecha: string, otros: string[] = []): Promo | null {
+  const presentes = otros.map(norm);
   const coinciden = promos.filter((p) => {
     if (!p.activa || fecha < p.desde || fecha > p.hasta) return false;
+    if (!p.requiere.every((r) => presentes.includes(norm(r)))) return false;
     if (p.estudios.length > 0) return p.estudios.some((e) => norm(e) === norm(s.estudio));
     return p.areas.some((a) => norm(a) === norm(s.area));
   });
-  return coinciden.sort((a, b) => b.porcentajeBp - a.porcentajeBp)[0] ?? null;
+  const monto = (p: Promo) => (s.precio === undefined ? p.valor : descuentoDePromo(p, s.precio));
+  return coinciden.filter((p) => s.precio === undefined || monto(p) > 0).sort((a, b) => monto(b) - monto(a))[0] ?? null;
 }
 
 /**
@@ -95,12 +115,12 @@ export function promoAplicable(promos: Promo[], s: { area: string; estudio: stri
  * Una factura no mezcla promo y descuento manual.
  */
 export function calcularFactura(servicios: ServicioBase[], promos: Promo[], fecha: string, manual: DescuentoManual | null): ServicioNeto[] {
-  const coincidencias = servicios.map((s) => promoAplicable(promos, s, fecha));
+  const coincidencias = servicios.map((s, i) => promoAplicable(promos, s, fecha, servicios.filter((_, k) => k !== i).map((o) => o.estudio)));
   if (coincidencias.some((p) => p !== null)) {
     if (manual) throw new DescuentoError('Esta factura ya tiene una promoción; no admite descuento manual.');
     return servicios.map((s, i) => {
       const p = coincidencias[i];
-      return p ? netoDe(s, Math.round((s.precio * p.porcentajeBp) / 10000), p.modo, p.id) : netoDe(s, 0, 'CLINICA', null);
+      return p ? netoDe(s, descuentoDePromo(p, s.precio), p.modo, p.id) : netoDe(s, 0, 'CLINICA', null);
     });
   }
   if (!manual) return servicios.map((s) => netoDe(s, 0, 'CLINICA', null));
