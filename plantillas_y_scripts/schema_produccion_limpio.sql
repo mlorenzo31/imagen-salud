@@ -117,6 +117,14 @@ CREATE TABLE IF NOT EXISTS facturas_caja (
   sala_anterior VARCHAR(100),
   grupo_clinico VARCHAR(10) DEFAULT 'A'::character varying,
   fecha_nacimiento_paciente DATE,
+  -- Descuentos: precio_usd es lo que se cobra (neto); precio_lista_usd el de catálogo (NULL = igual al neto)
+  precio_lista_usd NUMERIC(12,2),
+  descuento_usd NUMERIC(12,2) NOT NULL DEFAULT 0,
+  descuento_modo VARCHAR(12),
+  descuento_origen VARCHAR(10),
+  descuento_motivo TEXT,
+  descuento_promo_id INTEGER,
+  descuento_autorizado_por VARCHAR(100),
   PRIMARY KEY (id)
 );
 
@@ -134,6 +142,7 @@ CREATE TABLE IF NOT EXISTS facturas_servicios_detalle (
   estado VARCHAR(50) DEFAULT 'ESPERA'::character varying,
   orden INTEGER DEFAULT 1,
   creado_en TIMESTAMP WITH TIME ZONE DEFAULT now(),
+  precio_lista_usd NUMERIC(12,2),
   PRIMARY KEY (id)
 );
 
@@ -419,3 +428,20 @@ CREATE TABLE IF NOT EXISTS bitacora (
   descripcion TEXT NOT NULL,
   detalle JSONB
 );
+
+-- Tabla: promociones (descuentos programados por el admin; se aplican solas en caja)
+CREATE TABLE IF NOT EXISTS promociones (
+  id SERIAL PRIMARY KEY,
+  nombre VARCHAR(80) NOT NULL,
+  porcentaje NUMERIC(5,2) NOT NULL CHECK (porcentaje > 0 AND porcentaje <= 100),
+  modo VARCHAR(12) NOT NULL CHECK (modo IN ('CLINICA','PROPORCIONAL')),
+  areas TEXT[] NOT NULL DEFAULT '{}',
+  estudios TEXT[] NOT NULL DEFAULT '{}',
+  fecha_desde DATE NOT NULL,
+  fecha_hasta DATE NOT NULL,
+  activa BOOLEAN NOT NULL DEFAULT TRUE,
+  creado_por VARCHAR(100),
+  creado_en TIMESTAMPTZ NOT NULL DEFAULT now(),
+  CHECK (fecha_desde <= fecha_hasta)
+);
+ALTER TABLE promociones ENABLE ROW LEVEL SECURITY;
