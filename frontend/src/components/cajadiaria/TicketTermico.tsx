@@ -4,6 +4,8 @@ import React from 'react';
 import { Button } from '@/components/ui/button';
 import { Receipt } from 'lucide-react';
 import { FacturaCaja } from '@/types';
+import { Dialog, DialogContent, DialogDescription, DialogTitle } from '@/components/ui/dialog';
+import { useAvisos } from '@/components/ui/avisos';
 
 interface TicketTermicoProps {
   facturaSeleccionada: FacturaCaja;
@@ -11,9 +13,13 @@ interface TicketTermicoProps {
   setMostrarModalTicket: React.Dispatch<React.SetStateAction<boolean>>;
 }
 
-export const TicketTermico: React.FC<TicketTermicoProps> = ({ facturaSeleccionada, tasaBcv, setMostrarModalTicket }) => (
-  <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4">
-    <div className="bg-white rounded-2xl shadow-2xl max-w-sm w-full p-6 border border-slate-200">
+export const TicketTermico: React.FC<TicketTermicoProps> = ({ facturaSeleccionada, tasaBcv, setMostrarModalTicket }) => {
+  const { avisar } = useAvisos();
+  return (
+  <Dialog open onOpenChange={(abierto) => { if (!abierto) setMostrarModalTicket(false); }}>
+    <DialogContent showCloseButton={false} className="max-w-sm p-6 sm:max-w-sm">
+      <DialogTitle className="sr-only">Comprobante de la factura</DialogTitle>
+      <DialogDescription className="sr-only">Comprobante digital con el detalle del cobro</DialogDescription>
       {/* Ticket Térmico Design */}
       <div id="ticket-termico" className="bg-slate-50 p-4 rounded-xl border border-dashed border-slate-300 font-mono text-xs text-slate-800">
         <div className="text-center border-b border-dashed border-slate-300 pb-3 mb-3">
@@ -103,7 +109,7 @@ export const TicketTermico: React.FC<TicketTermicoProps> = ({ facturaSeleccionad
               'Estudio: ' + facturaSeleccionada.estudio + '\n' +
               'Total: $' + Number(facturaSeleccionada.precio_usd || 0).toFixed(2);
             navigator.clipboard.writeText(texto);
-            alert('Comprobante copiado al portapapeles. Impresión en papel desactivada.');
+            avisar({ tipo: 'exito', mensaje: 'Comprobante copiado al portapapeles.' });
           }} 
           className="flex-1 rounded-xl bg-slate-800 hover:bg-slate-700 text-white text-xs flex items-center justify-center gap-1.5"
         >
@@ -111,6 +117,7 @@ export const TicketTermico: React.FC<TicketTermicoProps> = ({ facturaSeleccionad
           <span>Copiar Digital</span>
         </Button>
       </div>
-    </div>
-  </div>
-);
+    </DialogContent>
+  </Dialog>
+  );
+};

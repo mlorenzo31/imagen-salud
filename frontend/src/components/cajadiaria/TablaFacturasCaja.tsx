@@ -3,7 +3,8 @@
 import React from 'react';
 import { Card, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Ban, Eye, ChevronDown, ChevronRight } from 'lucide-react';
+import { Ban, Eye, ChevronDown, ChevronRight, Loader2 } from 'lucide-react';
+import { Skeleton } from '@/components/ui/skeleton';
 import { esAnulada } from '@/lib/estados';
 import { FacturaCaja } from '@/types';
 import type { GrupoClinicoFiltro } from '../ModuloCajaDiaria';
@@ -20,9 +21,13 @@ interface TablaFacturasCajaProps {
   verTicket: (factura: FacturaCaja) => void;
   anulandoId: number | null;
   handleAnular: (id: number) => Promise<void>;
+  /** Primera carga: se muestran filas de esqueleto. */
+  cargando?: boolean;
+  /** Recarga con datos ya visibles: se atenúa la tabla sin vaciarla. */
+  actualizando?: boolean;
 }
 
-export const TablaFacturasCaja: React.FC<TablaFacturasCajaProps> = ({ facturasFiltradas, agruparPor, grupos, totalCobradoUSD, totalCobradoBs, gruposColapsados, toggleColapsarGrupo, tasaBcv, verTicket, anulandoId, handleAnular }) => (
+export const TablaFacturasCaja: React.FC<TablaFacturasCajaProps> = ({ facturasFiltradas, agruparPor, grupos, totalCobradoUSD, totalCobradoBs, gruposColapsados, toggleColapsarGrupo, tasaBcv, verTicket, anulandoId, handleAnular, cargando = false, actualizando = false }) => (
   <Card className="bg-white border-slate-200 shadow-sm overflow-hidden">
     <CardHeader className="py-3 px-5 border-b border-slate-100 flex flex-row flex-wrap items-center justify-between gap-2">
       <CardTitle className="text-xs font-bold text-slate-700 flex items-center gap-2">
@@ -36,9 +41,22 @@ export const TablaFacturasCaja: React.FC<TablaFacturasCajaProps> = ({ facturasFi
       <p className="text-xs text-slate-500">Total en vista: ${totalCobradoUSD.toFixed(2)} (Bs. {totalCobradoBs.toLocaleString('es-VE', { minimumFractionDigits: 2, maximumFractionDigits: 2 })})</p>
     </CardHeader>
 
-    <div className="overflow-x-auto">
+    <div className={`overflow-x-auto transition-opacity duration-200 ${actualizando ? "opacity-60" : ""}`} aria-busy={cargando || actualizando}>
       {/* CASO 1: VISTA AGRUPADA (GROUP BY) */}
-      {grupos ? (
+      {cargando ? (
+        <div className="divide-y divide-slate-100" aria-label="Cargando comprobantes">
+          {Array.from({ length: 6 }).map((_, i) => (
+            <div key={i} className="flex items-center gap-4 px-4 py-3.5">
+              <Skeleton className="h-4 w-12" />
+              <Skeleton className="h-4 w-10" />
+              <div className="flex-1 space-y-1.5"><Skeleton className="h-4 w-40" /><Skeleton className="h-3 w-24" /></div>
+              <Skeleton className="hidden h-4 w-44 md:block" />
+              <Skeleton className="h-4 w-16" />
+              <Skeleton className="hidden h-5 w-28 md:block" />
+            </div>
+          ))}
+        </div>
+      ) : grupos ? (
         <div className="divide-y divide-slate-200">
           {grupos.length === 0 ? (
             <div className="py-10 text-center text-slate-500 text-xs">
@@ -249,7 +267,7 @@ export const TablaFacturasCaja: React.FC<TablaFacturasCajaProps> = ({ facturasFi
                             className="p-1.5 rounded-lg text-slate-500 hover:text-rose-600 hover:bg-rose-50 transition-colors"
                             title="Anular Factura"
                           >
-                            <Ban className="w-4 h-4" />
+                            {anulandoId === f.id ? <Loader2 className="w-4 h-4 animate-spin" /> : <Ban className="w-4 h-4" />}
                           </button>
                         )}
                       </div>
