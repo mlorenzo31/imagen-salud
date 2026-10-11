@@ -28,7 +28,7 @@ export const WhatsAppMasivoDialog: React.FC<WhatsAppMasivoDialogProps> = ({ moda
           <div className="p-2 bg-emerald-100 rounded-xl text-emerald-700">
             <Send className="w-6 h-6" />
           </div>
-          <span>Despacho Masivo de WhatsApp (Cierre Diario)</span>
+          <span>Enviar resultados por WhatsApp</span>
         </DialogTitle>
         <p className="text-xs text-slate-500 mt-1">
           Envío secuencial de resultados médicos acumulados en el día. Este proceso garantiza que no queden atenciones pendientes antes de consolidar el arqueo contable.

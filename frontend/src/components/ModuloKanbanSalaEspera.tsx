@@ -445,7 +445,7 @@ export const ModuloKanbanSalaEspera: React.FC<ModuloKanbanSalaEsperaProps> = ({
           {/* Barra de Filtros por Grupo Clínico */}
           <div className="flex flex-wrap items-center justify-between gap-3 bg-white p-3.5 rounded-2xl border border-slate-200 shadow-sm">
             <div className="flex items-center gap-2">
-              <span className="text-xs font-black text-slate-600 uppercase tracking-wider pl-1">Filtrar Grupo:</span>
+              <span className="text-xs font-semibold text-slate-600 pl-1">Grupo:</span>
               <div className="flex bg-slate-100 p-1 rounded-xl gap-1">
                 <button
                   onClick={() => setFiltroGrupo('TODOS')}

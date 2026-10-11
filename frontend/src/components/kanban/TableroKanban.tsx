@@ -36,7 +36,7 @@ export const TableroKanban: React.FC<TableroKanbanProps> = ({ turnosTodos, turno
       <div className="flex items-center justify-between bg-amber-500/10 p-3 rounded-2xl border border-amber-500/20">
         <div className="flex items-center gap-2">
           <Clock className="w-4 h-4 text-amber-600" />
-          <h3 className="text-xs font-black uppercase tracking-wider text-amber-900">1. En Espera</h3>
+          <h3 className="text-sm font-semibold text-amber-900">1. En espera</h3>
         </div>
         <Badge className="bg-amber-600 text-white text-xs font-mono">{turnosEspera.length}</Badge>
       </div>
@@ -56,7 +56,7 @@ export const TableroKanban: React.FC<TableroKanbanProps> = ({ turnosTodos, turno
       <div className="flex items-center justify-between bg-blue-500/10 p-3 rounded-2xl border border-blue-500/20">
         <div className="flex items-center gap-2">
           <Play className="w-4 h-4 text-blue-600" />
-          <h3 className="text-xs font-black uppercase tracking-wider text-blue-900">2. En Atención</h3>
+          <h3 className="text-sm font-semibold text-blue-900">2. En atención</h3>
         </div>
         <Badge className="bg-blue-600 text-white text-xs font-mono">{turnosAtencion.length}</Badge>
       </div>
@@ -76,7 +76,7 @@ export const TableroKanban: React.FC<TableroKanbanProps> = ({ turnosTodos, turno
       <div className="flex items-center justify-between bg-emerald-500/10 p-3 rounded-2xl border border-emerald-500/20">
         <div className="flex items-center gap-2">
           <CheckCircle2 className="w-4 h-4 text-emerald-600" />
-          <h3 className="text-xs font-black uppercase tracking-wider text-emerald-900">3. Culminados (Resultados)</h3>
+          <h3 className="text-sm font-semibold text-emerald-900">3. Finalizados</h3>
         </div>
         <Badge className="bg-emerald-600 text-white text-xs font-mono">{pacientesFinalizados.length}</Badge>
       </div>
@@ -192,7 +192,7 @@ export const TableroKanban: React.FC<TableroKanbanProps> = ({ turnosTodos, turno
                     {!tieneAdjunto ? (
                       <>
                         <Lock className="w-3.5 h-3.5 text-slate-500" />
-                        <span>Adjunte Imagen para Enviar WA</span>
+                        <span>Adjunte el informe para enviar por WhatsApp</span>
                       </>
                     ) : (
                       <>

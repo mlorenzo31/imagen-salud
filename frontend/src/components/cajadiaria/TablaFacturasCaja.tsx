@@ -26,7 +26,7 @@ export const TablaFacturasCaja: React.FC<TablaFacturasCajaProps> = ({ facturasFi
   <Card className="bg-white border-slate-200 shadow-sm overflow-hidden">
     <CardHeader className="py-3 px-5 border-b border-slate-100 flex flex-row items-center justify-between">
       <CardTitle className="text-xs font-bold text-slate-700 flex items-center gap-2">
-        <span>Resultados: {facturasFiltradas.length} comprobantes</span>
+        <span>{facturasFiltradas.length} comprobantes</span>
         {agruparPor !== 'NINGUNO' && (
           <Badge className="bg-indigo-100 text-indigo-900 border border-indigo-300 text-xs">
             {grupos?.length || 0} Grupos Formados
@@ -139,7 +139,7 @@ export const TablaFacturasCaja: React.FC<TablaFacturasCajaProps> = ({ facturasFi
         /* CASO 2: VISTA DE TABLA PLANA */
         <table className="w-full text-left text-xs border-collapse">
           <thead>
-            <tr className="bg-slate-50/80 border-b border-slate-200 text-slate-500 text-xs font-black uppercase tracking-wider">
+            <tr className="bg-slate-50/80 border-b border-slate-200 text-slate-500 text-xs font-semibold">
               <th className="py-2.5 px-3">Folio/Turno</th>
               <th className="py-2.5 px-3">Hora</th>
               <th className="py-2.5 px-3">Paciente</th>
@@ -154,7 +154,7 @@ export const TablaFacturasCaja: React.FC<TablaFacturasCajaProps> = ({ facturasFi
             {facturasFiltradas.length === 0 ? (
               <tr>
                 <td colSpan={8} className="py-8 text-center text-slate-500 text-xs font-medium">
-                  No se encontraron comprobantes para los filtros seleccionados
+                  No hay comprobantes con estos filtros.
                 </td>
               </tr>
             ) : (
