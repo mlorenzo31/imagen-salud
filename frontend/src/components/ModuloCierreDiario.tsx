@@ -4,23 +4,8 @@ import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Badge } from '@/components/ui/badge';
-import { 
-  ShieldCheck, 
-  ShieldAlert, 
-  AlertCircle, 
-  Printer, 
-  Lock, 
-  CheckCircle2, 
-  DollarSign, 
-  Calendar,
-  Building2,
-  FileCheck,
-  RefreshCw,
-  Wallet,
-  Send,
-  MessageCircle
-} from 'lucide-react';
+
+import { ShieldAlert, Lock, CheckCircle2, Calendar, FileCheck, RefreshCw } from 'lucide-react';
 import { UserRole, PacientePendiente, ResumenCierre } from '@/types';
 import { BloqueoCierrePendiente } from './BloqueoCierrePendiente';
 import { ReabrirDiaDialog } from './ReabrirDiaDialog';
@@ -169,16 +154,7 @@ export const ModuloCierreDiario: React.FC<ModuloCierreDiarioProps> = ({ currentR
       <ReabrirDiaDialog open={reabriendo} fecha={fechaCierre} cargando={cargandoReapertura} error={errorReapertura} onCancelar={() => setReabriendo(false)} onConfirmar={confirmarReapertura} />
       <PinCierreDialog open={pidiendoPin} cargando={ejecutandoCierre} error={errorPin} onCancelar={() => setPidiendoPin(false)} onConfirmar={confirmarCierre} />
       {/* Header */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 bg-white p-5 rounded-2xl border border-slate-200 shadow-sm">
-        <div>
-          <h2 className="text-xl font-black text-slate-900 flex items-center gap-2">
-            <ShieldCheck className="w-6 h-6 text-emerald-600" />
-            Cierre Diario de Caja & Auditoría Contable
-          </h2>
-          <p className="text-xs text-slate-500 mt-1">
-            Consolidación de cuentas, validación estricta de sala y bloqueo crítico por resultados pendientes de WhatsApp
-          </p>
-        </div>
+      <div className="flex flex-wrap items-center justify-end gap-2">
         <div className="flex items-center gap-3">
           {currentRole !== 'cajero' ? (
             <div className="flex items-center gap-1.5 bg-slate-50 p-1 rounded-xl border border-slate-200">

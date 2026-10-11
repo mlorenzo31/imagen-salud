@@ -4,7 +4,7 @@ import React, { useState, useEffect, useMemo } from 'react';
 import { Card, CardHeader } from '@/components/ui/card';import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
-import { Search, History, Globe, DollarSign, Paperclip, RefreshCw, Download, Printer, MessageCircle, Activity, X } from 'lucide-react';import { UserRole, FacturaCaja } from '@/types';
+import { Search, Globe, DollarSign, Paperclip, RefreshCw, Download, Printer, MessageCircle, Activity, X } from 'lucide-react';import { UserRole, FacturaCaja } from '@/types';
 import { normalizarCedulaRif, extraerDigitos, sonMismoDocumento } from '@/lib/cedulaRif';
 import { hoyLocal, parseFechaLocal, sumarDias } from '@/lib/date';import { esAnulada } from '@/lib/estados';
 import { DetalleFacturaDialog } from '@/components/historial/DetalleFacturaDialog';
@@ -462,23 +462,7 @@ export const ModuloHistorialPacientes: React.FC<ModuloHistorialPacientesProps> =
   return (
     <div className="space-y-6 animate-in fade-in-50 duration-300">
       {/* 1. HEADER CLÍNICO DE ALTO NIVEL */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 bg-white p-6 rounded-3xl border border-slate-200/80 shadow-sm">
-        <div>
-          <div className="flex items-center gap-2.5">
-            <div className="p-2.5 bg-clinica-selection rounded-2xl text-clinica-primary">
-              <History className="w-6 h-6" />
-            </div>
-            <div>
-              <h2 className="text-xl font-black text-slate-900 tracking-tight">
-                Historial Clínico y Movimientos por Pacientes
-              </h2>
-              <p className="text-xs text-slate-500 font-medium">
-                Auditoría centralizada de atenciones, estudios realizados, pagos multimoneda y trazabilidad de entrega de resultados.
-              </p>
-            </div>
-          </div>
-        </div>
-
+      <div className="flex flex-wrap items-center justify-end gap-2">
         <div className="flex items-center gap-2.5">
           <Button
             variant="outline"
@@ -524,12 +508,12 @@ export const ModuloHistorialPacientes: React.FC<ModuloHistorialPacientesProps> =
       </div>
 
       {/* 2. PANEL DE BÚSQUEDA Y SELECTOR DE PACIENTES */}
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
+      <div className="grid grid-cols-1 xl:grid-cols-12 gap-6">
         {/* COLUMNA IZQUIERDA: BUSCADOR Y LISTA DE PACIENTES (4 Cols) */}
         <ListaPacientesPanel pacientesFiltrados={pacientesFiltrados} searchTerm={searchTerm} setSearchTerm={setSearchTerm} cargarMovimientosGlobales={cargarMovimientosGlobales} pacienteSeleccionado={pacienteSeleccionado} cargarMovimientosPaciente={cargarMovimientosPaciente} ocultarGlobal={esCajero} />
 
         {/* COLUMNA DERECHA: FICHA / BANNER, KPIS Y TABLA DE MOVIMIENTOS CON FILTROS (8 Cols) */}
-        <div className="lg:col-span-8 space-y-5">
+        <div className="xl:col-span-8 space-y-5">
           {esCajero && !pacienteSeleccionado ? (
             <Card className="rounded-3xl border border-slate-200/80 bg-white p-8 text-center shadow-sm">
               <p className="text-sm font-bold text-slate-700">Seleccione un paciente del directorio para ver su historial.</p>

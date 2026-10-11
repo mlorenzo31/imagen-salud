@@ -2,7 +2,7 @@
 
 import { useFechaOperacion } from './FechaOperacion';
 import React, { useState, useMemo } from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
@@ -13,28 +13,7 @@ import {
   DialogTitle,
   DialogFooter
 } from '@/components/ui/dialog';
-import {
-  Stethoscope,
-  DollarSign,
-  Wallet,
-  Users,
-  Search,
-  Filter,
-  Layers,
-  ChevronDown,
-  ChevronRight,
-  CheckCircle2,
-  Calendar,
-  CreditCard,
-  Smartphone,
-  Banknote,
-  FileSpreadsheet,
-  FileText,
-  AlertCircle,
-  HelpCircle,
-  TrendingUp,
-  PieChart
-} from 'lucide-react';
+import { DollarSign, Wallet, Search, Layers, ChevronDown, ChevronRight, CreditCard, Smartphone, Banknote, FileSpreadsheet, FileText, PieChart } from 'lucide-react';
 import { exportarAExcel, exportarAPDF } from '@/lib/exportUtils';
 import { HonorarioMedico, ModoOperacion, UserRole, DataPoint } from '@/types';
 import { UniversalDataView } from '@/components/analytics/UniversalDataView';
@@ -260,40 +239,25 @@ export const TablaHonorarios: React.FC<TablaHonorariosProps> = ({
   return (
     <div className="space-y-6">
       {/* Encabezado Corporativo */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 bg-white p-5 rounded-2xl border border-slate-200 shadow-sm">
-        <div className="flex items-center gap-3">
-          <div className="p-2.5 bg-clinica-selection rounded-xl text-clinica-primary">
-            <Stethoscope className="w-6 h-6" />
-          </div>
-          <div>
-            <div className="flex items-center gap-2">
-              <h2 className="text-xl font-black text-slate-900">Honorarios Médicos y Liquidación</h2>
-              <Badge className="bg-clinica-primary text-white text-xs font-mono">
-                Multiforma
-              </Badge>
-            </div>
-            <p className="text-xs text-slate-500 mt-0.5">
-              Trazabilidad exacta de cobro por método de pago de pacientes y dispersión contable de honorarios
-            </p>
-          </div>
-        </div>
-
+      <div className="flex flex-wrap items-center justify-end gap-2">
         <div className="flex flex-wrap items-center gap-2">
           <Button
+ variant="outline"
             size="sm"
             onClick={handleExportExcel}
-            className="bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold rounded-xl shadow-sm flex items-center gap-1.5 h-9"
+            className="gap-1.5 text-xs"
           >
-            <FileSpreadsheet className="w-3.5 h-3.5" />
+            <FileSpreadsheet className="w-3.5 h-3.5 text-emerald-600" />
             <span>Excel (.xlsx)</span>
           </Button>
 
           <Button
+ variant="outline"
             size="sm"
             onClick={handleExportPDF}
-            className="bg-slate-800 hover:bg-slate-900 text-white text-xs font-bold rounded-xl shadow-sm flex items-center gap-1.5 h-9"
+            className="gap-1.5 text-xs"
           >
-            <FileText className="w-3.5 h-3.5" />
+            <FileText className="w-3.5 h-3.5 text-rose-600" />
             <span>PDF (.pdf)</span>
           </Button>
         </div>

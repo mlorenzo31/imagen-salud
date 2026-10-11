@@ -7,24 +7,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
-import { 
-  ArrowDownRight, 
-  ArrowUpRight, 
-  Wallet, 
-  DollarSign, 
-  Smartphone, 
-  Landmark, 
-  CreditCard, 
-  AlertCircle, 
-  CheckCircle2, 
-  FileSpreadsheet, 
-  FileText, 
-  Search, 
-  Filter, 
-  RefreshCw,
-  X,
-  FileText as FileIcon
-} from 'lucide-react';
+import { ArrowDownRight, ArrowUpRight, Smartphone, AlertCircle, CheckCircle2, FileSpreadsheet, FileText, Search, X, FileText as FileIcon } from 'lucide-react';
 import { exportarAExcel, exportarAPDF } from '@/lib/exportUtils';
 import { CuentaBancaria } from '@/types';
 import { getErrorMessage } from '@/lib/utils';
@@ -428,17 +411,7 @@ export const ModuloEgresosOperativos: React.FC<ModuloEgresosOperativosProps> = (
     <div className="space-y-6">
       <DevolucionesPendientes onPagada={onEgresoRegistrado} />
       {/* Header Corporativo */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 bg-white p-5 rounded-2xl border border-slate-200 shadow-sm">
-        <div>
-          <h2 className="text-xl font-black text-slate-900 tracking-tight flex items-center gap-2">
-            <Wallet className="w-6 h-6 text-rose-600" />
-            Flujo de Egresos Operativos y Entradas Extraordinarias
-          </h2>
-          <p className="text-xs text-slate-500 mt-1">
-            Asiento de gastos de insumos, servicios y aportes con regla obligatoria de comisión de Pago Móvil 100% manual
-          </p>
-        </div>
-
+      <div className="flex flex-wrap items-center justify-end gap-2">
         <div className="flex flex-wrap items-center gap-2">
           {[
             { id: 'egreso', label: 'Nuevo Gasto Operativo', icon: ArrowDownRight, color: 'bg-rose-600' },
@@ -815,21 +788,23 @@ export const ModuloEgresosOperativos: React.FC<ModuloEgresosOperativosProps> = (
               </select>
 
               <Button
+ variant="outline"
                 size="sm"
                 onClick={handleExportarExcel}
                 disabled={historialFiltrado.length === 0}
-                className="bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold rounded-xl shadow-sm shadow-emerald-600/20 flex items-center gap-1.5"
+                className="gap-1.5 text-xs"
               >
-                <FileSpreadsheet className="w-3.5 h-3.5" />
+                <FileSpreadsheet className="w-3.5 h-3.5 text-emerald-600" />
                 <span>Excel (.xlsx)</span>
               </Button>
               <Button
+ variant="outline"
                 size="sm"
                 onClick={handleExportarPDF}
                 disabled={historialFiltrado.length === 0}
-                className="bg-slate-800 hover:bg-slate-900 text-white text-xs font-bold rounded-xl shadow-sm shadow-slate-800/20 flex items-center gap-1.5"
+                className="gap-1.5 text-xs"
               >
-                <FileText className="w-3.5 h-3.5" />
+                <FileText className="w-3.5 h-3.5 text-rose-600" />
                 <span>PDF (.pdf)</span>
               </Button>
             </div>

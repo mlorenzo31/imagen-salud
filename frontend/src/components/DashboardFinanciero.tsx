@@ -5,27 +5,11 @@ import { descargarExcel } from '@/lib/excel';
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
 import html2canvas from 'html2canvas';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { getErrorMessage } from '@/lib/utils';
-import {
-  BarChart3,
-  LineChart as LineChartIcon,
-  PieChart as PieChartIcon,
-  Table as TableIcon,
-  FileSpreadsheet,
-  FileText,
-  TrendingUp,
-  TrendingDown,
-  Percent,
-  Layers,
-  Calendar,
-  Wallet,
-  Building2,
-  RefreshCw,
-  Sparkles
-} from 'lucide-react';
+import { BarChart3, LineChart as LineChartIcon, PieChart as PieChartIcon, Table as TableIcon, FileSpreadsheet, FileText, TrendingUp } from 'lucide-react';
 import {
   ResponsiveContainer,
   BarChart,
@@ -222,21 +206,23 @@ export const DashboardFinanciero: React.FC<DashboardFinancieroProps> = ({ tasaBc
 
         <div className="flex items-center gap-2">
           <Button
+ variant="outline"
             size="sm"
             onClick={exportarExcel}
-            className="bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold rounded-xl shadow-sm flex items-center gap-1.5 h-8"
+            className="gap-1.5 text-xs"
           >
-            <FileSpreadsheet className="w-3.5 h-3.5" />
+            <FileSpreadsheet className="w-3.5 h-3.5 text-emerald-600" />
             <span>Excel (.xlsx)</span>
           </Button>
 
           <Button
+ variant="outline"
             size="sm"
             disabled={exportandoPdf}
             onClick={exportarPDF}
-            className="bg-slate-800 hover:bg-slate-900 text-white text-xs font-bold rounded-xl shadow-sm flex items-center gap-1.5 h-8"
+            className="gap-1.5 text-xs"
           >
-            <FileText className="w-3.5 h-3.5" />
+            <FileText className="w-3.5 h-3.5 text-rose-600" />
             <span>{exportandoPdf ? 'Capturando...' : 'PDF (.pdf)'}</span>
           </Button>
         </div>

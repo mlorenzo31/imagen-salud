@@ -31,28 +31,10 @@ import { ModuloHistorialPacientes } from '@/components/ModuloHistorialPacientes'
 import { ModuloCampanas } from '@/components/ModuloCampanas';
 import { LoginScreen } from '@/components/LoginScreen';
 
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { 
-  Building2, 
-  RefreshCw, 
-  ArrowDownRight, 
-  ArrowLeftRight, 
-  FileUp,
-  ShieldAlert, 
-  ShieldCheck,
-  CheckCircle2,
-  FileSpreadsheet,
-  FileText,
-  Lock,
-  Wallet,
-  TrendingUp,
-  CreditCard,
-  FileCheck2,
-  Eye,
-  AlertTriangle
-} from 'lucide-react';
+import { RefreshCw, ArrowDownRight, ArrowLeftRight, FileUp, FileSpreadsheet, FileText, TrendingUp, AlertTriangle } from 'lucide-react';
 import { exportarAExcel, exportarAPDF } from '@/lib/exportUtils';
 import { CuentaBancaria, TransaccionBancaria, HonorarioMedico, PacientePendiente, UserRole, ModoOperacion } from '@/types';
 import { hoyLocal } from '@/lib/date';
@@ -347,16 +329,7 @@ export default function Home() {
         {/* 6. FLUJO DE TESORERÍA Y BÓVEDAS (Exclusivo Admin) */}
         {activeSection === 'tesoreria' && role === 'admin' && (
           <div className="space-y-6 animate-in fade-in-50 duration-300">
-            <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 bg-white p-5 rounded-2xl border border-slate-200 shadow-sm">
-              <div>
-                <h2 className="text-xl font-black text-slate-900 flex items-center gap-2">
-                  <Wallet className="w-6 h-6 text-clinica-primary" />
-                  Tesorería y Bancos (4 Cuentas Fijas Operativas)
-                </h2>
-                <p className="text-xs text-slate-500 mt-0.5">
-                  Efectivo Divisas ($), Efectivo Bolívares, Punto de Venta (Bs) y Pago Móvil (Bs). Cobranza entra 100% en cuentas clínicas antes de dispersión.
-                </p>
-              </div>
+            <div className="flex flex-wrap items-center justify-end gap-2">
               <div className="flex flex-wrap gap-2">
                 <Button 
                   variant="outline" 
@@ -391,7 +364,7 @@ export default function Home() {
               </div>
             </div>
 
-            <TreasuryCards cuentas={cuentas} loading={loading} onRefresh={loadInitialData} />
+            <TreasuryCards cuentas={cuentas} />
 
             {/* Extracto de Movimientos Bancarios */}
             <Card className="rounded-2xl border border-slate-200 shadow-sm overflow-hidden bg-white">
@@ -407,21 +380,23 @@ export default function Home() {
                     {transacciones.length} Asientos
                   </Badge>
                   <Button
+ variant="outline"
                     size="sm"
                     onClick={exportarLibroMayorExcel}
                     disabled={transacciones.length === 0}
-                    className="bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold rounded-xl shadow-sm flex items-center gap-1.5 h-8"
+                    className="gap-1.5 text-xs"
                   >
-                    <FileSpreadsheet className="w-3.5 h-3.5" />
+                    <FileSpreadsheet className="w-3.5 h-3.5 text-emerald-600" />
                     <span>Excel (.xlsx)</span>
                   </Button>
                   <Button
+ variant="outline"
                     size="sm"
                     onClick={exportarLibroMayorPDF}
                     disabled={transacciones.length === 0}
-                    className="bg-slate-800 hover:bg-slate-900 text-white text-xs font-bold rounded-xl shadow-sm flex items-center gap-1.5 h-8"
+                    className="gap-1.5 text-xs"
                   >
-                    <FileText className="w-3.5 h-3.5" />
+                    <FileText className="w-3.5 h-3.5 text-rose-600" />
                     <span>PDF (.pdf)</span>
                   </Button>
                 </div>
@@ -509,13 +484,7 @@ export default function Home() {
         {/* 9. COBERTURA CAMBIARIA (Exclusivo Admin) */}
         {activeSection === 'divisas' && role === 'admin' && (
           <div className="space-y-6 animate-in fade-in-50 duration-300">
-            <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 bg-white p-5 rounded-2xl border border-slate-200 shadow-sm">
-              <div>
-                <h2 className="text-xl font-black text-slate-900">Cobertura Cambiaria (Compra de Divisas)</h2>
-                <p className="text-xs text-slate-500">
-                  Conversión de excedentes en Bolívares a Dólares en Bóveda a tasa pactada con registro doble
-                </p>
-              </div>
+            <div className="flex flex-wrap items-center justify-end gap-2">
               {modoOperacion === 'operador' && (
                 <Button
                   onClick={() => setOpenDivisas(true)}
@@ -526,7 +495,7 @@ export default function Home() {
                 </Button>
               )}
             </div>
-            <TreasuryCards cuentas={cuentas} loading={loading} onRefresh={loadInitialData} />
+            <TreasuryCards cuentas={cuentas} />
           </div>
         )}
 

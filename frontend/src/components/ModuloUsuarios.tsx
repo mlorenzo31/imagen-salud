@@ -6,7 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
-import { KeyRound, Plus, RefreshCw, Users } from 'lucide-react';
+import { KeyRound, Plus, RefreshCw } from 'lucide-react';
 import { diferir } from '@/lib/diferir';
 import type { UserRole } from '@/types';
 
@@ -84,11 +84,7 @@ export const ModuloUsuarios: React.FC = () => {
 
   return (
     <div className="space-y-4">
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-3 bg-white p-5 rounded-2xl border border-slate-200 shadow-sm">
-        <div>
-          <h2 className="text-xl font-black text-slate-900 flex items-center gap-2"><Users className="w-6 h-6 text-slate-700" /> Usuarios</h2>
-          <p className="text-xs text-slate-500 mt-1">Cada persona entra con su usuario y clave. El WhatsApp registrado se usa para recuperar la clave.</p>
-        </div>
+      <div className="flex flex-wrap items-center justify-end gap-2">
         <div className="flex items-center gap-2">
           <Button variant="outline" size="sm" onClick={cargar} disabled={cargando} className="rounded-xl text-xs">
             <RefreshCw className={`w-3.5 h-3.5 mr-1 ${cargando ? 'animate-spin' : ''}`} /> Actualizar
