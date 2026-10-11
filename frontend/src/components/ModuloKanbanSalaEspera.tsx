@@ -3,6 +3,7 @@
 import { despacharWhatsApp, resumenOmitidos } from '@/lib/despacharWhatsApp';
 import { subirAdjuntos } from '@/lib/subirAdjuntos';
 import React, { useState, useEffect, useMemo, useRef } from 'react';
+import { useAvisos } from '@/components/ui/avisos';
 import { UserRole, ModoOperacion, ReembolsoPendiente, ServicioFactura } from '@/types';
 import { 
   GrupoClinico, 
@@ -68,6 +69,8 @@ export const ModuloKanbanSalaEspera: React.FC<ModuloKanbanSalaEsperaProps> = ({
   const [pacientes, setPacientes] = useState<PacienteTurno[]>([]);
   const [turnos, setTurnos] = useState<FilaSala[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
+  const { avisar, confirmar } = useAvisos();
+  const soloLectura = () => avisar({ tipo: 'alerta', mensaje: 'Modo Vista activo: no se pueden hacer cambios.' });
   const [filtroGrupo, setFiltroGrupo] = useState<'TODOS' | 'A' | 'B' | 'C'>('TODOS');
   const [llamandoId, setLlamandoId] = useState<number | null>(null);
 
@@ -142,7 +145,7 @@ export const ModuloKanbanSalaEspera: React.FC<ModuloKanbanSalaEsperaProps> = ({
     });
     const json = (await res.json().catch(() => ({}))) as { error?: string; asignaciones?: { id: number; box: string }[] };
     if (!res.ok) {
-      alert(json.error ?? 'No se pudo completar la acción.');
+      avisar({ tipo: 'error', mensaje: json.error ?? 'No se pudo completar la acción.' });
       await cargarPacientes();
       return null;
     }
@@ -151,7 +154,7 @@ export const ModuloKanbanSalaEspera: React.FC<ModuloKanbanSalaEsperaProps> = ({
   };
 
   const handleLlamar = async (ids: number[], box?: string) => {
-    if (isReadOnly) return alert('Acción restringida en Modo Vista (Read-Only).');
+    if (isReadOnly) return soloLectura();
     setLlamandoId(ids[0]);
     try {
       // La voz se emite solo en la TV de la sala de espera, no en este puesto.
@@ -164,18 +167,23 @@ export const ModuloKanbanSalaEspera: React.FC<ModuloKanbanSalaEsperaProps> = ({
   };
 
   const handleFinalizar = async (ids: number[]) => {
-    if (isReadOnly) return alert('Modo Vista activo.');
+    if (isReadOnly) return soloLectura();
     await accionSala('FINALIZAR', ids);
   };
 
   const handleAusente = async (t: FilaSala) => {
-    if (isReadOnly) return alert('Modo Vista activo.');
-    if (!confirm('¿"' + (t.nombre_paciente ?? 'Paciente') + '" no se presentó al llamado? Volverá al final de la sala de espera.')) return;
+    if (isReadOnly) return soloLectura();
+    const ok = await confirmar({
+      titulo: 'Marcar como ausente',
+      mensaje: (t.nombre_paciente ?? 'El paciente') + ' no se presentó al llamado. Volverá al final de la sala de espera.',
+      textoConfirmar: 'Marcar ausente',
+    });
+    if (!ok) return;
     await accionSala('AUSENTE', [t.id]);
   };
 
   const handleRellamar = async (t: FilaSala) => {
-    if (isReadOnly) return alert('Modo Vista activo.');
+    if (isReadOnly) return soloLectura();
     await accionSala('RELLAMAR', [t.id]);
   };
 
@@ -186,7 +194,7 @@ export const ModuloKanbanSalaEspera: React.FC<ModuloKanbanSalaEsperaProps> = ({
 
   // 8. Carga de Documento / Informe al Culminar Estudio
   const handleTriggerAdjunto = (pacienteId: number) => {
-    if (isReadOnly) return alert('Modo Vista activo.');
+    if (isReadOnly) return soloLectura();
     setPacienteAdjuntoId(pacienteId);
     if (fileInputRef.current) {
       fileInputRef.current.value = '';
@@ -209,7 +217,7 @@ export const ModuloKanbanSalaEspera: React.FC<ModuloKanbanSalaEsperaProps> = ({
       const resumen = r.subidos > 0
         ? r.subidos + ' archivo(s) adjuntado(s). La atención está lista para envío por WhatsApp.'
         : 'No se adjuntó ningún archivo.';
-      alert(resumen + (r.errores.length ? '\n\nNo se pudieron subir:\n' + r.errores.join('\n') : ''));
+      avisar({ tipo: r.subidos > 0 && r.errores.length === 0 ? 'exito' : 'alerta', mensaje: resumen + (r.errores.length ? '\n\nNo se pudieron subir:\n' + r.errores.join('\n') : '') });
     } finally {
       setPacienteAdjuntoId(null);
     }
@@ -217,11 +225,11 @@ export const ModuloKanbanSalaEspera: React.FC<ModuloKanbanSalaEsperaProps> = ({
 
   // 9. Enviar WhatsApp Individual (Urgente)
   const handleEnviarWhatsAppIndividual = async (p: PacienteTurno) => {
-    if (isReadOnly) return alert('Modo Vista activo.');
+    if (isReadOnly) return soloLectura();
 
     // REGLA CLÍNICA OBLIGATORIA: Si no hay imágenes/informe adjunto, el envío está bloqueado
     if (!p.adjunto_nombre) {
-      alert('ADVERTENCIA CLÍNICA: No se puede enviar por WhatsApp. Es obligatorio adjuntar previamente las imágenes o el informe médico del estudio.');
+      avisar({ tipo: 'alerta', titulo: 'Falta el informe', mensaje: 'No se puede enviar por WhatsApp sin adjuntar antes las imágenes o el informe médico del estudio.' });
       return;
     }
 
@@ -241,9 +249,9 @@ export const ModuloKanbanSalaEspera: React.FC<ModuloKanbanSalaEsperaProps> = ({
 
     const bot = await despacharWhatsApp([p.id], telInternacional);
     if (bot.modo === 'bot') {
-      alert(bot.encolados > 0
-        ? '✅ Mensaje en cola: el bot lo enviará en unos segundos y quedará registrado como enviado.'
-        : 'No se encoló:\n' + resumenOmitidos(bot.omitidos));
+      avisar(bot.encolados > 0
+        ? { tipo: 'exito', mensaje: 'Mensaje en cola: el bot lo enviará en unos segundos y quedará registrado como enviado.' }
+        : { tipo: 'alerta', titulo: 'No se encoló', mensaje: resumenOmitidos(bot.omitidos) });
       return;
     }
 
@@ -307,15 +315,15 @@ export const ModuloKanbanSalaEspera: React.FC<ModuloKanbanSalaEsperaProps> = ({
 
   const handleEjecutarDespachoMasivo = async () => {
     if (pacientesPendientesWhatsApp.length === 0) {
-      alert('No existen resultados pendientes por enviar por WhatsApp.');
+      avisar({ tipo: 'info', mensaje: 'No hay resultados pendientes por enviar por WhatsApp.' });
       return;
     }
 
     const botMasivo = await despacharWhatsApp(pacientesPendientesWhatsApp.map(x => x.id));
     if (botMasivo.modo === 'bot') {
       setModalMasivoWhatsApp(false);
-      alert('✅ ' + botMasivo.encolados + ' mensajes en cola; el bot los envía de forma escalonada.' +
-        (botMasivo.omitidos.length ? '\n\nOmitidos:\n' + resumenOmitidos(botMasivo.omitidos) : ''));
+      avisar({ tipo: botMasivo.omitidos.length ? 'alerta' : 'exito', mensaje: botMasivo.encolados + ' mensajes en cola; el bot los envía de forma escalonada.' +
+        (botMasivo.omitidos.length ? '\n\nOmitidos:\n' + resumenOmitidos(botMasivo.omitidos) : '') });
       return;
     }
 
@@ -358,14 +366,14 @@ export const ModuloKanbanSalaEspera: React.FC<ModuloKanbanSalaEsperaProps> = ({
 
     setProcesandoMasivo(false);
     setModalMasivoWhatsApp(false);
-    alert('✅ Despacho masivo completado con éxito. ' + total + ' resultados procesados. La bandeja de cierre diario está ahora libre para consolidar.');
+    avisar({ tipo: 'exito', titulo: 'Envío completado', mensaje: total + ' resultados procesados. La bandeja de cierre diario queda libre para consolidar.' });
   };
 
   // 11. Anulación en Sala de Espera (Admin Only) y Traslado a Reembolsos
   const handleConfirmarAnulacion = async () => {
     if (!pacienteAAnular) return;
     if (!motivoAnulacion.trim()) {
-      alert('Es obligatorio ingresar el motivo de anulación para la auditoría.');
+      avisar({ tipo: 'alerta', mensaje: 'Ingrese el motivo de la anulación: queda registrado en la auditoría.' });
       return;
     }
 
@@ -401,9 +409,9 @@ export const ModuloKanbanSalaEspera: React.FC<ModuloKanbanSalaEsperaProps> = ({
       setPacientes(prev => prev.filter(item => item.id !== pacienteAAnular.id));
       setPacienteAAnular(null);
       setMotivoAnulacion('');
-      alert('Atención anulada en sala. Turno liberado de TV y fondos trasladados a reversiones bancarias pendientes.');
+      avisar({ tipo: 'exito', titulo: 'Atención anulada', mensaje: 'Turno liberado de la TV; los fondos pasan a reversiones bancarias pendientes.' });
     } catch (err) {
-      alert('Error anulando atención: ' + getErrorMessage(err));
+      avisar({ tipo: 'error', titulo: 'No se anuló la atención', mensaje: getErrorMessage(err) });
     } finally {
       setSubmittingAnulacion(false);
     }
@@ -493,7 +501,7 @@ export const ModuloKanbanSalaEspera: React.FC<ModuloKanbanSalaEsperaProps> = ({
           </div>
 
           {/* TABLERO KANBAN */}
-          <TableroKanban turnosTodos={turnos} turnosEspera={turnosEspera} turnosAtencion={turnosAtencion} isReadOnly={isReadOnly} isAdmin={isAdmin} llamandoId={llamandoId} onLlamar={handleLlamar} onFinalizar={handleFinalizar} onAusente={handleAusente} onRellamar={handleRellamar} onAnular={handleAnularTurno} pacientesFinalizados={pacientesFinalizados} handleTriggerAdjunto={handleTriggerAdjunto} handleEnviarWhatsAppIndividual={handleEnviarWhatsAppIndividual} />
+          <TableroKanban cargando={loading && turnos.length === 0 && pacientes.length === 0} turnosTodos={turnos} turnosEspera={turnosEspera} turnosAtencion={turnosAtencion} isReadOnly={isReadOnly} isAdmin={isAdmin} llamandoId={llamandoId} onLlamar={handleLlamar} onFinalizar={handleFinalizar} onAusente={handleAusente} onRellamar={handleRellamar} onAnular={handleAnularTurno} pacientesFinalizados={pacientesFinalizados} handleTriggerAdjunto={handleTriggerAdjunto} handleEnviarWhatsAppIndividual={handleEnviarWhatsAppIndividual} />
         </>
       )}
 

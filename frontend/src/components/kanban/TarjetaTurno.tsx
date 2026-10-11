@@ -74,7 +74,7 @@ export const TarjetaEspera: React.FC<PropsEspera> = ({ turno: t, todos, isReadOn
   const planConjunto = mismosGrupo.length > 0 ? planificarLlamado([t.id, ...mismosGrupo.map((o) => o.id)], tareas, box || undefined) : null;
 
   return (
-    <Card className={'rounded-2xl border transition-all shadow-sm bg-white p-4 space-y-3 ' + (
+    <Card className={'rounded-2xl border transition-all shadow-sm bg-white p-4 space-y-3 animate-in fade-in-0 slide-in-from-top-1 duration-200 ' + (
       bloqueo ? 'border-slate-200 bg-slate-50/60' : t.retorno ? 'border-clinica-coral/60 bg-clinica-coral-soft/50 ring-2 ring-clinica-coral/20' : 'border-slate-200 hover:border-slate-300'
     )}>
       <div className="flex items-start justify-between gap-2">
@@ -163,7 +163,7 @@ export const TarjetaAtencion: React.FC<PropsAtencion> = ({ turno: t, todos, isRe
   const clave = clavePaciente(t.cedula_paciente, t.factura_id);
   const mismosGrupo = todos.filter((o) => o.id !== t.id && o.estado === 'ATENCION' && o.grupo === t.grupo && clavePaciente(o.cedula_paciente, o.factura_id) === clave);
   return (
-    <Card className="rounded-2xl border-2 border-blue-400/40 shadow-md bg-white p-4 space-y-3">
+    <Card className="rounded-2xl border-2 border-blue-400/40 shadow-md bg-white p-4 space-y-3 animate-in fade-in-0 slide-in-from-top-1 duration-200">
       <div className="flex items-start justify-between gap-2">
         <div className="flex items-center gap-2">
           <span className="font-mono text-base font-black px-2.5 py-1 bg-blue-600 text-white rounded-xl animate-pulse">{codigo(t)}</span>

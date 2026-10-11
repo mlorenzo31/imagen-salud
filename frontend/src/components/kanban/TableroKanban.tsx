@@ -2,6 +2,7 @@
 
 import React from 'react';
 import { Card } from '@/components/ui/card';
+import { Skeleton } from '@/components/ui/skeleton';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { CheckCircle2, Clock, Play, AlertTriangle, Lock, Check, Paperclip, UploadCloud, MessageCircle } from 'lucide-react';
@@ -12,6 +13,8 @@ import type { FilaSala } from '@/lib/sala';
 import { TarjetaAtencion, TarjetaEspera } from './TarjetaTurno';
 
 interface TableroKanbanProps {
+  /** Primera carga: se muestran tarjetas de esqueleto en cada columna. */
+  cargando?: boolean;
   turnosTodos: FilaSala[];
   turnosEspera: FilaSala[];
   turnosAtencion: FilaSala[];
@@ -28,7 +31,7 @@ interface TableroKanbanProps {
   handleEnviarWhatsAppIndividual: (p: PacienteTurno) => Promise<void>;
 }
 
-export const TableroKanban: React.FC<TableroKanbanProps> = ({ turnosTodos, turnosEspera, turnosAtencion, isReadOnly, isAdmin, llamandoId, onLlamar, onFinalizar, onAusente, onRellamar, onAnular, pacientesFinalizados, handleTriggerAdjunto, handleEnviarWhatsAppIndividual }) => (
+export const TableroKanban: React.FC<TableroKanbanProps> = ({ cargando = false, turnosTodos, turnosEspera, turnosAtencion, isReadOnly, isAdmin, llamandoId, onLlamar, onFinalizar, onAusente, onRellamar, onAnular, pacientesFinalizados, handleTriggerAdjunto, handleEnviarWhatsAppIndividual }) => (
   <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
 
     {/* 1. EN ESPERA (un turno por estudio) */}
@@ -41,7 +44,17 @@ export const TableroKanban: React.FC<TableroKanbanProps> = ({ turnosTodos, turno
         <Badge className="bg-amber-600 text-white text-xs font-mono">{turnosEspera.length}</Badge>
       </div>
       <div className="space-y-3 min-h-[420px]">
-        {turnosEspera.length === 0 ? (
+        {cargando ? (
+          <div className="space-y-3" aria-busy="true" aria-label="Cargando turnos">
+            {[0, 1, 2].map((i) => (
+              <div key={i} className="rounded-2xl border border-slate-200 bg-white p-4 space-y-3">
+                <div className="flex items-center justify-between"><Skeleton className="h-4 w-32" /><Skeleton className="h-5 w-12" /></div>
+                <Skeleton className="h-3 w-24" />
+                <Skeleton className="h-8 w-full" />
+              </div>
+            ))}
+          </div>
+        ) : turnosEspera.length === 0 ? (
           <div className="p-8 text-center border-2 border-dashed border-slate-200 rounded-2xl bg-white text-slate-500 text-xs">No hay pacientes en espera</div>
         ) : (
           turnosEspera.map((t) => (
@@ -61,7 +74,17 @@ export const TableroKanban: React.FC<TableroKanbanProps> = ({ turnosTodos, turno
         <Badge className="bg-blue-600 text-white text-xs font-mono">{turnosAtencion.length}</Badge>
       </div>
       <div className="space-y-3 min-h-[420px]">
-        {turnosAtencion.length === 0 ? (
+        {cargando ? (
+          <div className="space-y-3" aria-busy="true" aria-label="Cargando turnos">
+            {[0, 1].map((i) => (
+              <div key={i} className="rounded-2xl border border-slate-200 bg-white p-4 space-y-3">
+                <div className="flex items-center justify-between"><Skeleton className="h-4 w-32" /><Skeleton className="h-5 w-12" /></div>
+                <Skeleton className="h-3 w-24" />
+                <Skeleton className="h-8 w-full" />
+              </div>
+            ))}
+          </div>
+        ) : turnosAtencion.length === 0 ? (
           <div className="p-8 text-center border-2 border-dashed border-slate-200 rounded-2xl bg-white text-slate-500 text-xs">No hay pacientes en curso</div>
         ) : (
           turnosAtencion.map((t) => (
@@ -82,7 +105,17 @@ export const TableroKanban: React.FC<TableroKanbanProps> = ({ turnosTodos, turno
       </div>
 
       <div className="space-y-3 min-h-[420px]">
-        {pacientesFinalizados.length === 0 ? (
+        {cargando ? (
+          <div className="space-y-3" aria-busy="true" aria-label="Cargando turnos">
+            {[0, 1].map((i) => (
+              <div key={i} className="rounded-2xl border border-slate-200 bg-white p-4 space-y-3">
+                <div className="flex items-center justify-between"><Skeleton className="h-4 w-32" /><Skeleton className="h-5 w-12" /></div>
+                <Skeleton className="h-3 w-24" />
+                <Skeleton className="h-8 w-full" />
+              </div>
+            ))}
+          </div>
+        ) : pacientesFinalizados.length === 0 ? (
           <div className="p-8 text-center border-2 border-dashed border-slate-200 rounded-2xl bg-white text-slate-500 text-xs">
             Aún no hay pacientes culminados hoy
           </div>
@@ -92,7 +125,7 @@ export const TableroKanban: React.FC<TableroKanbanProps> = ({ turnosTodos, turno
             const whatsappEnviado = Boolean(p.whatsapp_enviado);
 
             return (
-              <Card key={p.id} className="rounded-2xl border border-slate-200 shadow-sm bg-white p-3.5 space-y-2.5">
+              <Card key={p.id} className="rounded-2xl border border-slate-200 shadow-sm bg-white p-3.5 space-y-2.5 animate-in fade-in-0 slide-in-from-top-1 duration-200">
                 <div className="flex items-start justify-between gap-1">
                   <div className="flex items-center gap-2">
                     <span className="font-mono text-xs font-bold px-2 py-0.5 bg-slate-100 text-slate-700 rounded-lg">
