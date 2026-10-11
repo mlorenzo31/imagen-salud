@@ -401,7 +401,7 @@ export const UniversalDataView: React.FC<UniversalDataViewProps> = ({
         {data.length === 0 ? (
           <div className="py-12 text-center text-slate-500">
             <TrendingUp className="w-10 h-10 mx-auto mb-2 text-slate-300 stroke-1" />
-            <p className="text-xs font-medium">No hay datos registrados para el criterio seleccionado.</p>
+            <p className="text-xs font-medium">Sin datos para este período. Pruebe con Este mes o Historial completo.</p>
           </div>
         ) : (
           <>

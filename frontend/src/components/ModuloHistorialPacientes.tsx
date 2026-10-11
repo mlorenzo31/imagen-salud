@@ -530,14 +530,9 @@ export const ModuloHistorialPacientes: React.FC<ModuloHistorialPacientesProps> =
                     <Globe className="w-7 h-7" />
                   </div>
                   <div>
-                    <div className="flex items-center gap-2">
-                      <h3 className="text-lg font-black text-slate-900">
-                        Auditoría General de la Clínica
-                      </h3>
-                      <Badge className="bg-clinica-selection text-clinica-dark text-xs font-bold border border-clinica-primary/30">
-                        Modo Consolidado (Todos los Pacientes)
-                      </Badge>
-                    </div>
+                    <h3 className="text-lg font-semibold text-slate-900">
+                      Historial de toda la clínica
+                    </h3>
                     <p className="text-xs text-slate-500 mt-0.5">
                       Visualizando el historial global consolidado de todas las atenciones, recaudaciones y resultados clínicos.
                     </p>

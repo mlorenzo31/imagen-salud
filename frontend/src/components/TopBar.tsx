@@ -44,7 +44,7 @@ export const TopBar: React.FC<Props> = ({ seccion, tasaBcv, nombreUsuario, role,
 
   return (
     <header className="sticky top-0 z-20 bg-white/85 backdrop-blur border-b border-slate-200/80">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between gap-3">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between gap-2 sm:gap-3">
         <button
           type="button"
           onClick={onMenu}
@@ -54,27 +54,27 @@ export const TopBar: React.FC<Props> = ({ seccion, tasaBcv, nombreUsuario, role,
           <Menu className="w-5 h-5" strokeWidth={1.75} />
         </button>
         <div className="min-w-0 flex-1">
-          <h2 className="text-[17px] font-semibold tracking-tight text-slate-900 leading-tight truncate">{info.titulo}</h2>
-          <p className="text-xs text-slate-500 truncate">{info.detalle}</p>
+          <h2 className="text-[15px] sm:text-[17px] font-semibold tracking-tight text-slate-900 leading-tight sm:truncate">{info.titulo}</h2>
+          <p className="hidden sm:block text-xs text-slate-500 truncate">{info.detalle}</p>
         </div>
 
-        <div className="flex items-center gap-3 shrink-0">
+        <div className="flex items-center gap-2 sm:gap-3 shrink-0">
           <span className="hidden xl:block text-xs text-slate-500">{fecha}</span>
 
           <WhatsAppEstado />
 
           <div
             title="Tasa oficial BCV (se actualiza automáticamente)"
-            className="flex items-center gap-1.5 rounded-full bg-clinica-selection border border-clinica-aquamarine/50 px-3 py-1.5 text-xs"
+            className="flex items-center gap-1.5 rounded-full bg-clinica-selection border border-clinica-aquamarine/50 px-2.5 sm:px-3 py-1.5 text-xs"
           >
-            <CircleDollarSign className="w-3.5 h-3.5 text-clinica-primary" strokeWidth={1.75} />
+            <CircleDollarSign className="hidden sm:block w-3.5 h-3.5 text-clinica-primary" strokeWidth={1.75} />
             <span className="text-slate-500">BCV</span>
             <span className="font-semibold text-clinica-dark tabular-nums">
               {tasaBcv > 0 ? `Bs ${tasaBcv.toLocaleString('es-VE', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` : '—'}
             </span>
           </div>
 
-          <div className="flex items-center gap-2.5 pl-3 border-l border-slate-200">
+          <div className="flex items-center gap-2.5 sm:pl-3 sm:border-l border-slate-200">
             <div className="size-8 rounded-full bg-gradient-to-br from-clinica-aquamarine to-clinica-primary text-white text-xs font-semibold flex items-center justify-center">
               {iniciales(nombreUsuario) || 'IS'}
             </div>

@@ -22,8 +22,8 @@ export const BannerHistorial: React.FC<BannerHistorialProps> = ({ pacienteSelecc
           {pacienteSeleccionado.nombre ? pacienteSeleccionado.nombre.charAt(0).toUpperCase() : 'P'}
         </div>
         <div>
-          <div className="flex items-center gap-2">
-            <h3 className="text-lg font-black text-slate-900">
+          <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
+            <h3 className="text-lg font-semibold text-slate-900">
               {pacienteSeleccionado.nombre}
             </h3>
             <Badge className="bg-emerald-100 text-emerald-800 text-xs font-bold border border-emerald-200">

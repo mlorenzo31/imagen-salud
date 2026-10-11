@@ -444,12 +444,12 @@ export const ModuloKanbanSalaEspera: React.FC<ModuloKanbanSalaEsperaProps> = ({
         <>
           {/* Barra de Filtros por Grupo Clínico */}
           <div className="flex flex-wrap items-center justify-between gap-3 bg-white p-3.5 rounded-2xl border border-slate-200 shadow-sm">
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-2 min-w-0 max-w-full">
               <span className="text-xs font-semibold text-slate-600 pl-1">Grupo:</span>
-              <div className="flex bg-slate-100 p-1 rounded-xl gap-1">
+              <div className="flex bg-slate-100 p-1 rounded-xl gap-1 min-w-0 overflow-x-auto">
                 <button
                   onClick={() => setFiltroGrupo('TODOS')}
-                  className={'px-3 py-1 text-xs font-bold rounded-lg transition-all ' + (
+                  className={'px-3 py-1 text-xs font-bold rounded-lg transition-all whitespace-nowrap shrink-0 ' + (
                     filtroGrupo === 'TODOS' ? 'bg-white text-slate-900 shadow-sm' : 'text-slate-500 hover:text-slate-800'
                   )}
                 >
@@ -457,7 +457,7 @@ export const ModuloKanbanSalaEspera: React.FC<ModuloKanbanSalaEsperaProps> = ({
                 </button>
                 <button
                   onClick={() => setFiltroGrupo('A')}
-                  className={'px-3 py-1 text-xs font-bold rounded-lg transition-all flex items-center gap-1.5 ' + (
+                  className={'px-3 py-1 text-xs font-bold rounded-lg transition-all whitespace-nowrap shrink-0 flex items-center gap-1.5 ' + (
                     filtroGrupo === 'A' ? 'bg-clinica-selection text-clinica-dark shadow-sm border border-clinica-aquamarine/40' : 'text-slate-500 hover:text-slate-800'
                   )}
                 >
@@ -466,7 +466,7 @@ export const ModuloKanbanSalaEspera: React.FC<ModuloKanbanSalaEsperaProps> = ({
                 </button>
                 <button
                   onClick={() => setFiltroGrupo('B')}
-                  className={'px-3 py-1 text-xs font-bold rounded-lg transition-all flex items-center gap-1.5 ' + (
+                  className={'px-3 py-1 text-xs font-bold rounded-lg transition-all whitespace-nowrap shrink-0 flex items-center gap-1.5 ' + (
                     filtroGrupo === 'B' ? 'bg-blue-50 text-blue-800 shadow-sm border border-blue-200' : 'text-slate-500 hover:text-slate-800'
                   )}
                 >
@@ -475,7 +475,7 @@ export const ModuloKanbanSalaEspera: React.FC<ModuloKanbanSalaEsperaProps> = ({
                 </button>
                 <button
                   onClick={() => setFiltroGrupo('C')}
-                  className={'px-3 py-1 text-xs font-bold rounded-lg transition-all flex items-center gap-1.5 ' + (
+                  className={'px-3 py-1 text-xs font-bold rounded-lg transition-all whitespace-nowrap shrink-0 flex items-center gap-1.5 ' + (
                     filtroGrupo === 'C' ? 'bg-purple-50 text-purple-800 shadow-sm border border-purple-200' : 'text-slate-500 hover:text-slate-800'
                   )}
                 >
