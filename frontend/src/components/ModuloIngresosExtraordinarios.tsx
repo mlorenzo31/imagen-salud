@@ -480,7 +480,7 @@ export const ModuloIngresosExtraordinarios: React.FC<ModuloIngresosExtraordinari
               ) : ingresosFiltrados.length === 0 ? (
                 <tr>
                   <td colSpan={8} className="p-8 text-center text-slate-500">
-                    No se encontraron ingresos extraordinarios para los filtros seleccionados.
+                    No hay ingresos extraordinarios con estos filtros. Use el botón Nuevo ingreso extraordinario para registrar uno.
                   </td>
                 </tr>
               ) : agruparPor === 'NINGUNO' ? (

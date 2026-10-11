@@ -368,7 +368,7 @@ export default function Home() {
 
             {/* Extracto de Movimientos Bancarios */}
             <Card className="rounded-2xl border border-slate-200 shadow-sm overflow-hidden bg-white">
-              <CardHeader className="py-4 px-6 border-b border-slate-100 flex flex-row items-center justify-between">
+              <CardHeader className="py-4 px-6 border-b border-slate-100 flex flex-row flex-wrap items-center justify-between gap-3">
                 <div>
                   <CardTitle className="text-sm font-black text-slate-800">
                     Extracto de Movimientos y Libro Mayor
@@ -417,8 +417,8 @@ export default function Home() {
                   <tbody className="divide-y divide-slate-100">
                     {transacciones.length === 0 ? (
                       <tr>
-                        <td colSpan={7} className="p-8 text-center text-slate-500 font-medium">
-                          No hay transacciones registradas aún.
+                        <td colSpan={7} className="p-8 text-left sm:text-center text-slate-500 font-medium">
+                          Aún no hay movimientos. Aparecen al cobrar facturas o registrar ingresos y egresos.
                         </td>
                       </tr>
                     ) : (

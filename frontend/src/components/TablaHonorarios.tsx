@@ -395,7 +395,7 @@ export const TablaHonorarios: React.FC<TablaHonorariosProps> = ({
               {itemsFiltrados.length === 0 ? (
                 <tr>
                   <td colSpan={7} className="p-8 text-center text-slate-500">
-                    No se encontraron honorarios médicos registrados.
+                    Aún no hay honorarios. Se generan al facturar estudios con médico asignado.
                   </td>
                 </tr>
               ) : (

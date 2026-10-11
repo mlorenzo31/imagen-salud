@@ -831,7 +831,7 @@ export const ModuloEgresosOperativos: React.FC<ModuloEgresosOperativosProps> = (
                   {historialFiltrado.length === 0 ? (
                     <tr>
                       <td colSpan={9} className="p-8 text-center text-slate-500 font-medium">
-                        No hay movimientos que coincidan con la búsqueda.
+                        Ningún egreso coincide con la búsqueda. Pruebe con otra palabra o limpie el filtro.
                       </td>
                     </tr>
                   ) : (

@@ -24,7 +24,7 @@ interface TablaFacturasCajaProps {
 
 export const TablaFacturasCaja: React.FC<TablaFacturasCajaProps> = ({ facturasFiltradas, agruparPor, grupos, totalCobradoUSD, totalCobradoBs, gruposColapsados, toggleColapsarGrupo, tasaBcv, verTicket, anulandoId, handleAnular }) => (
   <Card className="bg-white border-slate-200 shadow-sm overflow-hidden">
-    <CardHeader className="py-3 px-5 border-b border-slate-100 flex flex-row items-center justify-between">
+    <CardHeader className="py-3 px-5 border-b border-slate-100 flex flex-row flex-wrap items-center justify-between gap-2">
       <CardTitle className="text-xs font-bold text-slate-700 flex items-center gap-2">
         <span>{facturasFiltradas.length} comprobantes</span>
         {agruparPor !== 'NINGUNO' && (
@@ -154,7 +154,7 @@ export const TablaFacturasCaja: React.FC<TablaFacturasCajaProps> = ({ facturasFi
             {facturasFiltradas.length === 0 ? (
               <tr>
                 <td colSpan={8} className="py-8 text-center text-slate-500 text-xs font-medium">
-                  No hay comprobantes con estos filtros.
+                  No hay comprobantes con estos filtros. Cambie la fecha o limpie los filtros.
                 </td>
               </tr>
             ) : (
