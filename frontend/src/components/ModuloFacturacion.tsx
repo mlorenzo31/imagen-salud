@@ -5,7 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
-import { ShoppingCart, CreditCard, CheckCircle2, AlertCircle, Trash2, Search, UserCheck, Stethoscope, RefreshCw, RotateCcw, X } from 'lucide-react';import { ESPECIALISTAS_MEDICOS } from '@/lib/catalogos';import { useCatalogoEstudios } from '@/lib/useCatalogoEstudios';import { facturaCreateSchema } from '@/lib/validations';
+import { ShoppingCart, CreditCard, CheckCircle2, AlertCircle, Trash2, Search, UserCheck, Stethoscope, RefreshCw, RotateCcw, X } from 'lucide-react';import { ESPECIALISTAS_MEDICOS } from '@/lib/catalogos';import { useCatalogoEstudios } from '@/lib/useCatalogoEstudios';import { facturaCreateSchema } from '@/lib/validations';import { useAvisos } from '@/components/ui/avisos';
 import { inferirSexo, esSexo, ETIQUETA_SEXO, type Sexo } from '@/lib/sexo';
 import { mapearEstudioAGrupo, GrupoClinico } from '@/lib/gruposClinicos';import { normalizarCedulaRif } from '@/lib/cedulaRif';import { aFormatoInputDate, calcularEdadReal, hoyLocal } from '@/lib/date';
 import { getErrorMessage } from '@/lib/utils';
@@ -162,6 +162,8 @@ export const ModuloFacturacion: React.FC<ModuloFacturacionProps> = ({ onFacturaE
 
   // Estados de Proceso
   const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
+  const [emitida, setEmitida] = useState<boolean>(false);
+  const { avisar } = useAvisos();
   const [erroresValidacion, setErroresValidacion] = useState<string[]>([]);
   const [facturaEmitida, setFacturaEmitida] = useState<unknown>(null);
   // Impresión física desactivada según requerimiento corporativo
@@ -179,7 +181,7 @@ export const ModuloFacturacion: React.FC<ModuloFacturacionProps> = ({ onFacturaE
           setFuenteTasaBcv(data.fuente || 'BCV Oficial');
           setTasaManualEditada(false);
           setTasaPin(null);
-          if (notificar) alert(`Tasa oficial del BCV sincronizada con éxito: Bs. ${tasaNum.toFixed(2)}`);
+          if (notificar) avisar({ tipo: 'exito', mensaje: `Tasa BCV actualizada: Bs. ${tasaNum.toFixed(2)}` });
         }
       }
     } catch (err) {
@@ -306,7 +308,7 @@ export const ModuloFacturacion: React.FC<ModuloFacturacionProps> = ({ onFacturaE
     if (!valRes.valido) {
       setErroresFicha(valRes.errores);
       const lista = Object.values(valRes.errores).filter(Boolean);
-      alert(`Por favor complete los campos obligatorios según sus características:\n\n• ${lista.join('\n• ')}`);
+      avisar({ tipo: 'alerta', titulo: 'Complete los datos del paciente', mensaje: `• ${lista.join('\n• ')}` });
       return;
     }
 
@@ -328,14 +330,14 @@ export const ModuloFacturacion: React.FC<ModuloFacturacionProps> = ({ onFacturaE
       if (res.ok) {
         setPacienteExiste(true);
         setErroresFicha({});
-        alert('✓ Paciente registrado exitosamente en la base de datos.');
+        avisar({ tipo: 'exito', mensaje: 'Paciente registrado.' });
       } else {
         const errData = await res.json().catch(() => ({}));
-        alert(errData.error || 'Error al registrar paciente.');
+        avisar({ tipo: 'error', mensaje: errData.error || 'No se pudo registrar al paciente.' });
       }
     } catch (err) {
       console.error(err);
-      alert('Error de conexión.');
+      avisar({ tipo: 'error', mensaje: 'Sin conexión. Revise la red e intente de nuevo.' });
     } finally {
       setGuardandoPaciente(false);
     }
@@ -350,13 +352,13 @@ export const ModuloFacturacion: React.FC<ModuloFacturacionProps> = ({ onFacturaE
       ? (espConsulta ? { nombre: `Consulta ${espConsulta.especialidad}`, precio: espConsulta.precio || 0, area: 'CONSULTAS', sala: estudiosArea[0]?.sala || 'CONSULTORIO_GENERAL', dist: { imagen: 0, medico: 0, eco: 0, patologo: 0 } } : undefined)
       : estudiosArea.find(e => e.nombre === selectedEstudioNombre);
     if (!estudioObj) {
-      if (selectedArea === 'CONSULTAS') alert('Seleccione al médico de la consulta.');
+      if (selectedArea === 'CONSULTAS') avisar({ tipo: 'alerta', mensaje: 'Seleccione al médico de la consulta.' });
       return;
     }
 
     // Validación estricta de médico en Consultas y Ginecología
     if ((selectedArea === 'CONSULTAS' || selectedArea === 'GINECOLOGIA') && (!selectedDoctor || selectedDoctor === 'De Guardia')) {
-      alert(`En ${selectedArea} es obligatorio seleccionar al médico especialista tratante.`);
+      avisar({ tipo: 'alerta', mensaje: `En ${selectedArea} es obligatorio elegir al médico tratante.` });
       return;
     }
 
@@ -591,10 +593,12 @@ export const ModuloFacturacion: React.FC<ModuloFacturacionProps> = ({ onFacturaE
       setPagoPuntoBs('');
       setPagoMovilBs('');
 
+      setEmitida(true);
+      setTimeout(() => setEmitida(false), 1800);
       if (onFacturaEmitida) onFacturaEmitida();
     } catch (err) {
       console.error(err);
-      alert(`Error procesando cobro: ${getErrorMessage(err)}`);
+      avisar({ tipo: 'error', titulo: 'No se emitió la factura', mensaje: getErrorMessage(err) });
     } finally {
       setIsSubmitting(false);
     }
@@ -980,7 +984,7 @@ export const ModuloFacturacion: React.FC<ModuloFacturacionProps> = ({ onFacturaE
                       return (
                         <div 
                           key={item.id} 
-                          className="p-3 rounded-xl bg-slate-50 border border-slate-200 flex items-center justify-between text-xs"
+                          className="p-3 rounded-xl bg-slate-50 border border-slate-200 flex items-center justify-between text-xs animate-in fade-in-0 slide-in-from-top-1 duration-200"
                         >
                           <div>
                             <div className="flex items-center gap-2">
@@ -1174,8 +1178,9 @@ export const ModuloFacturacion: React.FC<ModuloFacturacionProps> = ({ onFacturaE
             <div className="border-t border-slate-200 bg-white p-4">
               <Button
                 type="button"
-                disabled={!isCuadrado || isSubmitting || carrito.length === 0 || !(tasaBcv > 0)}
+                disabled={!emitida && (!isCuadrado || isSubmitting || carrito.length === 0 || !(tasaBcv > 0))}
                 onClick={handleProcesarFactura}
+                aria-live="polite"
                 className="w-full h-12 rounded-xl bg-clinica-primary hover:bg-clinica-primary-dark text-white font-semibold text-sm flex items-center justify-center gap-2 disabled:opacity-40"
               >
                 {isSubmitting ? (
@@ -1183,6 +1188,11 @@ export const ModuloFacturacion: React.FC<ModuloFacturacionProps> = ({ onFacturaE
                     <span className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
                     <span>Emitiendo factura…</span>
                   </>
+                ) : emitida ? (
+                  <span className="flex items-center gap-2 animate-in fade-in-0 zoom-in-95 duration-200">
+                    <CheckCircle2 className="w-4 h-4" />
+                    <span>Factura emitida</span>
+                  </span>
                 ) : (
                   <>
                     <CheckCircle2 className="w-4 h-4" />
