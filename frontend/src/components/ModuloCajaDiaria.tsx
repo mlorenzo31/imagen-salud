@@ -11,6 +11,8 @@ import { TicketTermico } from '@/components/cajadiaria/TicketTermico';
 import { TablaFacturasCaja } from '@/components/cajadiaria/TablaFacturasCaja';
 import { BarraBusquedaCaja } from '@/components/cajadiaria/BarraBusquedaCaja';
 import { diferir } from '@/lib/diferir';
+import { Skeleton } from '@/components/ui/skeleton';
+import { useAvisos } from '@/components/ui/avisos';
 
 interface ModuloCajaDiariaProps {
   currentRole: UserRole;
@@ -24,6 +26,7 @@ export const ModuloCajaDiaria: React.FC<ModuloCajaDiariaProps> = ({ currentRole 
   const [facturaSeleccionada, setFacturaSeleccionada] = useState<FacturaCaja | null>(null);
   const [mostrarModalTicket, setMostrarModalTicket] = useState(false);
   const [anulandoId, setAnulandoId] = useState<number | null>(null);
+  const { avisar, confirmar } = useAvisos();
 
   // Tasa Oficial BCV
   const [tasaBcv, setTasaBcv] = useState<number>(0);
@@ -210,10 +213,17 @@ export const ModuloCajaDiaria: React.FC<ModuloCajaDiariaProps> = ({ currentRole 
   const totalPagoMovilEquivUSD = tasaBcv > 0 ? totalPagoMovilBs / tasaBcv : 0;
 
   const totalAnuladas = facturasFiltradas.filter(f => esAnulada(f.estado)).length;
+  const cargandoInicial = loading && facturas.length === 0;
 
   // Anular factura
   const handleAnular = async (id: number) => {
-    if (!confirm('¿Está seguro de anular esta factura? Esta acción quedará auditada.')) return;
+    const ok = await confirmar({
+      titulo: 'Anular factura',
+      mensaje: 'La factura quedará anulada y la acción se registra en la auditoría.',
+      textoConfirmar: 'Anular factura',
+      tono: 'peligro',
+    });
+    if (!ok) return;
     setAnulandoId(id);
     try {
       const res = await fetch(`/api/facturas/${id}/estado`, {
@@ -222,14 +232,14 @@ export const ModuloCajaDiaria: React.FC<ModuloCajaDiariaProps> = ({ currentRole 
         body: JSON.stringify({ estado: 'ANULADA', etapa_actual: 2 })
       });
       if (res.ok) {
-        alert('Factura anulada con éxito.');
+        avisar({ tipo: 'exito', mensaje: 'Factura anulada.' });
         cargarFacturas();
       } else {
-        alert('Error al anular la factura.');
+        avisar({ tipo: 'error', mensaje: 'No se pudo anular la factura.' });
       }
     } catch (err) {
       console.error(err);
-      alert('Error de conexión.');
+      avisar({ tipo: 'error', mensaje: 'Sin conexión. Revise la red e intente de nuevo.' });
     } finally {
       setAnulandoId(null);
     }
@@ -242,7 +252,7 @@ export const ModuloCajaDiaria: React.FC<ModuloCajaDiariaProps> = ({ currentRole 
 
   const handleExportarExcel = () => {
     if (facturasFiltradas.length === 0) {
-      alert('No hay facturas filtradas para exportar.');
+      avisar({ tipo: 'alerta', mensaje: 'No hay facturas filtradas para exportar.' });
       return;
     }
 
@@ -280,7 +290,7 @@ export const ModuloCajaDiaria: React.FC<ModuloCajaDiariaProps> = ({ currentRole 
 
   const handleExportarPDF = () => {
     if (facturasFiltradas.length === 0) {
-      alert('No hay facturas filtradas para exportar.');
+      avisar({ tipo: 'alerta', mensaje: 'No hay facturas filtradas para exportar.' });
       return;
     }
 
@@ -372,7 +382,20 @@ export const ModuloCajaDiaria: React.FC<ModuloCajaDiariaProps> = ({ currentRole 
       </div>
 
       {/* KPI Cards de Arqueo Multimoneda */}
-      <div className="grid grid-cols-2 md:grid-cols-6 gap-3">
+      {cargandoInicial ? (
+        <div className="grid grid-cols-2 md:grid-cols-6 gap-3" aria-busy="true" aria-label="Cargando totales">
+          {Array.from({ length: 6 }).map((_, i) => (
+            <Card key={i} className="bg-white border-slate-200">
+              <CardContent className="p-3.5 space-y-2.5">
+                <Skeleton className="h-3 w-20" />
+                <Skeleton className="h-7 w-24" />
+                <Skeleton className="h-3 w-28" />
+              </CardContent>
+            </Card>
+          ))}
+        </div>
+      ) : (
+      <div className="grid grid-cols-2 md:grid-cols-6 gap-3 animate-in fade-in-0 duration-200">
         <Card className="bg-white border-slate-200">
           <CardContent className="p-3.5">
             <p className="text-xs font-medium text-slate-500">Facturas</p>
@@ -437,6 +460,7 @@ export const ModuloCajaDiaria: React.FC<ModuloCajaDiariaProps> = ({ currentRole 
           </CardContent>
         </Card>
       </div>
+      )}
 
       {/* === BARRA DE BÚSQUEDA Y CONTROL CLÍNICO === */}
       <Card className="bg-white border-slate-300 shadow-md rounded-2xl overflow-visible">
@@ -593,7 +617,7 @@ export const ModuloCajaDiaria: React.FC<ModuloCajaDiariaProps> = ({ currentRole 
       </Card>
 
       {/* === VISTA DE TABLA CON SOPORTE DE AGRUPACIÓN (TREE/GROUP VIEW) === */}
-      <TablaFacturasCaja facturasFiltradas={facturasFiltradas} agruparPor={soloHoy ? 'NINGUNO' : agruparPor} grupos={grupos} totalCobradoUSD={totalCobradoUSD} totalCobradoBs={totalCobradoBs} gruposColapsados={gruposColapsados} toggleColapsarGrupo={toggleColapsarGrupo} tasaBcv={tasaBcv} verTicket={verTicket} anulandoId={anulandoId} handleAnular={handleAnular} />
+      <TablaFacturasCaja facturasFiltradas={facturasFiltradas} agruparPor={soloHoy ? 'NINGUNO' : agruparPor} grupos={grupos} totalCobradoUSD={totalCobradoUSD} totalCobradoBs={totalCobradoBs} gruposColapsados={gruposColapsados} toggleColapsarGrupo={toggleColapsarGrupo} tasaBcv={tasaBcv} verTicket={verTicket} anulandoId={anulandoId} handleAnular={handleAnular} cargando={cargandoInicial} actualizando={loading && !cargandoInicial} />
 
       {/* Modal de Ticket Térmico Imprimible */}
       {mostrarModalTicket && facturaSeleccionada && (
