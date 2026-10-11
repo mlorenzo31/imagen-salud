@@ -20,20 +20,20 @@ export const BandejaReembolsos: React.FC<BandejaReembolsosProps> = ({ reembolsos
       <div>
         <h3 className="text-base font-black text-slate-900 flex items-center gap-2">
           <Undo2 className="w-5 h-5 text-clinica-coral" />
-          <span>Bandeja de Reversiones Bancarias Pendientes (Anulaciones en Sala)</span>
+          <span>Reversiones bancarias pendientes (anulaciones en sala)</span>
         </h3>
         <p className="text-xs text-slate-500 mt-0.5">
           Atenciones canceladas por el Administrador cuyos fondos deben ser devueltos mediante transferencia o caja
         </p>
       </div>
       <Badge className="bg-clinica-coral-soft text-clinica-coral border border-clinica-coral/30 text-xs font-mono font-bold">
-        {reembolsos.length} Reversiones Activas
+        {reembolsos.length} activas
       </Badge>
     </div>
 
     <div className="overflow-x-auto">
       <table className="w-full text-left text-xs">
-        <thead className="bg-slate-50 border-b border-slate-200 text-slate-500 uppercase text-xs font-black">
+        <thead className="bg-slate-50 border-b border-slate-200 text-slate-500 text-xs font-semibold">
           <tr>
             <th className="p-3">Turno / Paciente</th>
             <th className="p-3">Cédula</th>

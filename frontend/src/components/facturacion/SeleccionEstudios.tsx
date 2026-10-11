@@ -27,7 +27,7 @@ export const SeleccionEstudios: React.FC<SeleccionEstudiosProps> = ({ selectedAr
     
     {/* 1. Selector de Área Médica */}
     <div className="md:col-span-4">
-      <label className="block text-xs font-black text-slate-600 uppercase mb-1">Área Médica</label>
+      <label className="block text-xs font-semibold text-slate-700 mb-1">Área Médica</label>
       <select
         value={selectedArea}
         onChange={(e) => setSelectedArea(e.target.value)}
@@ -45,7 +45,7 @@ export const SeleccionEstudios: React.FC<SeleccionEstudiosProps> = ({ selectedAr
     {/* 2. Selector de Estudio (Consultas no lo usa: el precio depende del médico) */}
     {selectedArea !== 'CONSULTAS' && (
     <div className="md:col-span-8">
-      <label className="block text-xs font-black text-slate-600 uppercase mb-1">
+      <label className="block text-xs font-semibold text-slate-700 mb-1">
         Estudio o Procedimiento
       </label>
       <select
@@ -67,7 +67,7 @@ export const SeleccionEstudios: React.FC<SeleccionEstudiosProps> = ({ selectedAr
 
     {/* 3. Selector / Reglas de Médico Tratante */}
     <div className="md:col-span-8">
-      <label className="block text-xs font-black text-slate-600 uppercase mb-1">
+      <label className="block text-xs font-semibold text-slate-700 mb-1">
         Médico Especialista Asignado
       </label>
       
@@ -104,7 +104,7 @@ export const SeleccionEstudios: React.FC<SeleccionEstudiosProps> = ({ selectedAr
       )}
     </div>
 
-    {/* Botón Agregar al Carrito */}
+    {/* Botón Agregar */}
     <div className="md:col-span-4 flex items-end">
       <Button
         type="button"
@@ -112,7 +112,7 @@ export const SeleccionEstudios: React.FC<SeleccionEstudiosProps> = ({ selectedAr
         className="w-full rounded-xl bg-cyan-600 hover:bg-cyan-700 text-white font-bold text-xs flex items-center justify-center gap-1.5 h-9 shadow-md shadow-cyan-600/20"
       >
         <Plus className="w-4 h-4" />
-        <span>Agregar al Carrito</span>
+        <span>Agregar</span>
       </Button>
     </div>
 

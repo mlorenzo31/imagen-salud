@@ -32,7 +32,7 @@ export const EncabezadoSalaEspera: React.FC<EncabezadoSalaEsperaProps> = ({ setM
         title="Despacho masivo secuencial de todos los resultados culminados del día"
       >
         <Send className="w-3.5 h-3.5" />
-        <span>Despacho Masivo WhatsApp</span>
+        <span>Enviar resultados por WhatsApp</span>
         <Badge className={'ml-1 text-xs font-mono ' + (
           pacientesPendientesWhatsApp.length > 0 ? 'bg-white text-emerald-800' : 'bg-slate-200 text-slate-600'
         )}>
@@ -47,7 +47,7 @@ export const EncabezadoSalaEspera: React.FC<EncabezadoSalaEsperaProps> = ({ setM
             tabActiva === 'turnos' ? 'bg-white text-slate-900 shadow-sm' : 'text-slate-500 hover:text-slate-900'
           )}
         >
-          Control de Turnos
+          Turnos
         </button>
         <button
           onClick={() => setTabActiva('reembolsos')}
@@ -55,7 +55,7 @@ export const EncabezadoSalaEspera: React.FC<EncabezadoSalaEsperaProps> = ({ setM
             tabActiva === 'reembolsos' ? 'bg-white text-clinica-coral shadow-sm' : 'text-slate-500 hover:text-slate-900'
           )}
         >
-          <span>Reversiones en Espera</span>
+          <span>Reversiones</span>
           {reembolsos.length > 0 && (
             <span className="w-4 h-4 rounded-full bg-clinica-coral text-white text-xs inline-flex items-center justify-center font-bold">
               {reembolsos.length}

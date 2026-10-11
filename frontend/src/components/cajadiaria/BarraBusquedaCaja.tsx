@@ -113,7 +113,7 @@ export const BarraBusquedaCaja: React.FC<BarraBusquedaCajaProps> = ({ filtroPeri
       }`}
     >
       <SlidersHorizontal className="w-3.5 h-3.5" />
-      <span>Filtros & Agrupaciones</span>
+      <span>Filtros</span>
       <ChevronDown className={`w-3 h-3 transition-transform ${menuFiltrosAbierto ? 'rotate-180' : ''}`} />
     </button>}
   </div>

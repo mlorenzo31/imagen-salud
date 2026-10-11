@@ -23,8 +23,8 @@ interface FormasDePagoProps {
 
 export const FormasDePago: React.FC<FormasDePagoProps> = ({ handleAutocompletar, pagoDivisas, setPagoDivisas, numDivisas, tasaBcv, pagoEfectivoBs, setPagoEfectivoBs, numEfectivoBs, pagoPuntoBs, setPagoPuntoBs, numPuntoBs, pagoMovilBs, setPagoMovilBs, numPagoMovilBs }) => (
   <div className="space-y-3">
-    <p className="text-xs font-black text-slate-600 uppercase tracking-wider">
-      Desglose de Pago Multimoneda Simultáneo
+    <p className="text-xs font-semibold text-slate-700">
+      Forma de pago
     </p>
 
     {/* 1. Efectivo Divisas ($) */}
@@ -39,7 +39,7 @@ export const FormasDePago: React.FC<FormasDePagoProps> = ({ handleAutocompletar,
           onClick={() => handleAutocompletar('divisas')}
           className="text-xs text-cyan-600 font-bold hover:underline"
         >
-          Completar Faltante
+          Poner el resto
         </button>
       </div>
       <div className="flex gap-2 items-center">
@@ -69,7 +69,7 @@ export const FormasDePago: React.FC<FormasDePagoProps> = ({ handleAutocompletar,
           onClick={() => handleAutocompletar('efectivoBs')}
           className="text-xs text-cyan-600 font-bold hover:underline"
         >
-          Completar Faltante
+          Poner el resto
         </button>
       </div>
       <div className="flex gap-2 items-center">
@@ -99,7 +99,7 @@ export const FormasDePago: React.FC<FormasDePagoProps> = ({ handleAutocompletar,
           onClick={() => handleAutocompletar('punto')}
           className="text-xs text-cyan-600 font-bold hover:underline"
         >
-          Completar Faltante
+          Poner el resto
         </button>
       </div>
       <div className="flex gap-2 items-center">
@@ -129,7 +129,7 @@ export const FormasDePago: React.FC<FormasDePagoProps> = ({ handleAutocompletar,
           onClick={() => handleAutocompletar('pagoMovil')}
           className="text-xs text-cyan-600 font-bold hover:underline"
         >
-          Completar Faltante
+          Poner el resto
         </button>
       </div>
       <div className="flex gap-2 items-center">

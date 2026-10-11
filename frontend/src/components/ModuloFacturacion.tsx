@@ -643,7 +643,7 @@ export const ModuloFacturacion: React.FC<ModuloFacturacionProps> = ({ onFacturaE
                 <div className="flex items-center gap-2">
                   <CardTitle className="text-xs font-black text-slate-800 flex items-center gap-2">
                     <UserCheck className="w-4 h-4 text-cyan-600" />
-                    <span>1. Ficha del Paciente (Búsqueda Reactiva)</span>
+                    <span>1. Paciente</span>
                   </CardTitle>
                   {Boolean(cedula || nombre || telefono || direccion) && (
                     <button
@@ -679,7 +679,7 @@ export const ModuloFacturacion: React.FC<ModuloFacturacionProps> = ({ onFacturaE
               <div className="grid grid-cols-1 md:grid-cols-12 gap-3">
                 {/* Tipo de Documento y Cédula */}
                 <div className="md:col-span-3">
-                  <label className="block text-xs font-black text-slate-600 uppercase mb-1">
+                  <label className="block text-xs font-semibold text-slate-700 mb-1">
                     Tipo <span className="text-rose-500">*</span>
                   </label>
                   <select
@@ -695,7 +695,7 @@ export const ModuloFacturacion: React.FC<ModuloFacturacionProps> = ({ onFacturaE
                 </div>
 
                 <div className="md:col-span-5">
-                  <label className="block text-xs font-black text-slate-600 uppercase mb-1">
+                  <label className="block text-xs font-semibold text-slate-700 mb-1">
                     Cédula / Documento <span className="text-rose-500">*</span>
                   </label>
                   <div className="relative">
@@ -733,7 +733,7 @@ export const ModuloFacturacion: React.FC<ModuloFacturacionProps> = ({ onFacturaE
 
                 <div className="md:col-span-4">
                   <div className="flex items-center justify-between mb-1">
-                    <label className="block text-xs font-black text-slate-600 uppercase">
+                    <label className="block text-xs font-semibold text-slate-700">
                       F. Nacimiento <span className="text-rose-500">*</span>
                     </label>
                     {fechaNacimiento && (
@@ -761,7 +761,7 @@ export const ModuloFacturacion: React.FC<ModuloFacturacionProps> = ({ onFacturaE
 
                 {/* Nombre Completo */}
                 <div className="md:col-span-7">
-                  <label className="block text-xs font-black text-slate-600 uppercase mb-1">
+                  <label className="block text-xs font-semibold text-slate-700 mb-1">
                     Nombre Completo <span className="text-rose-500">*</span>
                   </label>
                   <Input
@@ -786,7 +786,7 @@ export const ModuloFacturacion: React.FC<ModuloFacturacionProps> = ({ onFacturaE
 
                 {/* Sexo (sugerido por el nombre; recepción confirma) */}
                 <div className="md:col-span-5">
-                  <label className="block text-xs font-black text-slate-600 uppercase mb-1">
+                  <label className="block text-xs font-semibold text-slate-700 mb-1">
                     Sexo <span className="text-rose-500">*</span>
                   </label>
                   <div className="flex gap-2">
@@ -823,7 +823,7 @@ export const ModuloFacturacion: React.FC<ModuloFacturacionProps> = ({ onFacturaE
 
                 {/* Teléfono */}
                 <div className="md:col-span-5">
-                  <label className="block text-xs font-black text-slate-600 uppercase mb-1">
+                  <label className="block text-xs font-semibold text-slate-700 mb-1">
                     Teléfono / Celular <span className="text-rose-500">*</span>
                   </label>
                   <Input
@@ -849,7 +849,7 @@ export const ModuloFacturacion: React.FC<ModuloFacturacionProps> = ({ onFacturaE
 
                 {/* Dirección */}
                 <div className="md:col-span-7">
-                  <label className="block text-xs font-black text-slate-600 uppercase mb-1">
+                  <label className="block text-xs font-semibold text-slate-700 mb-1">
                     Dirección / Residencia <span className="text-rose-500">*</span>
                   </label>
                   <div className="flex gap-2">
@@ -889,7 +889,7 @@ export const ModuloFacturacion: React.FC<ModuloFacturacionProps> = ({ onFacturaE
             <CardHeader className="py-3 px-5 border-b border-slate-100 bg-slate-50/50">
               <CardTitle className="text-xs font-black text-slate-800 flex items-center gap-2">
                 <Stethoscope className="w-4 h-4 text-cyan-600" />
-                <span>2. Selección de Estudios & Asignación de Especialista</span>
+                <span>2. Estudios y especialista</span>
               </CardTitle>
             </CardHeader>
             <CardContent className="p-5 space-y-4">
@@ -958,9 +958,9 @@ export const ModuloFacturacion: React.FC<ModuloFacturacionProps> = ({ onFacturaE
               {/* Lista del Carrito */}
               <div className="mt-4 pt-4 border-t border-slate-100">
                 <div className="flex items-center justify-between mb-2">
-                  <h4 className="text-xs font-black text-slate-800 uppercase tracking-wider flex items-center gap-1.5">
+                  <h4 className="text-xs font-semibold text-slate-800 flex items-center gap-1.5">
                     <ShoppingCart className="w-3.5 h-3.5 text-slate-500" />
-                    <span>Estudios en Carrito ({carrito.length})</span>
+                    <span>Estudios agregados ({carrito.length})</span>
                   </h4>
                   <p className="text-xs font-mono font-black text-cyan-800">
                     Total: ${totalUSD.toFixed(2)} (Bs. {totalBs.toLocaleString('es-VE', { minimumFractionDigits: 2, maximumFractionDigits: 2 })})
@@ -969,7 +969,7 @@ export const ModuloFacturacion: React.FC<ModuloFacturacionProps> = ({ onFacturaE
 
                 {carrito.length === 0 ? (
                   <div className="p-6 rounded-xl border border-dashed border-slate-200 text-center text-slate-500 text-xs">
-                    No hay estudios en el carrito. Seleccione arriba y pulse &quot;Agregar al Carrito&quot;.
+                    Aún no hay estudios. Elija uno arriba y pulse &quot;Agregar&quot;.
                   </div>
                 ) : (
                   <div className="space-y-2">
@@ -1054,16 +1054,13 @@ export const ModuloFacturacion: React.FC<ModuloFacturacionProps> = ({ onFacturaE
 
         {/* COLUMNA DERECHA: Cobro Multimoneda Simultáneo & Cuadre al Centavo */}
         <div className="lg:col-span-5 space-y-6">
-          <Card className="border-slate-200 bg-white shadow-sm overflow-hidden sticky top-6">
+          <Card className="border-slate-200 bg-white shadow-sm overflow-hidden lg:sticky lg:top-20 lg:max-h-[calc(100dvh-6rem)] gap-0 py-0">
             <CardHeader className="py-3 px-5 border-b border-slate-100 bg-slate-50/50 flex flex-row items-center justify-between">
               <CardTitle className="text-xs font-black text-slate-800 flex items-center gap-2">
                 <CreditCard className="w-4 h-4 text-emerald-600" />
-                <span>3. Cobro Multimoneda Simultáneo</span>
+                <span>3. Cobro</span>
               </CardTitle>
               <div className="flex items-center gap-1.5">
-                <Badge className="bg-slate-900 text-white font-mono text-xs flex items-center gap-1">
-                  <span>BCV: Bs. {tasaBcv.toFixed(2)}</span>
-                </Badge>
                 <button
                   type="button"
                   onClick={() => sincronizarTasaBCV(true)}
@@ -1075,12 +1072,12 @@ export const ModuloFacturacion: React.FC<ModuloFacturacionProps> = ({ onFacturaE
                 </button>
               </div>
             </CardHeader>
-            <CardContent className="p-5 space-y-4">
+            <CardContent className="p-5 space-y-4 min-h-0 flex-1 lg:overflow-y-auto">
               
               {/* Resumen Total Multimoneda */}
               <div className="p-4 rounded-2xl bg-gradient-to-br from-slate-900 to-slate-800 text-white shadow-md">
-                <div className="flex justify-between items-center text-xs text-slate-500 mb-1">
-                  <span>TOTAL A FACTURAR (MULTIMONEDA)</span>
+                <div className="flex justify-between items-center text-xs text-slate-300 mb-1">
+                  <span>Total a facturar</span>
                   <span className="text-xs text-cyan-400 font-medium">{fuenteTasaBcv}</span>
                 </div>
                 <div className="flex justify-between items-end">
@@ -1153,7 +1150,7 @@ export const ModuloFacturacion: React.FC<ModuloFacturacionProps> = ({ onFacturaE
 
                 {/* Línea 2: Diferencia de Cuadre */}
                 <div className="flex justify-between items-center mt-1.5 pt-1.5 border-t border-slate-200/60">
-                  <span>Diferencia de Cuadre:</span>
+                  <span>Diferencia:</span>
                   <span className="font-black text-sm">
                     {diferenciaUSD > 0.01 ? (
                       <span className="text-amber-700">
@@ -1161,38 +1158,39 @@ export const ModuloFacturacion: React.FC<ModuloFacturacionProps> = ({ onFacturaE
                       </span>
                     ) : diferenciaUSD < -0.01 ? (
                       <span className="text-rose-700">
-                        Excedente/Vuelto ${Math.abs(diferenciaUSD).toFixed(2)} (Bs. {Math.abs(diferenciaBs).toLocaleString('es-VE', { minimumFractionDigits: 2, maximumFractionDigits: 2 })})
+                        Vuelto ${Math.abs(diferenciaUSD).toFixed(2)} (Bs. {Math.abs(diferenciaBs).toLocaleString('es-VE', { minimumFractionDigits: 2, maximumFractionDigits: 2 })})
                       </span>
                     ) : (
                       <span className="text-emerald-700 flex items-center gap-1">
                         <CheckCircle2 className="w-3.5 h-3.5" />
-                        <span>✓ Cuadre Exacto ($0.00 | Bs. 0.00)</span>
+                        <span>Cuadra exacto</span>
                       </span>
                     )}
                   </span>
                 </div>
               </div>
 
-              {/* Botón Principal de Cobro */}
+            </CardContent>
+            <div className="border-t border-slate-200 bg-white p-4">
               <Button
                 type="button"
                 disabled={!isCuadrado || isSubmitting || carrito.length === 0 || !(tasaBcv > 0)}
                 onClick={handleProcesarFactura}
-                className="w-full py-3.5 rounded-xl bg-slate-900 hover:bg-slate-800 text-white font-black text-xs flex items-center justify-center gap-2 shadow-lg shadow-slate-900/20 disabled:opacity-40"
+                className="w-full h-12 rounded-xl bg-clinica-primary hover:bg-clinica-primary-dark text-white font-semibold text-sm flex items-center justify-center gap-2 disabled:opacity-40"
               >
                 {isSubmitting ? (
                   <>
                     <span className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
-                    <span>Emitiendo Factura y Asignando Turno...</span>
+                    <span>Emitiendo factura…</span>
                   </>
                 ) : (
                   <>
-                    <CheckCircle2 className="w-4 h-4 text-emerald-400" />
-                    <span>Emitir Factura y Asignar Turno — ${totalUSD.toFixed(2)} (Bs. {totalBs.toLocaleString('es-VE', { minimumFractionDigits: 2, maximumFractionDigits: 2 })})</span>
+                    <CheckCircle2 className="w-4 h-4" />
+                    <span>Emitir factura y asignar turno — ${totalUSD.toFixed(2)} (Bs. {totalBs.toLocaleString('es-VE', { minimumFractionDigits: 2, maximumFractionDigits: 2 })})</span>
                   </>
                 )}
               </Button>
-            </CardContent>
+            </div>
           </Card>
         </div>
       </div>
