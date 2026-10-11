@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState, useEffect, useMemo } from 'react';
+import { useAvisos } from '@/components/ui/avisos';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -16,6 +17,7 @@ import { diferir } from '@/lib/diferir';
 type GrupoAnalitica = 'NINGUNO' | 'AREA' | 'MEDICO' | 'METODO_PAGO' | 'FECHA';
 
 export const ModuloAnaliticas: React.FC = () => {
+  const { avisar } = useAvisos();
   const [facturas, setFacturas] = useState<FacturaCaja[]>([]);
   const [loading, setLoading] = useState(true);
   const [tasaBcv, setTasaBcv] = useState<number>(0);
@@ -226,7 +228,7 @@ export const ModuloAnaliticas: React.FC = () => {
   // Exportación a Excel
   const handleExportarExcel = () => {
     if (facturasFiltradas.length === 0) {
-      alert('No hay datos filtrados para exportar.');
+      avisar({ tipo: 'alerta', mensaje: 'No hay datos filtrados para exportar.' });
       return;
     }
 
@@ -284,7 +286,7 @@ export const ModuloAnaliticas: React.FC = () => {
   // Exportación a PDF
   const handleExportarPDF = () => {
     if (facturasFiltradas.length === 0) {
-      alert('No hay datos filtrados para exportar.');
+      avisar({ tipo: 'alerta', mensaje: 'No hay datos filtrados para exportar.' });
       return;
     }
 

@@ -2,6 +2,7 @@
 
 import { useFechaOperacion } from './FechaOperacion';
 import React, { useState, useEffect, useMemo } from 'react';
+import { useAvisos } from '@/components/ui/avisos';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -58,6 +59,7 @@ export const ModuloIngresosExtraordinarios: React.FC<ModuloIngresosExtraordinari
   cuentas,
   onIngresoRegistrado
 }) => {
+  const { avisar } = useAvisos();
   const [ingresos, setIngresos] = useState<IngresoExtraordinario[]>([]);
   const [loading, setLoading] = useState(true);
   const [openModal, setOpenModal] = useState(false);
@@ -117,11 +119,11 @@ export const ModuloIngresosExtraordinarios: React.FC<ModuloIngresosExtraordinari
     e.preventDefault();
     const montoNum = parseFloat(monto);
     if (!monto || isNaN(montoNum) || montoNum <= 0) {
-      alert('Por favor ingrese un monto válido mayor a 0.');
+      avisar({ tipo: 'alerta', mensaje: 'Por favor ingrese un monto válido mayor a 0.' });
       return;
     }
     if (!conceptoLibre.trim()) {
-      alert('El concepto libre es obligatorio para fines de auditoría contable.');
+      avisar({ tipo: 'alerta', mensaje: 'El concepto libre es obligatorio para fines de auditoría contable.' });
       return;
     }
 
@@ -162,9 +164,9 @@ export const ModuloIngresosExtraordinarios: React.FC<ModuloIngresosExtraordinari
       setComisionBancariaManual('0.00');
       await cargarIngresos();
       if (onIngresoRegistrado) onIngresoRegistrado();
-      alert('✓ Ingreso extraordinario registrado exitosamente con asiento contable.');
+      avisar({ tipo: 'exito', mensaje: 'Ingreso extraordinario registrado exitosamente con asiento contable.' });
     } catch (err) {
-      alert('Error: ' + getErrorMessage(err));
+      avisar({ tipo: 'error', mensaje: 'Error: ' + getErrorMessage(err) });
     } finally {
       setSubmitting(false);
     }
@@ -239,7 +241,7 @@ export const ModuloIngresosExtraordinarios: React.FC<ModuloIngresosExtraordinari
 
   // Exportar Excel
   const handleExportarExcel = () => {
-    if (ingresosFiltrados.length === 0) return alert('No hay registros para exportar.');
+    if (ingresosFiltrados.length === 0) return avisar({ tipo: 'alerta', mensaje: 'No hay registros para exportar.' });
     const data = ingresosFiltrados.map(i => ({
       'ID Asiento': `#${i.id}`,
       'Fecha': String(i.fecha || '').slice(0, 10),
@@ -261,7 +263,7 @@ export const ModuloIngresosExtraordinarios: React.FC<ModuloIngresosExtraordinari
 
   // Exportar PDF
   const handleExportarPDF = () => {
-    if (ingresosFiltrados.length === 0) return alert('No hay registros para exportar.');
+    if (ingresosFiltrados.length === 0) return avisar({ tipo: 'alerta', mensaje: 'No hay registros para exportar.' });
 
     const filas = ingresosFiltrados.map(i => [
       `#${i.id}`,

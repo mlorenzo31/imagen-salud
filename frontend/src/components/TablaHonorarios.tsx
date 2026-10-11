@@ -2,6 +2,7 @@
 
 import { useFechaOperacion } from './FechaOperacion';
 import React, { useState, useMemo } from 'react';
+import { useAvisos } from '@/components/ui/avisos';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -32,6 +33,7 @@ export const TablaHonorarios: React.FC<TablaHonorariosProps> = ({
   modoOperacion = 'operador',
   currentRole = 'admin'
 }) => {
+  const { avisar } = useAvisos();
   const [selectedDoctor, setSelectedDoctor] = useState<HonorarioMedico | null>(null);
   const fechaOp = useFechaOperacion();
   const [trazabilidadAbierta, setTrazabilidadAbierta] = useState<Record<number, boolean>>({});
@@ -120,7 +122,7 @@ export const TablaHonorarios: React.FC<TablaHonorariosProps> = ({
 
   const handleOpenLiquidar = (doc: HonorarioMedico) => {
     if (isReadOnly) {
-      alert('Operación restringida en Modo Vista (Read-Only).');
+      avisar({ tipo: 'alerta', mensaje: 'Operación restringida en Modo Vista (Read-Only).' });
       return;
     }
     setSelectedDoctor(doc);
@@ -165,7 +167,7 @@ export const TablaHonorarios: React.FC<TablaHonorariosProps> = ({
 
       setSelectedDoctor(null);
       if (onLiquidarSuccess) onLiquidarSuccess();
-      alert(`✓ Honorarios de ${selectedDoctor.medico} liquidados exitosamente.`);
+      avisar({ tipo: 'exito', mensaje: `Honorarios de ${selectedDoctor.medico} liquidados exitosamente.` });
     } catch (err) {
       setErrorMsg(getErrorMessage(err));
     } finally {
@@ -175,7 +177,7 @@ export const TablaHonorarios: React.FC<TablaHonorariosProps> = ({
 
   // Exportar Excel
   const handleExportExcel = () => {
-    if (itemsFiltrados.length === 0) return alert('No hay registros para exportar.');
+    if (itemsFiltrados.length === 0) return avisar({ tipo: 'alerta', mensaje: 'No hay registros para exportar.' });
     const data = itemsFiltrados.map(doc => {
       const traz = obtenerTrazabilidad(doc);
       return {
@@ -199,7 +201,7 @@ export const TablaHonorarios: React.FC<TablaHonorariosProps> = ({
 
   // Exportar PDF
   const handleExportPDF = () => {
-    if (itemsFiltrados.length === 0) return alert('No hay registros para exportar.');
+    if (itemsFiltrados.length === 0) return avisar({ tipo: 'alerta', mensaje: 'No hay registros para exportar.' });
     const filas = itemsFiltrados.map(doc => [
       doc.medico,
       doc.especialidad,

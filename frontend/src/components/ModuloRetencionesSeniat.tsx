@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState, useMemo } from 'react';
+import { useAvisos } from '@/components/ui/avisos';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -28,6 +29,7 @@ export const ModuloRetencionesSeniat: React.FC<ModuloRetencionesSeniatProps> = (
   modoOperacion,
   tasaBcv
 }) => {
+  const { avisar } = useAvisos();
   const [retenciones, setRetenciones] = useState<RetencionSENIAT[]>([]);
 
   const [searchQuery, setSearchQuery] = useState('');
@@ -62,19 +64,19 @@ export const ModuloRetencionesSeniat: React.FC<ModuloRetencionesSeniatProps> = (
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (isReadOnly) {
-      alert('Operación no permitida en Modo Vista (Read-Only).');
+      avisar({ tipo: 'alerta', mensaje: 'Operación no permitida en Modo Vista (Read-Only).' });
       return;
     }
     if (!formCliente.trim() || !formRif.trim()) {
-      alert('Por favor ingrese el nombre y RIF/Cédula del cliente o agente de retención.');
+      avisar({ tipo: 'alerta', mensaje: 'Por favor ingrese el nombre y RIF/Cédula del cliente o agente de retención.' });
       return;
     }
     if (baseUsdNum <= 0) {
-      alert('Ingrese una base imponible válida.');
+      avisar({ tipo: 'alerta', mensaje: 'Ingrese una base imponible válida.' });
       return;
     }
     if (!(tasaBcv > 0)) {
-      alert('No hay tasa BCV vigente. Espere a que cargue la tasa e intente de nuevo.');
+      avisar({ tipo: 'alerta', mensaje: 'No hay tasa BCV vigente. Espere a que cargue la tasa e intente de nuevo.' });
       return;
     }
 
@@ -112,7 +114,7 @@ export const ModuloRetencionesSeniat: React.FC<ModuloRetencionesSeniatProps> = (
       setFormBaseUsd('');
       setFormObs('');
       setSubmitting(false);
-      alert(`Comprobante N° ${nuevoNumero} creado en esta pantalla. Aún no se guarda en el sistema: se pierde al recargar. Expórtelo si lo necesita.`);
+      avisar({ tipo: 'alerta', mensaje: `Comprobante N° ${nuevoNumero} creado en esta pantalla. Aún no se guarda en el sistema: se pierde al recargar. Expórtelo si lo necesita.` });
     }, 400);
   };
 
@@ -134,7 +136,7 @@ export const ModuloRetencionesSeniat: React.FC<ModuloRetencionesSeniatProps> = (
 
   // Exportar Excel
   const handleExportExcel = () => {
-    if (retencionesFiltradas.length === 0) return alert('No hay comprobantes para exportar.');
+    if (retencionesFiltradas.length === 0) return avisar({ tipo: 'alerta', mensaje: 'No hay comprobantes para exportar.' });
     const data = retencionesFiltradas.map(r => ({
       'N° Comprobante SENIAT': r.nro_comprobante,
       'Período Fiscal': r.periodo_fiscal,
@@ -161,7 +163,7 @@ export const ModuloRetencionesSeniat: React.FC<ModuloRetencionesSeniatProps> = (
 
   // Exportar PDF
   const handleExportPDF = () => {
-    if (retencionesFiltradas.length === 0) return alert('No hay comprobantes para exportar.');
+    if (retencionesFiltradas.length === 0) return avisar({ tipo: 'alerta', mensaje: 'No hay comprobantes para exportar.' });
     const filas = retencionesFiltradas.map(r => [
       r.nro_comprobante,
       r.fecha_emision,

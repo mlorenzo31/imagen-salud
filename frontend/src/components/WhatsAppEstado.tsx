@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useEffect, useState } from 'react';
+import { useAvisos } from '@/components/ui/avisos';
 import { MessageCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -22,6 +23,7 @@ const ETIQUETA: Record<string, { texto: string; clase: string }> = {
 };
 
 export const WhatsAppEstado: React.FC = () => {
+  const { confirmar } = useAvisos();
   const [e, setE] = useState<Estado | null>(null);
   const [abierto, setAbierto] = useState(false);
   const [esAdmin, setEsAdmin] = useState(false);
@@ -35,7 +37,15 @@ export const WhatsAppEstado: React.FC = () => {
   }, []);
 
   const ordenar = async (accion: 'DESVINCULAR' | 'REVINCULAR') => {
-    if (accion === 'DESVINCULAR' && !confirm('¿Desvincular el WhatsApp de la clínica? Los envíos automáticos se detendrán hasta vincular de nuevo.')) return;
+    if (accion === 'DESVINCULAR') {
+      const ok = await confirmar({
+        titulo: 'Desvincular WhatsApp',
+        mensaje: 'Los envíos automáticos se detendrán hasta vincular de nuevo.',
+        textoConfirmar: 'Desvincular',
+        tono: 'peligro',
+      });
+      if (!ok) return;
+    }
     setEnviando(true); setMsg(null);
     try {
       const r = await fetch('/api/whatsapp/estado', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ accion, pin }) });

@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState, useRef } from 'react';
+import { useAvisos } from '@/components/ui/avisos';
 import { descargarExcel } from '@/lib/excel';
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
@@ -34,6 +35,7 @@ interface DashboardFinancieroProps {
 type VistaModo = 'BARRAS' | 'LINEAS' | 'DONUT' | 'TABLA';
 
 export const DashboardFinanciero: React.FC<DashboardFinancieroProps> = ({ tasaBcv: tasaProp = 0 }) => {
+  const { avisar } = useAvisos();
   const [vista, setVista] = useState<VistaModo>('BARRAS');
   const [periodo, setPeriodo] = useState<'HOY' | '7DIAS' | 'MES' | 'TODO'>('MES');
   const [exportandoPdf, setExportandoPdf] = useState(false);
@@ -149,7 +151,7 @@ export const DashboardFinanciero: React.FC<DashboardFinancieroProps> = ({ tasaBc
 
       doc.save(`Dashboard_Financiero_Imagen_Salud_${Date.now()}.pdf`);
     } catch (err) {
-      alert('Error exportando PDF: ' + getErrorMessage(err));
+      avisar({ tipo: 'error', mensaje: 'Error exportando PDF: ' + getErrorMessage(err) });
     } finally {
       setExportandoPdf(false);
     }

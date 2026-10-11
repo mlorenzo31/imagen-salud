@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
+import { useAvisos } from '@/components/ui/avisos';
 import { Sidebar } from '@/components/Sidebar';
 import { TreasuryCards } from '@/components/TreasuryCards';
 import { ModalEgreso } from '@/components/ModalEgreso';
@@ -41,6 +42,7 @@ import { hoyLocal } from '@/lib/date';
 import { diferir } from '@/lib/diferir';
 
 export default function Home() {
+  const { avisar } = useAvisos();
   const [isAuthenticated, setIsAuthenticated] = useState<boolean>(false);
   const [nombreUsuario, setNombreUsuario] = useState<string>('Dr. Director Médico');
   const [role, setRole] = useState<UserRole>('admin');
@@ -153,7 +155,7 @@ export default function Home() {
 
   const exportarLibroMayorExcel = () => {
     if (transacciones.length === 0) {
-      alert('No hay movimientos registrados para exportar.');
+      avisar({ tipo: 'alerta', mensaje: 'No hay movimientos registrados para exportar.' });
       return;
     }
     const data = transacciones.map((tx) => ({
@@ -174,7 +176,7 @@ export default function Home() {
 
   const exportarLibroMayorPDF = () => {
     if (transacciones.length === 0) {
-      alert('No hay movimientos registrados para exportar.');
+      avisar({ tipo: 'alerta', mensaje: 'No hay movimientos registrados para exportar.' });
       return;
     }
     const totalDebitos = transacciones.reduce((acc: number, tx) => acc + (Number(tx.monto_debito) || 0), 0);

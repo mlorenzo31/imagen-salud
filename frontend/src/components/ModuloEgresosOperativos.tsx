@@ -3,6 +3,7 @@
 import { useFechaOperacion } from './FechaOperacion';
 import { DevolucionesPendientes } from './DevolucionesPendientes';
 import React, { useState, useEffect, useMemo } from 'react';
+import { useAvisos } from '@/components/ui/avisos';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -60,6 +61,7 @@ export const ModuloEgresosOperativos: React.FC<ModuloEgresosOperativosProps> = (
   cuentas,
   onEgresoRegistrado
 }) => {
+  const { avisar } = useAvisos();
   const isAdmin = currentRole === 'admin';
   const [tabActiva, setTabActiva] = useState<'egreso' | 'ingreso' | 'historial'>('egreso');
   const [loading, setLoading] = useState(false);
@@ -326,7 +328,7 @@ export const ModuloEgresosOperativos: React.FC<ModuloEgresosOperativosProps> = (
 
   // Exportaciones
   const handleExportarExcel = () => {
-    if (historialFiltrado.length === 0) return alert('No hay registros filtrados para exportar.');
+    if (historialFiltrado.length === 0) return avisar({ tipo: 'alerta', mensaje: 'No hay registros filtrados para exportar.' });
 
     const data = historialFiltrado.map(h => ({
       'ID Registro': `#${h.id}`,
@@ -349,7 +351,7 @@ export const ModuloEgresosOperativos: React.FC<ModuloEgresosOperativosProps> = (
   };
 
   const handleExportarPDF = () => {
-    if (historialFiltrado.length === 0) return alert('No hay registros filtrados para exportar.');
+    if (historialFiltrado.length === 0) return avisar({ tipo: 'alerta', mensaje: 'No hay registros filtrados para exportar.' });
 
     const totalEgresos = historialFiltrado
       .filter(h => h.tipo === 'EGRESO')

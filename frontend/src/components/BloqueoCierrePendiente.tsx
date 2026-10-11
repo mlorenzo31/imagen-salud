@@ -2,6 +2,7 @@
 
 import { despacharWhatsApp, resumenOmitidos } from '@/lib/despacharWhatsApp';
 import React, { useState } from 'react';
+import { useAvisos } from '@/components/ui/avisos';
 import { resolverPacienteCierre } from '@/lib/api';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
@@ -29,6 +30,7 @@ export const BloqueoCierrePendiente: React.FC<BloqueoCierrePendienteProps> = ({
   onCierreCompletado,
   esJornadaAnterior = false
 }) => {
+  const { avisar } = useAvisos();
   const [loadingId, setLoadingId] = useState<number | null>(null);
   const [listaSala, setListaSala] = useState<PacientePendiente[]>(pacientesPendientes);
   const [listaWhatsApp, setListaWhatsApp] = useState<PacientePendiente[]>(pacientesWhatsAppPendientes);
@@ -49,7 +51,7 @@ export const BloqueoCierrePendiente: React.FC<BloqueoCierrePendienteProps> = ({
         onOpenChange(false);
       }
     } catch (err) {
-      alert('Error al procesar el saneamiento: ' + getErrorMessage(err));
+      avisar({ tipo: 'error', mensaje: 'Error al procesar el saneamiento: ' + getErrorMessage(err) });
     } finally {
       setLoadingId(null);
     }
@@ -65,13 +67,13 @@ export const BloqueoCierrePendiente: React.FC<BloqueoCierrePendienteProps> = ({
       const bot = await despacharWhatsApp([p.id]);
       if (bot.modo === 'bot') {
         if (bot.encolados === 0) {
-          alert('No se encoló:\n' + resumenOmitidos(bot.omitidos));
+          avisar({ tipo: 'alerta', mensaje: 'No se encoló:\n' + resumenOmitidos(bot.omitidos) });
           return;
         }
         const restantes = listaWhatsApp.filter(item => item.id !== p.id);
         setListaWhatsApp(restantes);
         if (listaSala.length === 0 && restantes.length === 0) {
-          alert('✅ Mensajes en cola. El cierre se habilita cuando el bot confirme los envíos (unos segundos).');
+          avisar({ tipo: 'exito', mensaje: 'Mensajes en cola. El cierre se habilita cuando el bot confirme los envíos (unos segundos).' });
           onOpenChange(false);
         }
         return;
@@ -103,7 +105,7 @@ export const BloqueoCierrePendiente: React.FC<BloqueoCierrePendienteProps> = ({
         onOpenChange(false);
       }
     } catch (err) {
-      alert('Error despachando WhatsApp: ' + getErrorMessage(err));
+      avisar({ tipo: 'error', mensaje: 'Error despachando WhatsApp: ' + getErrorMessage(err) });
     } finally {
       setLoadingId(null);
     }
@@ -117,8 +119,8 @@ export const BloqueoCierrePendiente: React.FC<BloqueoCierrePendienteProps> = ({
       if (bot.modo === 'bot') {
         const fallidos = new Set(bot.omitidos.filter(o => o.motivo !== 'Ya en cola' && o.motivo !== 'Ya enviado').map(o => o.id));
         setListaWhatsApp(listaWhatsApp.filter(x => fallidos.has(x.id)));
-        alert('✅ ' + bot.encolados + ' mensajes en cola; el cierre se habilita al confirmarse los envíos.' +
-          (fallidos.size ? '\n\nRequieren atención:\n' + resumenOmitidos(bot.omitidos.filter(o => fallidos.has(o.id))) : ''));
+        avisar({ tipo: 'exito', mensaje: '' + bot.encolados + ' mensajes en cola; el cierre se habilita al confirmarse los envíos.' +
+          (fallidos.size ? '\n\nRequieren atención:\n' + resumenOmitidos(bot.omitidos.filter(o => fallidos.has(o.id))) : '') });
         if (fallidos.size === 0 && listaSala.length === 0) onOpenChange(false);
         return;
       }
@@ -137,9 +139,9 @@ export const BloqueoCierrePendiente: React.FC<BloqueoCierrePendienteProps> = ({
         onCierreCompletado();
         onOpenChange(false);
       }
-      alert('✅ Todos los resultados pendientes fueron marcados como enviados por WhatsApp. Cierre diario desbloqueado.');
+      avisar({ tipo: 'exito', mensaje: 'Todos los resultados pendientes fueron marcados como enviados por WhatsApp. Cierre diario desbloqueado.' });
     } catch (err) {
-      alert('Error en despacho masivo: ' + getErrorMessage(err));
+      avisar({ tipo: 'error', mensaje: 'Error en despacho masivo: ' + getErrorMessage(err) });
     } finally {
       setDespachandoMasivo(false);
     }

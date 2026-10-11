@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState } from 'react';import { UserRole, PacienteCatalogo, DoctorCatalogo, ServicioCatalogo } from '@/types';
+import { useAvisos } from '@/components/ui/avisos';
 import { Users, Stethoscope, Activity, FileSpreadsheet, BadgePercent } from 'lucide-react';import { normalizarCedulaRif, extraerDigitos, validarEstructuraCedulaRif } from '@/lib/cedulaRif';import { calcularEdadReal } from '@/lib/date';import { getErrorMessage } from '@/lib/utils';
 import { ModalEstudio } from '@/components/admincatalogos/ModalEstudio';
 import { ModalEspecialista } from '@/components/admincatalogos/ModalEspecialista';
@@ -28,6 +29,7 @@ interface PacienteApi {
 }
 
 export const ModuloAdminCatalogos: React.FC<ModuloAdminCatalogosProps> = ({ currentRole }) => {
+  const { avisar } = useAvisos();
   const [tabActiva, setTabActiva] = useState<'pacientes' | 'doctores' | 'servicios' | 'promociones' | 'carga_masiva'>('pacientes');
   const [busqueda, setBusqueda] = useState('');
 
@@ -107,7 +109,7 @@ export const ModuloAdminCatalogos: React.FC<ModuloAdminCatalogosProps> = ({ curr
 
   // --- 1. ACCIONES PACIENTES (CON BLINDAJE ANTI-DUPLICIDAD) ---
   const handleAbrirEditarPaciente = (p?: PacienteCatalogo) => {
-    if (isReadOnly) return alert('Acción exclusiva para administradores.');
+    if (isReadOnly) return avisar({ tipo: 'alerta', mensaje: 'Acción exclusiva para administradores.' });
     setErrorDuplicadoPaciente(null);
     if (p) {
       setFormPaciente({ ...p, cedula: normalizarCedulaRif(p.cedula) });
@@ -181,7 +183,7 @@ export const ModuloAdminCatalogos: React.FC<ModuloAdminCatalogosProps> = ({ curr
   };
 
   const handleToggleEstadoPaciente = async (id: number | string) => {
-    if (isReadOnly) return alert('Acción exclusiva para administradores.');
+    if (isReadOnly) return avisar({ tipo: 'alerta', mensaje: 'Acción exclusiva para administradores.' });
     const p = pacientes.find(x => x.id === id);
     if (!p) return;
     const res = await fetch('/api/pacientes', {
@@ -189,13 +191,13 @@ export const ModuloAdminCatalogos: React.FC<ModuloAdminCatalogosProps> = ({ curr
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ id: Number(id), activo: !p.activo }),
     });
-    if (!res.ok) return alert((await res.json().catch(() => ({}))).error || 'No se pudo cambiar el estado.');
+    if (!res.ok) return avisar({ tipo: 'error', mensaje: (await res.json().catch(() => ({}))).error || 'No se pudo cambiar el estado.' });
     await cargarPacientes();
   };
 
   // --- 2. ACCIONES ESPECIALISTAS (CON BLINDAJE ESTRICTO ANTI-DUPLICIDAD POR CÉDULA/RIF) ---
   const handleAbrirEditarDoctor = (d?: DoctorCatalogo) => {
-    if (isReadOnly) return alert('Acción exclusiva para administradores.');
+    if (isReadOnly) return avisar({ tipo: 'alerta', mensaje: 'Acción exclusiva para administradores.' });
     setErrorDuplicadoDoctor(null);
     if (d) {
       setFormDoctor({ 
@@ -285,13 +287,13 @@ export const ModuloAdminCatalogos: React.FC<ModuloAdminCatalogosProps> = ({ curr
   };
 
   const handleToggleEstadoDoctor = (id: number | string) => {
-    if (isReadOnly) return alert('Acción exclusiva para administradores.');
+    if (isReadOnly) return avisar({ tipo: 'alerta', mensaje: 'Acción exclusiva para administradores.' });
     setDoctores(prev => prev.map(d => d.id === id ? { ...d, activo: !d.activo } : d));
   };
 
   // --- 3. ACCIONES ESTUDIOS Y TARIFAS ---
   const handleAbrirEditarServicio = (s?: ServicioCatalogo) => {
-    if (isReadOnly) return alert('Acción exclusiva para administradores.');
+    if (isReadOnly) return avisar({ tipo: 'alerta', mensaje: 'Acción exclusiva para administradores.' });
     if (s) {
       setFormServicio({ ...s });
       setModalServicio({ visible: true, item: s });
@@ -324,14 +326,14 @@ export const ModuloAdminCatalogos: React.FC<ModuloAdminCatalogosProps> = ({ curr
   const handleGuardarServicio = async () => {
     const precio = Number(formServicio.precio_usd) || 0;
     if (!formServicio.nombre?.trim() || precio <= 0) {
-      alert('Nombre y Precio Base son obligatorios.');
+      avisar({ tipo: 'alerta', mensaje: 'Nombre y Precio Base son obligatorios.' });
       return;
     }
     const pct = (v?: number) => Math.max(0, Number(v) || 0);
     const pctClinica = pct(formServicio.reparto_clinica_pct), pctMedico = pct(formServicio.reparto_medico_pct);
     const pctEco = pct(formServicio.reparto_eco_pct), pctPatologo = pct(formServicio.reparto_patologo_pct);
     if (Math.abs(pctClinica + pctMedico + pctEco + pctPatologo - 100) > 0.01) {
-      alert('Las reglas de reparto deben sumar exactamente 100%.');
+      avisar({ tipo: 'alerta', mensaje: 'Las reglas de reparto deben sumar exactamente 100%.' });
       return;
     }
     // Reparto en centavos; la parte de la clínica es el resto para que la suma sea exactamente el precio.
@@ -339,7 +341,7 @@ export const ModuloAdminCatalogos: React.FC<ModuloAdminCatalogosProps> = ({ curr
     const medico = Math.round((precioC * pctMedico) / 100), eco = Math.round((precioC * pctEco) / 100), patologo = Math.round((precioC * pctPatologo) / 100);
     const imagen = precioC - medico - eco - patologo;
     if (imagen < 0) {
-      alert('El reparto supera el precio del estudio.');
+      avisar({ tipo: 'alerta', mensaje: 'El reparto supera el precio del estudio.' });
       return;
     }
     const area = formServicio.area || 'ECOGRAFIA_AM';
@@ -356,12 +358,12 @@ export const ModuloAdminCatalogos: React.FC<ModuloAdminCatalogosProps> = ({ curr
       await cargarServicios();
       setModalServicio({ visible: false });
     } catch (err) {
-      alert(getErrorMessage(err));
+      avisar({ tipo: 'error', mensaje: getErrorMessage(err) });
     }
   };
 
   const handleToggleEstadoServicio = async (id: number | string) => {
-    if (isReadOnly) return alert('Acción exclusiva para administradores.');
+    if (isReadOnly) return avisar({ tipo: 'alerta', mensaje: 'Acción exclusiva para administradores.' });
     const s = servicios.find(x => x.id === id);
     if (!s || !s.dist || !s.area) return;
     try {
@@ -371,7 +373,7 @@ export const ModuloAdminCatalogos: React.FC<ModuloAdminCatalogosProps> = ({ curr
       });
       await cargarServicios();
     } catch (err) {
-      alert(getErrorMessage(err));
+      avisar({ tipo: 'error', mensaje: getErrorMessage(err) });
     }
   };
 

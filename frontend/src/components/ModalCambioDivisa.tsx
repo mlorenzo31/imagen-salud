@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
+import { useAvisos } from '@/components/ui/avisos';
 import { CuentaBancaria, registrarCambioDivisa } from '@/lib/api';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
@@ -22,6 +23,7 @@ export const ModalCambioDivisa: React.FC<ModalCambioDivisaProps> = ({
   cuentas,
   onSuccess
 }) => {
+  const { avisar } = useAvisos();
   // Cuentas en Bolívares
   const cuentasBs = cuentas.filter(c => c.moneda === 'BS');
   const [cuentaId, setCuentaId] = useState<number>(cuentasBs[0]?.id || 4);
@@ -83,7 +85,7 @@ export const ModalCambioDivisa: React.FC<ModalCambioDivisaProps> = ({
         ...fechaOp.payload
       });
 
-      alert(`Operación completada con éxito. Se acreditaron $${totalUsdComprado.toFixed(2)} USD en Efectivo Divisas.`);
+      avisar({ tipo: 'exito', mensaje: `Operación completada con éxito. Se acreditaron $${totalUsdComprado.toFixed(2)} USD en Efectivo Divisas.` });
       onSuccess();
       onOpenChange(false);
       setMontoBs('');
