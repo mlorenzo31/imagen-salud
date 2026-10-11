@@ -25,7 +25,7 @@ export const ModalEspecialista: React.FC<ModalEspecialistaProps> = ({ modalDocto
         <h3 className="text-sm font-black text-slate-900">
           {modalDoctor.item ? 'Editar Especialista Médico' : 'Registrar Nuevo Especialista'}
         </h3>
-        <p className="text-[11px] text-slate-500 mt-0.5">
+        <p className="text-xs text-slate-500 mt-0.5">
           La Cédula o RIF se valida para impedir registros duplicados en el cuerpo médico.
         </p>
       </div>
@@ -39,7 +39,7 @@ export const ModalEspecialista: React.FC<ModalEspecialistaProps> = ({ modalDocto
 
       <div className="space-y-3 text-xs">
         <div>
-          <label className="text-[11px] font-bold text-slate-600 block mb-1">
+          <label className="text-xs font-bold text-slate-600 block mb-1">
             Cédula / RIF del Especialista <span className="text-rose-500">*</span>
           </label>
           <Input
@@ -60,7 +60,7 @@ export const ModalEspecialista: React.FC<ModalEspecialistaProps> = ({ modalDocto
           />
         </div>
         <div>
-          <label className="text-[11px] font-bold text-slate-600 block mb-1">
+          <label className="text-xs font-bold text-slate-600 block mb-1">
             Nombre Completo (Dr. / Dra.) <span className="text-rose-500">*</span>
           </label>
           <Input
@@ -71,7 +71,7 @@ export const ModalEspecialista: React.FC<ModalEspecialistaProps> = ({ modalDocto
           />
         </div>
         <div>
-          <label className="text-[11px] font-bold text-slate-600 block mb-1">
+          <label className="text-xs font-bold text-slate-600 block mb-1">
             Especialidad Médica <span className="text-rose-500">*</span>
           </label>
           <Input
@@ -83,7 +83,7 @@ export const ModalEspecialista: React.FC<ModalEspecialistaProps> = ({ modalDocto
         </div>
         <div className="grid grid-cols-2 gap-2">
           <div>
-            <label className="text-[11px] font-bold text-slate-600 block mb-1">Turno Asignado</label>
+            <label className="text-xs font-bold text-slate-600 block mb-1">Turno Asignado</label>
             <select
               value={formDoctor.turno || 'AM'}
               onChange={e => setFormDoctor({ ...formDoctor, turno: e.target.value as DoctorCatalogo['turno'] })}
@@ -95,7 +95,7 @@ export const ModalEspecialista: React.FC<ModalEspecialistaProps> = ({ modalDocto
             </select>
           </div>
           <div>
-            <label className="text-[11px] font-bold text-slate-600 block mb-1">Honorario (% Comisión)</label>
+            <label className="text-xs font-bold text-slate-600 block mb-1">Honorario (% Comisión)</label>
             <Input
               type="number"
               value={formDoctor.comision_pct || ''}
@@ -106,7 +106,7 @@ export const ModalEspecialista: React.FC<ModalEspecialistaProps> = ({ modalDocto
           </div>
         </div>
         <div>
-          <label className="text-[11px] font-bold text-slate-600 block mb-1">Consultorio / Box Habitual</label>
+          <label className="text-xs font-bold text-slate-600 block mb-1">Consultorio / Box Habitual</label>
           <Input
             value={formDoctor.consultorio_defecto || ''}
             onChange={e => setFormDoctor({ ...formDoctor, consultorio_defecto: e.target.value.toUpperCase() })}

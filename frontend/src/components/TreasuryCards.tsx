@@ -23,43 +23,19 @@ export const TreasuryCards: React.FC<TreasuryCardsProps> = ({ cuentas, loading, 
     }
   };
 
+  // Mismo color por medio de pago que en Caja: divisas verde, efectivo Bs azul, punto índigo, pago móvil cian.
   const getCardColors = (codigo: string) => {
     switch (codigo) {
       case 'EFECTIVO_USD':
-        return {
-          border: 'border-emerald-500/30',
-          bg: 'bg-emerald-950/20 hover:bg-emerald-950/30',
-          badge: 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20',
-          iconBg: 'bg-emerald-500/20 text-emerald-400'
-        };
+        return { border: 'border-emerald-200', bg: 'bg-white', badge: 'bg-emerald-50 text-emerald-700 border-emerald-200', iconBg: 'bg-emerald-50 text-emerald-700' };
       case 'EFECTIVO_BS':
-        return {
-          border: 'border-blue-500/30',
-          bg: 'bg-blue-950/20 hover:bg-blue-950/30',
-          badge: 'bg-blue-500/10 text-blue-400 border-blue-500/20',
-          iconBg: 'bg-blue-500/20 text-blue-400'
-        };
+        return { border: 'border-blue-200', bg: 'bg-white', badge: 'bg-blue-50 text-blue-700 border-blue-200', iconBg: 'bg-blue-50 text-blue-700' };
       case 'PUNTO_VENTA_BS':
-        return {
-          border: 'border-indigo-500/30',
-          bg: 'bg-indigo-950/20 hover:bg-indigo-950/30',
-          badge: 'bg-indigo-500/10 text-indigo-400 border-indigo-500/20',
-          iconBg: 'bg-indigo-500/20 text-indigo-400'
-        };
+        return { border: 'border-indigo-200', bg: 'bg-white', badge: 'bg-indigo-50 text-indigo-700 border-indigo-200', iconBg: 'bg-indigo-50 text-indigo-700' };
       case 'PAGO_MOVIL_BS':
-        return {
-          border: 'border-amber-500/30',
-          bg: 'bg-amber-950/20 hover:bg-amber-950/30',
-          badge: 'bg-amber-500/10 text-amber-400 border-amber-500/20',
-          iconBg: 'bg-amber-500/20 text-amber-400'
-        };
+        return { border: 'border-cyan-200', bg: 'bg-white', badge: 'bg-cyan-50 text-cyan-700 border-cyan-200', iconBg: 'bg-cyan-50 text-cyan-700' };
       default:
-        return {
-          border: 'border-slate-800',
-          bg: 'bg-slate-900',
-          badge: 'bg-slate-800 text-slate-300',
-          iconBg: 'bg-slate-800 text-slate-500'
-        };
+        return { border: 'border-slate-200', bg: 'bg-white', badge: 'bg-slate-100 text-slate-600 border-slate-200', iconBg: 'bg-slate-100 text-slate-600' };
     }
   };
 
@@ -113,10 +89,10 @@ export const TreasuryCards: React.FC<TreasuryCardsProps> = ({ cuentas, loading, 
                   {formatSaldo(cta.saldo_actual, cta.moneda)}
                 </div>
                 <div className="mt-2 flex items-center justify-between">
-                  <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full border ${theme.badge}`}>
+                  <span className={`text-xs font-bold px-2 py-0.5 rounded-full border ${theme.badge}`}>
                     {cta.moneda === 'USD' ? 'Divisas Efectivo' : 'Moneda Nacional'}
                   </span>
-                  <span className="text-[10px] text-slate-500 font-mono">
+                  <span className="text-xs text-slate-500 font-mono">
                     Cuenta #{cta.id}
                   </span>
                 </div>

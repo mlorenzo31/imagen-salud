@@ -35,7 +35,7 @@ export const ModalPaciente: React.FC<ModalPacienteProps> = ({ modalPaciente, err
 
       <div className="space-y-3 text-xs">
         <div>
-          <label className="text-[11px] font-bold text-slate-600 block mb-1">
+          <label className="text-xs font-bold text-slate-600 block mb-1">
             Cédula de Identidad <span className="text-rose-500">*</span>
           </label>
           <Input
@@ -56,7 +56,7 @@ export const ModalPaciente: React.FC<ModalPacienteProps> = ({ modalPaciente, err
           />
         </div>
         <div>
-          <label className="text-[11px] font-bold text-slate-600 block mb-1">
+          <label className="text-xs font-bold text-slate-600 block mb-1">
             Nombres y Apellidos <span className="text-rose-500">*</span>
           </label>
           <Input
@@ -71,7 +71,7 @@ export const ModalPaciente: React.FC<ModalPacienteProps> = ({ modalPaciente, err
           />
         </div>
         <div>
-          <label className="text-[11px] font-bold text-slate-600 block mb-1">
+          <label className="text-xs font-bold text-slate-600 block mb-1">
             Sexo <span className="text-rose-500">*</span>
             {formPaciente.sexo && !modalPaciente.item?.sexo && (
               <span className="ml-1 font-normal text-slate-500">(sugerido por el nombre; confirme)</span>
@@ -94,7 +94,7 @@ export const ModalPaciente: React.FC<ModalPacienteProps> = ({ modalPaciente, err
         </div>
         <div className="grid grid-cols-2 gap-2">
           <div>
-            <label className="text-[11px] font-bold text-slate-600 block mb-1">Teléfono</label>
+            <label className="text-xs font-bold text-slate-600 block mb-1">Teléfono</label>
             <Input
               value={formPaciente.telefono || ''}
               onChange={e => setFormPaciente({ ...formPaciente, telefono: limpiarTelefonoInput(e.target.value) })}
@@ -105,9 +105,9 @@ export const ModalPaciente: React.FC<ModalPacienteProps> = ({ modalPaciente, err
           </div>
           <div>
             <div className="flex items-center justify-between mb-1">
-              <label className="text-[11px] font-bold text-slate-600 block">F. Nacimiento</label>
+              <label className="text-xs font-bold text-slate-600 block">F. Nacimiento</label>
               {formPaciente.fecha_nacimiento && (
-                <span className="text-[10px] font-bold text-teal-700 bg-teal-50 px-1.5 py-0.5 rounded border border-teal-200">
+                <span className="text-xs font-bold text-teal-700 bg-teal-50 px-1.5 py-0.5 rounded border border-teal-200">
                   {calcularEdadReal(formPaciente.fecha_nacimiento)} años
                 </span>
               )}
@@ -122,7 +122,7 @@ export const ModalPaciente: React.FC<ModalPacienteProps> = ({ modalPaciente, err
           </div>
         </div>
         <div>
-          <label className="text-[11px] font-bold text-slate-600 block mb-1">Dirección Habitual</label>
+          <label className="text-xs font-bold text-slate-600 block mb-1">Dirección Habitual</label>
           <Input
             value={formPaciente.direccion || ''}
             onChange={e => setFormPaciente({ ...formPaciente, direccion: e.target.value.toUpperCase() })}

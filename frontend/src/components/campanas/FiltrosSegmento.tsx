@@ -48,11 +48,11 @@ interface Props {
 }
 
 const chip = (activo: boolean) =>
-  `px-2.5 py-1 text-[11px] font-bold rounded-lg border transition-colors ${activo ? 'bg-clinica-primary text-white border-clinica-primary' : 'bg-white text-slate-600 border-slate-200 hover:bg-slate-50'}`;
+  `px-2.5 py-1 text-xs font-bold rounded-lg border transition-colors ${activo ? 'bg-clinica-primary text-white border-clinica-primary' : 'bg-white text-slate-600 border-slate-200 hover:bg-slate-50'}`;
 
 const Campo: React.FC<{ etiqueta: string; children: React.ReactNode }> = ({ etiqueta, children }) => (
   <div className="space-y-1">
-    <span className="text-[10px] font-black uppercase text-slate-500 block">{etiqueta}</span>
+    <span className="text-xs font-black uppercase text-slate-500 block">{etiqueta}</span>
     {children}
   </div>
 );
@@ -61,7 +61,7 @@ function Multi({ valores, opciones, onChange }: { valores: string[]; opciones: s
   const alternar = (o: string) => onChange(valores.includes(o) ? valores.filter((x) => x !== o) : [...valores, o]);
   return (
     <div className="flex flex-wrap gap-1.5 max-h-24 overflow-y-auto">
-      {opciones.length === 0 && <span className="text-[11px] text-slate-400">Sin datos</span>}
+      {opciones.length === 0 && <span className="text-xs text-slate-400">Sin datos</span>}
       {opciones.map((o) => <button key={o} type="button" onClick={() => alternar(o)} className={chip(valores.includes(o))}>{o}</button>)}
     </div>
   );
@@ -91,7 +91,7 @@ export const FiltrosSegmento: React.FC<Props> = ({ form, setForm, opciones, busc
             <Campo etiqueta="Edad mínima">{entrada('edadMin', 'Ej. 40')}</Campo>
             <Campo etiqueta="Edad máxima">{entrada('edadMax', 'Ej. 65')}</Campo>
           </div>
-          <label className="flex items-center gap-2 text-[11px] text-slate-600">
+          <label className="flex items-center gap-2 text-xs text-slate-600">
             <input type="checkbox" checked={form.incluirSinFecha} onChange={(e) => set('incluirSinFecha', e.target.checked)} />
             Incluir pacientes sin fecha de nacimiento
           </label>
@@ -104,7 +104,7 @@ export const FiltrosSegmento: React.FC<Props> = ({ form, setForm, opciones, busc
                   key={v || 'todos'}
                   type="button"
                   onClick={() => set('sexo', v)}
-                  className={`px-2.5 h-7 rounded-lg text-[11px] font-bold border ${
+                  className={`px-2.5 h-7 rounded-lg text-xs font-bold border ${
                     form.sexo === v ? 'bg-teal-600 border-teal-600 text-white' : 'border-slate-300 text-slate-600 hover:bg-slate-50'
                   }`}
                 >

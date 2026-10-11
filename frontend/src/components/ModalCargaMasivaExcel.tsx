@@ -149,7 +149,7 @@ export const ModalCargaMasivaExcel: React.FC<ModalCargaMasivaExcelProps> = ({
               <span className="text-xs font-bold text-slate-700 block">
                 {file ? file.name : 'Haz clic para seleccionar o arrastra tu archivo Excel (.xlsx)'}
               </span>
-              <span className="text-[10px] text-slate-500">
+              <span className="text-xs text-slate-500">
                 Columnas requeridas: Paciente, Cedula, Servicio, Medico, Monto_USD, Monto_BS, Metodo_Pago
               </span>
             </label>
@@ -171,19 +171,19 @@ export const ModalCargaMasivaExcel: React.FC<ModalCargaMasivaExcelProps> = ({
             <div className="space-y-3 pt-2">
               <div className="grid grid-cols-4 gap-3">
                 <div className="p-3 bg-slate-50 rounded-xl border border-slate-200 text-center">
-                  <span className="text-[10px] text-slate-500 font-bold uppercase">Total Filas</span>
+                  <span className="text-xs text-slate-500 font-bold uppercase">Total Filas</span>
                   <p className="text-lg font-black font-mono text-slate-900">{simulationResult.total_filas}</p>
                 </div>
                 <div className="p-3 bg-emerald-50 rounded-xl border border-emerald-200 text-center">
-                  <span className="text-[10px] text-emerald-700 font-bold uppercase">Válidas</span>
+                  <span className="text-xs text-emerald-700 font-bold uppercase">Válidas</span>
                   <p className="text-lg font-black font-mono text-emerald-700">{simulationResult.filas_validas}</p>
                 </div>
                 <div className="p-3 bg-rose-50 rounded-xl border border-rose-200 text-center">
-                  <span className="text-[10px] text-rose-700 font-bold uppercase">Con Inconsistencias</span>
+                  <span className="text-xs text-rose-700 font-bold uppercase">Con Inconsistencias</span>
                   <p className="text-lg font-black font-mono text-rose-700">{simulationResult.filas_invalidas}</p>
                 </div>
                 <div className="p-3 bg-blue-50 rounded-xl border border-blue-200 text-center">
-                  <span className="text-[10px] text-blue-700 font-bold uppercase">Monto Total USD</span>
+                  <span className="text-xs text-blue-700 font-bold uppercase">Monto Total USD</span>
                   <p className="text-lg font-black font-mono text-blue-700">${simulationResult.monto_total_usd.toFixed(2)}</p>
                 </div>
               </div>
@@ -191,7 +191,7 @@ export const ModalCargaMasivaExcel: React.FC<ModalCargaMasivaExcelProps> = ({
               {/* Tabla de inspección fila por fila */}
               <div className="max-h-60 overflow-y-auto border border-slate-200 rounded-xl">
                 <table className="w-full text-left text-xs">
-                  <thead className="bg-slate-50 border-b border-slate-200 text-slate-600 font-bold uppercase text-[10px] sticky top-0">
+                  <thead className="bg-slate-50 border-b border-slate-200 text-slate-600 font-bold uppercase text-xs sticky top-0">
                     <tr>
                       <th className="p-2.5">Fila</th>
                       <th className="p-2.5">Paciente</th>
@@ -210,12 +210,12 @@ export const ModalCargaMasivaExcel: React.FC<ModalCargaMasivaExcelProps> = ({
                         <td className="p-2.5 text-right font-mono font-bold">${f.monto_usd.toFixed(2)}</td>
                         <td className="p-2.5 text-center">
                           {f.valido ? (
-                            <Badge className="bg-emerald-100 text-emerald-800 text-[10px]">Válido</Badge>
+                            <Badge className="bg-emerald-100 text-emerald-800 text-xs">Válido</Badge>
                           ) : (
-                            <Badge className="bg-rose-100 text-rose-800 text-[10px]">Error</Badge>
+                            <Badge className="bg-rose-100 text-rose-800 text-xs">Error</Badge>
                           )}
                         </td>
-                        <td className="p-2.5 text-[11px] text-slate-500">
+                        <td className="p-2.5 text-xs text-slate-500">
                           {f.observaciones.length > 0 ? (
                             <span className="text-rose-600 font-medium">{f.observaciones.join(' • ')}</span>
                           ) : (

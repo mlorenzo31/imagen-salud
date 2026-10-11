@@ -649,7 +649,7 @@ export const ModuloFacturacion: React.FC<ModuloFacturacionProps> = ({ onFacturaE
                     <button
                       type="button"
                       onClick={limpiarFichaCompleta}
-                      className="ml-2 text-[10px] font-bold text-slate-500 hover:text-rose-600 hover:bg-rose-50 px-2 py-0.5 rounded-lg transition-colors flex items-center gap-1 border border-slate-200"
+                      className="ml-2 text-xs font-bold text-slate-500 hover:text-rose-600 hover:bg-rose-50 px-2 py-0.5 rounded-lg transition-colors flex items-center gap-1 border border-slate-200"
                       title="Borrar cédula y limpiar toda la información del paciente"
                     >
                       <RotateCcw className="w-3 h-3 text-rose-500" />
@@ -659,17 +659,17 @@ export const ModuloFacturacion: React.FC<ModuloFacturacionProps> = ({ onFacturaE
                 </div>
                 <div className="flex items-center gap-2">
                   {buscandoPaciente && (
-                    <span className="text-[10px] text-cyan-600 font-bold flex items-center gap-1 animate-pulse">
+                    <span className="text-xs text-cyan-600 font-bold flex items-center gap-1 animate-pulse">
                       <Search className="w-3 h-3" /> Verificando cédula...
                     </span>
                   )}
                   {!buscandoPaciente && pacienteExiste === true && (
-                    <Badge className="bg-emerald-100 text-emerald-800 text-[10px] font-bold border border-emerald-300">
+                    <Badge className="bg-emerald-100 text-emerald-800 text-xs font-bold border border-emerald-300">
                       ✓ Registrado en BD
                     </Badge>
                   )}
                   {!buscandoPaciente && pacienteExiste === false && (
-                    <Badge className="bg-amber-100 text-amber-800 text-[10px] font-bold border border-amber-300">
+                    <Badge className="bg-amber-100 text-amber-800 text-xs font-bold border border-amber-300">
                       ★ Nuevo Paciente (Alta Rápida)
                     </Badge>
                   )}
@@ -679,7 +679,7 @@ export const ModuloFacturacion: React.FC<ModuloFacturacionProps> = ({ onFacturaE
               <div className="grid grid-cols-1 md:grid-cols-12 gap-3">
                 {/* Tipo de Documento y Cédula */}
                 <div className="md:col-span-3">
-                  <label className="block text-[10px] font-black text-slate-600 uppercase mb-1">
+                  <label className="block text-xs font-black text-slate-600 uppercase mb-1">
                     Tipo <span className="text-rose-500">*</span>
                   </label>
                   <select
@@ -695,7 +695,7 @@ export const ModuloFacturacion: React.FC<ModuloFacturacionProps> = ({ onFacturaE
                 </div>
 
                 <div className="md:col-span-5">
-                  <label className="block text-[10px] font-black text-slate-600 uppercase mb-1">
+                  <label className="block text-xs font-black text-slate-600 uppercase mb-1">
                     Cédula / Documento <span className="text-rose-500">*</span>
                   </label>
                   <div className="relative">
@@ -720,12 +720,12 @@ export const ModuloFacturacion: React.FC<ModuloFacturacionProps> = ({ onFacturaE
                     <Search className="w-4 h-4 text-slate-500 absolute right-2.5 top-2.5" />
                   </div>
                   {erroresFicha.cedula ? (
-                    <p className="text-[10px] text-rose-600 font-bold mt-1 flex items-center gap-1">
+                    <p className="text-xs text-rose-600 font-bold mt-1 flex items-center gap-1">
                       <AlertCircle className="w-3 h-3 shrink-0" />
                       {erroresFicha.cedula}
                     </p>
                   ) : (
-                    <p className="text-[9px] text-slate-500 mt-0.5">
+                    <p className="text-xs text-slate-500 mt-0.5">
                       {tipoDoc === 'P' ? 'Alfanumérico sin espacios' : 'Solo números (5-9 dígitos, sin letras)'}
                     </p>
                   )}
@@ -733,11 +733,11 @@ export const ModuloFacturacion: React.FC<ModuloFacturacionProps> = ({ onFacturaE
 
                 <div className="md:col-span-4">
                   <div className="flex items-center justify-between mb-1">
-                    <label className="block text-[10px] font-black text-slate-600 uppercase">
+                    <label className="block text-xs font-black text-slate-600 uppercase">
                       F. Nacimiento <span className="text-rose-500">*</span>
                     </label>
                     {fechaNacimiento && (
-                      <span className="text-[10px] font-bold text-teal-700 bg-teal-50 border border-teal-200 px-1.5 py-0.5 rounded-md">
+                      <span className="text-xs font-bold text-teal-700 bg-teal-50 border border-teal-200 px-1.5 py-0.5 rounded-md">
                         {calcularEdadReal(fechaNacimiento)} años
                       </span>
                     )}
@@ -752,7 +752,7 @@ export const ModuloFacturacion: React.FC<ModuloFacturacionProps> = ({ onFacturaE
                     }`}
                   />
                   {erroresFicha.fecha_nacimiento && (
-                    <p className="text-[10px] text-rose-600 font-bold mt-1 flex items-center gap-1">
+                    <p className="text-xs text-rose-600 font-bold mt-1 flex items-center gap-1">
                       <AlertCircle className="w-3 h-3 shrink-0" />
                       {erroresFicha.fecha_nacimiento}
                     </p>
@@ -761,7 +761,7 @@ export const ModuloFacturacion: React.FC<ModuloFacturacionProps> = ({ onFacturaE
 
                 {/* Nombre Completo */}
                 <div className="md:col-span-7">
-                  <label className="block text-[10px] font-black text-slate-600 uppercase mb-1">
+                  <label className="block text-xs font-black text-slate-600 uppercase mb-1">
                     Nombre Completo <span className="text-rose-500">*</span>
                   </label>
                   <Input
@@ -773,12 +773,12 @@ export const ModuloFacturacion: React.FC<ModuloFacturacionProps> = ({ onFacturaE
                     }`}
                   />
                   {erroresFicha.nombre ? (
-                    <p className="text-[10px] text-rose-600 font-bold mt-1 flex items-center gap-1">
+                    <p className="text-xs text-rose-600 font-bold mt-1 flex items-center gap-1">
                       <AlertCircle className="w-3 h-3 shrink-0" />
                       {erroresFicha.nombre}
                     </p>
                   ) : (
-                    <p className="text-[9px] text-slate-500 mt-0.5">
+                    <p className="text-xs text-slate-500 mt-0.5">
                       Solo letras y apellidos (sin números)
                     </p>
                   )}
@@ -786,7 +786,7 @@ export const ModuloFacturacion: React.FC<ModuloFacturacionProps> = ({ onFacturaE
 
                 {/* Sexo (sugerido por el nombre; recepción confirma) */}
                 <div className="md:col-span-5">
-                  <label className="block text-[10px] font-black text-slate-600 uppercase mb-1">
+                  <label className="block text-xs font-black text-slate-600 uppercase mb-1">
                     Sexo <span className="text-rose-500">*</span>
                   </label>
                   <div className="flex gap-2">
@@ -810,12 +810,12 @@ export const ModuloFacturacion: React.FC<ModuloFacturacionProps> = ({ onFacturaE
                     ))}
                   </div>
                   {erroresFicha.sexo ? (
-                    <p className="text-[10px] text-rose-600 font-bold mt-1 flex items-center gap-1">
+                    <p className="text-xs text-rose-600 font-bold mt-1 flex items-center gap-1">
                       <AlertCircle className="w-3 h-3 shrink-0" />
                       {erroresFicha.sexo}
                     </p>
                   ) : (
-                    <p className="text-[9px] text-slate-500 mt-0.5">
+                    <p className="text-xs text-slate-500 mt-0.5">
                       {sexo && !sexoManual ? 'Sugerido por el nombre; confirme o cambie' : 'Seleccione una opción'}
                     </p>
                   )}
@@ -823,7 +823,7 @@ export const ModuloFacturacion: React.FC<ModuloFacturacionProps> = ({ onFacturaE
 
                 {/* Teléfono */}
                 <div className="md:col-span-5">
-                  <label className="block text-[10px] font-black text-slate-600 uppercase mb-1">
+                  <label className="block text-xs font-black text-slate-600 uppercase mb-1">
                     Teléfono / Celular <span className="text-rose-500">*</span>
                   </label>
                   <Input
@@ -836,12 +836,12 @@ export const ModuloFacturacion: React.FC<ModuloFacturacionProps> = ({ onFacturaE
                     }`}
                   />
                   {erroresFicha.telefono ? (
-                    <p className="text-[10px] text-rose-600 font-bold mt-1 flex items-center gap-1">
+                    <p className="text-xs text-rose-600 font-bold mt-1 flex items-center gap-1">
                       <AlertCircle className="w-3 h-3 shrink-0" />
                       {erroresFicha.telefono}
                     </p>
                   ) : (
-                    <p className="text-[9px] text-slate-500 mt-0.5">
+                    <p className="text-xs text-slate-500 mt-0.5">
                       Solo números (10 a 11 dígitos, sin letras)
                     </p>
                   )}
@@ -849,7 +849,7 @@ export const ModuloFacturacion: React.FC<ModuloFacturacionProps> = ({ onFacturaE
 
                 {/* Dirección */}
                 <div className="md:col-span-7">
-                  <label className="block text-[10px] font-black text-slate-600 uppercase mb-1">
+                  <label className="block text-xs font-black text-slate-600 uppercase mb-1">
                     Dirección / Residencia <span className="text-rose-500">*</span>
                   </label>
                   <div className="flex gap-2">
@@ -867,14 +867,14 @@ export const ModuloFacturacion: React.FC<ModuloFacturacionProps> = ({ onFacturaE
                         onClick={handleGuardarPacienteRapido}
                         disabled={guardandoPaciente}
                         size="sm"
-                        className="rounded-xl text-[10px] font-bold bg-amber-600 hover:bg-amber-700 text-white shrink-0"
+                        className="rounded-xl text-xs font-bold bg-amber-600 hover:bg-amber-700 text-white shrink-0"
                       >
                         {guardandoPaciente ? 'Guardando...' : 'Guardar Ficha'}
                       </Button>
                     )}
                   </div>
                   {erroresFicha.direccion && (
-                    <p className="text-[10px] text-rose-600 font-bold mt-1 flex items-center gap-1">
+                    <p className="text-xs text-rose-600 font-bold mt-1 flex items-center gap-1">
                       <AlertCircle className="w-3 h-3 shrink-0" />
                       {erroresFicha.direccion}
                     </p>
@@ -906,11 +906,11 @@ export const ModuloFacturacion: React.FC<ModuloFacturacionProps> = ({ onFacturaE
                           Prioridad de Primer Llamado en Sala de Espera
                         </h5>
                       </div>
-                      <Badge className="bg-[#1D7A70] text-white text-[9px] font-bold">
+                      <Badge className="bg-[#1D7A70] text-white text-xs font-bold">
                         Multi-Estudio ({carrito.length})
                       </Badge>
                     </div>
-                    <p className="text-[11px] text-slate-600 mb-2.5">
+                    <p className="text-xs text-slate-600 mb-2.5">
                       Defina cuál estudio debe llamarse de <span className="font-bold text-slate-900">primer lugar</span> en la Sala de Espera. Los estudios restantes permanecerán en cola secundaria protegida.
                     </p>
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
@@ -930,20 +930,20 @@ export const ModuloFacturacion: React.FC<ModuloFacturacionProps> = ({ onFacturaE
                           >
                             <div className="pr-2">
                               <div className="flex items-center gap-1.5">
-                                <Badge variant="outline" className="text-[9px] font-bold border-cyan-300 text-cyan-800 bg-cyan-50">
+                                <Badge variant="outline" className="text-xs font-bold border-cyan-300 text-cyan-800 bg-cyan-50">
                                   Grupo {grupo}
                                 </Badge>
                                 <span className="text-xs font-bold text-slate-900 line-clamp-1">{c.estudio}</span>
                               </div>
-                              <p className="text-[10px] text-slate-500 mt-1">Sala: {c.sala} • {c.medico}</p>
+                              <p className="text-xs text-slate-500 mt-1">Sala: {c.sala} • {c.medico}</p>
                             </div>
                             <div className="shrink-0 pt-0.5">
                               {esSeleccionado ? (
-                                <span className="px-2 py-0.5 rounded-md bg-[#1D7A70] text-white text-[9px] font-black tracking-wide uppercase">
+                                <span className="px-2 py-0.5 rounded-md bg-[#1D7A70] text-white text-xs font-black tracking-wide uppercase">
                                   1er Llamado
                                 </span>
                               ) : (
-                                <span className="px-2 py-0.5 rounded-md bg-slate-100 text-slate-500 text-[9px] font-medium">
+                                <span className="px-2 py-0.5 rounded-md bg-slate-100 text-slate-500 text-xs font-medium">
                                   Secundario
                                 </span>
                               )}
@@ -984,16 +984,16 @@ export const ModuloFacturacion: React.FC<ModuloFacturacionProps> = ({ onFacturaE
                         >
                           <div>
                             <div className="flex items-center gap-2">
-                              <Badge variant="outline" className="text-[9px] font-mono font-bold bg-white">
+                              <Badge variant="outline" className="text-xs font-mono font-bold bg-white">
                                 {item.area}
                               </Badge>
                               <span className="font-black text-slate-900">{item.estudio}</span>
                             </div>
-                            <p className="text-[10px] text-slate-500 mt-0.5">
+                            <p className="text-xs text-slate-500 mt-0.5">
                               Médico: <span className="font-bold text-slate-700">{item.medico}</span> • Sala: <span className="font-mono text-cyan-700">{item.sala}</span>
                             </p>
                             {/* Desglose de Liquidación Multimoneda */}
-                            <p className="text-[9px] text-slate-500 font-mono mt-0.5">
+                            <p className="text-xs text-slate-500 font-mono mt-0.5">
                               Clínica: ${item.dist.imagen.toFixed(2)} (Bs. {(item.dist.imagen * tasaBcv).toFixed(2)}) | Médico: ${item.dist.medico.toFixed(2)} (Bs. {(item.dist.medico * tasaBcv).toFixed(2)})
                               {item.dist.eco > 0 ? ` | Eco: $${item.dist.eco.toFixed(2)} (Bs. ${(item.dist.eco * tasaBcv).toFixed(2)})` : ''}
                               {item.dist.patologo > 0 ? ` | Patólogo: $${item.dist.patologo.toFixed(2)} (Bs. ${(item.dist.patologo * tasaBcv).toFixed(2)})` : ''}
@@ -1002,17 +1002,17 @@ export const ModuloFacturacion: React.FC<ModuloFacturacionProps> = ({ onFacturaE
                           <div className="flex items-center gap-3">
                             <div className="text-right">
                               {neto && neto.descuento > 0 && (
-                                <p className="font-mono text-[10px] text-slate-600 line-through">${item.precioUSD.toFixed(2)}</p>
+                                <p className="font-mono text-xs text-slate-600 line-through">${item.precioUSD.toFixed(2)}</p>
                               )}
                               <p className="font-mono font-black text-slate-900 text-sm">
                                 ${itemNetoUSD.toFixed(2)}
                               </p>
                               {neto && neto.promoId !== null && (
-                                <p className="text-[9px] font-bold text-emerald-800">
+                                <p className="text-xs font-bold text-emerald-800">
                                   Promo: {promos.find((p) => p.id === neto.promoId)?.nombre ?? 'vigente'}
                                 </p>
                               )}
-                              <p className="font-mono text-[10px] text-slate-500 font-semibold">
+                              <p className="font-mono text-xs text-slate-500 font-semibold">
                                 Bs. {itemBs.toLocaleString('es-VE', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                               </p>
                             </div>
@@ -1032,7 +1032,7 @@ export const ModuloFacturacion: React.FC<ModuloFacturacionProps> = ({ onFacturaE
                 {carrito.length > 0 && (
                   <div className="mt-3 space-y-2">
                     {descuentoTotalUSD > 0 && (
-                      <p className="font-mono text-[11px] font-bold text-slate-800">
+                      <p className="font-mono text-xs font-bold text-slate-800">
                         Lista ${totalListaUSD.toFixed(2)} − Descuento ${descuentoTotalUSD.toFixed(2)} = Total a cobrar ${totalUSD.toFixed(2)}
                       </p>
                     )}
@@ -1061,7 +1061,7 @@ export const ModuloFacturacion: React.FC<ModuloFacturacionProps> = ({ onFacturaE
                 <span>3. Cobro Multimoneda Simultáneo</span>
               </CardTitle>
               <div className="flex items-center gap-1.5">
-                <Badge className="bg-slate-900 text-white font-mono text-[10px] flex items-center gap-1">
+                <Badge className="bg-slate-900 text-white font-mono text-xs flex items-center gap-1">
                   <span>BCV: Bs. {tasaBcv.toFixed(2)}</span>
                 </Badge>
                 <button
@@ -1081,7 +1081,7 @@ export const ModuloFacturacion: React.FC<ModuloFacturacionProps> = ({ onFacturaE
               <div className="p-4 rounded-2xl bg-gradient-to-br from-slate-900 to-slate-800 text-white shadow-md">
                 <div className="flex justify-between items-center text-xs text-slate-500 mb-1">
                   <span>TOTAL A FACTURAR (MULTIMONEDA)</span>
-                  <span className="text-[10px] text-cyan-400 font-medium">{fuenteTasaBcv}</span>
+                  <span className="text-xs text-cyan-400 font-medium">{fuenteTasaBcv}</span>
                 </div>
                 <div className="flex justify-between items-end">
                   <div>
@@ -1102,21 +1102,21 @@ export const ModuloFacturacion: React.FC<ModuloFacturacionProps> = ({ onFacturaE
               {/* Tasa BCV Oficial con Sincronización */}
               <div className="flex items-center justify-between text-xs bg-slate-50 p-2.5 rounded-xl border border-slate-200">
                 <div>
-                  <span className="font-bold text-slate-700 text-[11px] flex items-center gap-1">
+                  <span className="font-bold text-slate-700 text-xs flex items-center gap-1">
                     <span>Tasa Oficial BCV:</span>
                     {tasaManualEditada && (
-                      <span className="text-[9px] text-amber-700 font-bold bg-amber-100 px-1 py-0.5 rounded">
+                      <span className="text-xs text-amber-700 font-bold bg-amber-100 px-1 py-0.5 rounded">
                         Manual
                       </span>
                     )}
                   </span>
-                  <p className="text-[9px] text-slate-600 mt-0.5">{tasaManualEditada ? 'Fijada por el administrador (solo esta factura)' : 'Automática vía API oficial BCV'}</p>
+                  <p className="text-xs text-slate-600 mt-0.5">{tasaManualEditada ? 'Fijada por el administrador (solo esta factura)' : 'Automática vía API oficial BCV'}</p>
                 </div>
                 <div className="flex items-center gap-1.5">
-                  <span className="text-[10px] text-slate-500 font-mono">Bs.</span>
+                  <span className="text-xs text-slate-500 font-mono">Bs.</span>
                   <span className="w-24 px-2 py-1 text-xs font-mono font-bold text-right text-slate-900" aria-label="Tasa BCV (solo lectura)">{tasaBcv.toFixed(2)}</span>
                   {rol === 'admin' && (
-                    <button type="button" onClick={() => setFijandoTasa(true)} className="px-2 py-1 text-[10px] font-bold text-cyan-800 border border-cyan-300 rounded-lg hover:bg-cyan-50">
+                    <button type="button" onClick={() => setFijandoTasa(true)} className="px-2 py-1 text-xs font-bold text-cyan-800 border border-cyan-300 rounded-lg hover:bg-cyan-50">
                       Modificar
                     </button>
                   )}

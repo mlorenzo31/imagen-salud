@@ -428,7 +428,7 @@ export default function Home() {
               </CardHeader>
               <div className="overflow-x-auto">
                 <table className="w-full text-left text-xs">
-                  <thead className="bg-slate-50 border-b border-slate-200 text-slate-500 uppercase text-[10px] font-black">
+                  <thead className="bg-slate-50 border-b border-slate-200 text-slate-500 uppercase text-xs font-black">
                     <tr>
                       <th className="p-3">Ref/ID</th>
                       <th className="p-3">Cuenta Afectada</th>
@@ -465,11 +465,11 @@ export default function Home() {
                           </td>
                           <td className="p-3 text-center">
                             {tx.es_comision ? (
-                              <Badge className="bg-amber-100 text-amber-800 text-[10px] font-bold">
+                              <Badge className="bg-amber-100 text-amber-800 text-xs font-bold">
                                 Comisión Manual
                               </Badge>
                             ) : (
-                              <Badge variant="outline" className="text-[10px] text-slate-600">
+                              <Badge variant="outline" className="text-xs text-slate-600">
                                 {tx.tipo_transaccion}
                               </Badge>
                             )}

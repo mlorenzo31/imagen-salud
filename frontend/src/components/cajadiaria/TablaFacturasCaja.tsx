@@ -28,12 +28,12 @@ export const TablaFacturasCaja: React.FC<TablaFacturasCajaProps> = ({ facturasFi
       <CardTitle className="text-xs font-bold text-slate-700 flex items-center gap-2">
         <span>Resultados: {facturasFiltradas.length} comprobantes</span>
         {agruparPor !== 'NINGUNO' && (
-          <Badge className="bg-indigo-100 text-indigo-900 border border-indigo-300 text-[10px]">
+          <Badge className="bg-indigo-100 text-indigo-900 border border-indigo-300 text-xs">
             {grupos?.length || 0} Grupos Formados
           </Badge>
         )}
       </CardTitle>
-      <p className="text-[11px] text-slate-500">Total en vista: ${totalCobradoUSD.toFixed(2)} (Bs. {totalCobradoBs.toLocaleString('es-VE', { minimumFractionDigits: 2, maximumFractionDigits: 2 })})</p>
+      <p className="text-xs text-slate-500">Total en vista: ${totalCobradoUSD.toFixed(2)} (Bs. {totalCobradoBs.toLocaleString('es-VE', { minimumFractionDigits: 2, maximumFractionDigits: 2 })})</p>
     </CardHeader>
 
     <div className="overflow-x-auto">
@@ -62,14 +62,14 @@ export const TablaFacturasCaja: React.FC<TablaFacturasCajaProps> = ({ facturasFi
                       )}
                       <span className="font-black text-xs text-slate-900 flex items-center gap-2">
                         <span>{grp.nombreGrupo}</span>
-                        <Badge variant="outline" className="bg-white text-slate-700 font-mono text-[10px]">
+                        <Badge variant="outline" className="bg-white text-slate-700 font-mono text-xs">
                           {grp.totalItems} registros
                         </Badge>
                       </span>
                     </div>
                     <div className="text-right font-mono">
                       <span className="text-xs font-black text-slate-900">${grp.subtotalUSD.toFixed(2)}</span>
-                      <span className="text-[10px] text-slate-500 font-bold ml-2">
+                      <span className="text-xs text-slate-500 font-bold ml-2">
                         (Bs. {grp.subtotalBs.toLocaleString('es-VE', { minimumFractionDigits: 2, maximumFractionDigits: 2 })})
                       </span>
                     </div>
@@ -90,13 +90,13 @@ export const TablaFacturasCaja: React.FC<TablaFacturasCajaProps> = ({ facturasFi
                               </span>
                               <div>
                                 <p className="font-bold text-slate-900">{f.nombre_paciente}</p>
-                                <p className="text-[11px] text-slate-500">{f.estudio} • <span className="font-medium text-cyan-700">{f.medico || 'De Guardia'}</span></p>
+                                <p className="text-xs text-slate-500">{f.estudio} • <span className="font-medium text-cyan-700">{f.medico || 'De Guardia'}</span></p>
                               </div>
                             </div>
                             <div className="flex items-center gap-4">
                               <div className="text-right font-mono">
                                 <p className="font-black text-slate-900">${Number(f.precio_usd || 0).toFixed(2)}</p>
-                                <p className="text-[10px] text-slate-500 font-bold">Bs. {totalBsFactura.toLocaleString('es-VE', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</p>
+                                <p className="text-xs text-slate-500 font-bold">Bs. {totalBsFactura.toLocaleString('es-VE', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</p>
                               </div>
                               <Badge className={
                                 isAnulada ? 'bg-rose-600' :
@@ -139,7 +139,7 @@ export const TablaFacturasCaja: React.FC<TablaFacturasCajaProps> = ({ facturasFi
         /* CASO 2: VISTA DE TABLA PLANA */
         <table className="w-full text-left text-xs border-collapse">
           <thead>
-            <tr className="bg-slate-50/80 border-b border-slate-200 text-slate-500 text-[10px] font-black uppercase tracking-wider">
+            <tr className="bg-slate-50/80 border-b border-slate-200 text-slate-500 text-xs font-black uppercase tracking-wider">
               <th className="py-2.5 px-3">Folio/Turno</th>
               <th className="py-2.5 px-3">Hora</th>
               <th className="py-2.5 px-3">Paciente</th>
@@ -171,44 +171,44 @@ export const TablaFacturasCaja: React.FC<TablaFacturasCajaProps> = ({ facturasFi
                     <td className="py-2.5 px-3 font-mono font-black text-slate-900">
                       #{f.turno_num ? String(f.turno_num).padStart(3, '0') : f.id}
                     </td>
-                    <td className="py-2.5 px-3 text-slate-500 font-mono text-[11px]">
+                    <td className="py-2.5 px-3 text-slate-500 font-mono text-xs">
                       {f.hora ? f.hora.slice(0, 5) : '--:--'}
                     </td>
                     <td className="py-2.5 px-3">
                       <p className="font-bold text-slate-900 leading-tight">{f.nombre_paciente}</p>
-                      <p className="text-[10px] text-slate-500 font-mono">{f.cedula_paciente}</p>
+                      <p className="text-xs text-slate-500 font-mono">{f.cedula_paciente}</p>
                     </td>
                     <td className="py-2.5 px-3">
                       <p className="font-semibold text-slate-800 line-clamp-1">{f.estudio}</p>
-                      <p className="text-[10px] text-cyan-700 font-medium">{f.medico || 'Médico de Guardia'}</p>
+                      <p className="text-xs text-cyan-700 font-medium">{f.medico || 'Médico de Guardia'}</p>
                     </td>
                     <td className="py-2.5 px-3 text-right font-mono">
                       <p className="font-black text-slate-900 text-sm">
                         ${Number(f.precio_usd || 0).toFixed(2)}
                       </p>
-                      <p className="text-[10px] text-slate-500 font-bold">
+                      <p className="text-xs text-slate-500 font-bold">
                         Bs. {totalBsFactura.toLocaleString('es-VE', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                       </p>
                     </td>
                     <td className="py-2.5 px-3">
                       <div className="flex flex-wrap gap-1">
                         {Number(f.pago_divisas || 0) > 0 && (
-                          <span className="px-1.5 py-0.5 rounded bg-emerald-100 text-emerald-900 text-[10px] font-mono font-bold">
+                          <span className="px-1.5 py-0.5 rounded bg-emerald-100 text-emerald-900 text-xs font-mono font-bold">
                             ${Number(f.pago_divisas).toFixed(2)} (Bs. {(Number(f.pago_divisas) * tasaFactura).toFixed(2)})
                           </span>
                         )}
                         {Number(f.pago_efectivo_bs || 0) > 0 && (
-                          <span className="px-1.5 py-0.5 rounded bg-blue-100 text-blue-900 text-[10px] font-mono font-bold">
+                          <span className="px-1.5 py-0.5 rounded bg-blue-100 text-blue-900 text-xs font-mono font-bold">
                             Bs.{Number(f.pago_efectivo_bs).toFixed(2)}
                           </span>
                         )}
                         {Number(f.pago_punto || 0) > 0 && (
-                          <span className="px-1.5 py-0.5 rounded bg-indigo-100 text-indigo-900 text-[10px] font-mono font-bold">
+                          <span className="px-1.5 py-0.5 rounded bg-indigo-100 text-indigo-900 text-xs font-mono font-bold">
                             Punto: Bs.{Number(f.pago_punto).toFixed(2)}
                           </span>
                         )}
                         {Number(f.pago_movil || 0) > 0 && (
-                          <span className="px-1.5 py-0.5 rounded bg-cyan-100 text-cyan-900 text-[10px] font-mono font-bold">
+                          <span className="px-1.5 py-0.5 rounded bg-cyan-100 text-cyan-900 text-xs font-mono font-bold">
                             PM: Bs.{Number(f.pago_movil).toFixed(2)}
                           </span>
                         )}
@@ -216,19 +216,19 @@ export const TablaFacturasCaja: React.FC<TablaFacturasCajaProps> = ({ facturasFi
                     </td>
                     <td className="py-2.5 px-3 text-center">
                       {isAnulada ? (
-                        <Badge variant="destructive" className="text-[10px] font-bold">
+                        <Badge variant="destructive" className="text-xs font-bold">
                           ANULADA
                         </Badge>
                       ) : String(f.etapa_actual) === '2' || f.estado === 'FINALIZADO' ? (
-                        <Badge className="bg-emerald-600 hover:bg-emerald-700 text-[10px] font-bold">
+                        <Badge className="bg-emerald-600 hover:bg-emerald-700 text-xs font-bold">
                           FINALIZADO
                         </Badge>
                       ) : String(f.etapa_actual) === '1' || f.estado === 'ATENCION' ? (
-                        <Badge className="bg-amber-500 hover:bg-amber-600 text-[10px] font-bold">
+                        <Badge className="bg-amber-500 hover:bg-amber-600 text-xs font-bold">
                           EN ATENCIÓN
                         </Badge>
                       ) : (
-                        <Badge className="bg-blue-600 hover:bg-blue-700 text-[10px] font-bold">
+                        <Badge className="bg-blue-600 hover:bg-blue-700 text-xs font-bold">
                           EN ESPERA
                         </Badge>
                       )}

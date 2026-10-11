@@ -26,7 +26,7 @@ export const BannerHistorial: React.FC<BannerHistorialProps> = ({ pacienteSelecc
             <h3 className="text-lg font-black text-slate-900">
               {pacienteSeleccionado.nombre}
             </h3>
-            <Badge className="bg-emerald-100 text-emerald-800 text-[10px] font-bold border border-emerald-200">
+            <Badge className="bg-emerald-100 text-emerald-800 text-xs font-bold border border-emerald-200">
               Paciente Seleccionado
             </Badge>
           </div>

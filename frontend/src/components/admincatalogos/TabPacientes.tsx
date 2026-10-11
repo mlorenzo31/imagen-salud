@@ -62,13 +62,13 @@ export const TabPacientes: React.FC<TabPacientesProps> = ({ busqueda, setBusqued
                   <h4 className="text-sm font-black text-slate-900 leading-snug">{p.nombres}</h4>
                   <div className="flex items-center gap-2 mt-0.5">
                     <span className="font-mono text-xs font-bold text-[#1D7A70]">{p.cedula}</span>
-                    <Badge variant="outline" className="text-[10px] font-bold py-0.5 px-2 bg-teal-50 text-teal-800 border-teal-200">
+                    <Badge variant="outline" className="text-xs font-bold py-0.5 px-2 bg-teal-50 text-teal-800 border-teal-200">
                       {p.fecha_nacimiento ? `${calcularEdadReal(p.fecha_nacimiento)} años` : (p.edad ? `${p.edad} años` : 'Edad N/R')}
                     </Badge>
                   </div>
                 </div>
               </div>
-              <Badge className={p.activo ? 'bg-emerald-100 text-emerald-800 text-[10px]' : 'bg-slate-200 text-slate-600 text-[10px]'}>
+              <Badge className={p.activo ? 'bg-emerald-100 text-emerald-800 text-xs' : 'bg-slate-200 text-slate-600 text-xs'}>
                 {p.activo ? 'Activo' : 'Inactivo'}
               </Badge>
             </CardHeader>
@@ -80,11 +80,11 @@ export const TabPacientes: React.FC<TabPacientesProps> = ({ busqueda, setBusqued
                   <span>{p.telefono || 'Sin teléfono registrado'}</span>
                 </div>
                 <div className="flex items-center justify-between pt-1 border-t border-slate-100">
-                  <span className="text-slate-500 text-[11px]">Historial de Atenciones:</span>
+                  <span className="text-slate-500 text-xs">Historial de Atenciones:</span>
                   <span className="font-bold text-slate-800">{p.historial_visitas} visitas</span>
                 </div>
                 <div className="flex items-center justify-between">
-                  <span className="text-slate-500 text-[11px]">Saldo Pendiente:</span>
+                  <span className="text-slate-500 text-xs">Saldo Pendiente:</span>
                   <span className={`font-mono font-black ${p.saldo_pendiente_usd > 0 ? 'text-rose-600' : 'text-emerald-700'}`}>
                     ${p.saldo_pendiente_usd.toFixed(2)}
                   </span>

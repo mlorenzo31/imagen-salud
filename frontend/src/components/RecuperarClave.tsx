@@ -75,7 +75,7 @@ export const RecuperarClave: React.FC<Props> = ({ open, usuarioInicial, onCerrar
             <Input type="password" autoComplete="new-password" placeholder="Nueva clave (8+ caracteres, letras y números)" value={clave} onChange={(e) => setClave(e.target.value)} className="rounded-xl" />
             {error && <p className="text-xs font-bold text-clinica-coral">{error}</p>}
             <Button type="submit" disabled={codigo.length !== 6 || !clave || cargando} className="w-full rounded-xl font-bold">{cargando ? 'Guardando…' : 'Cambiar clave'}</Button>
-            <button type="button" onClick={() => { setPaso(1); setError(null); }} className="w-full text-[11px] font-bold text-slate-500 hover:underline">Pedir un código nuevo</button>
+            <button type="button" onClick={() => { setPaso(1); setError(null); }} className="w-full text-xs font-bold text-slate-500 hover:underline">Pedir un código nuevo</button>
           </form>
         )}
 

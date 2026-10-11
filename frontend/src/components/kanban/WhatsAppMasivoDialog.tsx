@@ -50,7 +50,7 @@ export const WhatsAppMasivoDialog: React.FC<WhatsAppMasivoDialogProps> = ({ moda
               <p className="font-bold">
                 {pacientesFinalizadosSinAdjunto.length} estudio(s) culminado(s) sin imágenes adjuntas
               </p>
-              <p className="text-[11px] text-amber-700 mt-0.5">
+              <p className="text-xs text-amber-700 mt-0.5">
                 Por protocolo médico, el envío de WhatsApp permanece inactivo para estos pacientes hasta que sus imágenes o informe sean cargados al sistema.
               </p>
             </div>
@@ -71,7 +71,7 @@ export const WhatsAppMasivoDialog: React.FC<WhatsAppMasivoDialogProps> = ({ moda
                 style={{ width: ((progresoMasivo.actual / progresoMasivo.total) * 100) + '%' }}
               />
             </div>
-            <p className="text-[11px] text-slate-500 truncate">
+            <p className="text-xs text-slate-500 truncate">
               Paciente: <strong className="text-slate-800">{progresoMasivo.nombreActual}</strong>
             </p>
           </div>
@@ -87,9 +87,9 @@ export const WhatsAppMasivoDialog: React.FC<WhatsAppMasivoDialogProps> = ({ moda
               <div key={p.id} className="p-2.5 rounded-xl border border-slate-200 bg-slate-50/50 flex items-center justify-between text-xs">
                 <div>
                   <p className="font-bold text-slate-800">{p.nombre_paciente}</p>
-                  <p className="text-[10px] text-slate-500">{p.estudio} • {p.adjunto_nombre || 'Sin adjunto'}</p>
+                  <p className="text-xs text-slate-500">{p.estudio} • {p.adjunto_nombre || 'Sin adjunto'}</p>
                 </div>
-                <Badge variant="outline" className="text-[10px] text-amber-700 border-amber-300">
+                <Badge variant="outline" className="text-xs text-amber-700 border-amber-300">
                   Pendiente
                 </Badge>
               </div>

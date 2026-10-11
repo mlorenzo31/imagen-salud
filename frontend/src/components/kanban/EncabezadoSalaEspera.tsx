@@ -27,7 +27,7 @@ export const EncabezadoSalaEspera: React.FC<EncabezadoSalaEsperaProps> = ({ setM
         <div>
           <div className="flex items-center gap-2">
             <h2 className="text-xl font-black text-slate-900">Sala de Espera y Turnero Clínico</h2>
-            <Badge className="bg-clinica-primary text-white text-[10px] font-mono">
+            <Badge className="bg-clinica-primary text-white text-xs font-mono">
               Full HD / 4K
             </Badge>
           </div>
@@ -52,7 +52,7 @@ export const EncabezadoSalaEspera: React.FC<EncabezadoSalaEsperaProps> = ({ setM
       >
         <Send className="w-3.5 h-3.5" />
         <span>Despacho Masivo WhatsApp</span>
-        <Badge className={'ml-1 text-[10px] font-mono ' + (
+        <Badge className={'ml-1 text-xs font-mono ' + (
           pacientesPendientesWhatsApp.length > 0 ? 'bg-white text-emerald-800' : 'bg-slate-200 text-slate-600'
         )}>
           {pacientesPendientesWhatsApp.length} pendientes
@@ -76,7 +76,7 @@ export const EncabezadoSalaEspera: React.FC<EncabezadoSalaEsperaProps> = ({ setM
         >
           <span>Reversiones en Espera</span>
           {reembolsos.length > 0 && (
-            <span className="w-4 h-4 rounded-full bg-clinica-coral text-white text-[10px] inline-flex items-center justify-center font-bold">
+            <span className="w-4 h-4 rounded-full bg-clinica-coral text-white text-xs inline-flex items-center justify-center font-bold">
               {reembolsos.length}
             </span>
           )}

@@ -36,7 +36,7 @@ export const DetalleFacturaDialog: React.FC<DetalleFacturaDialogProps> = ({ fact
           <div className="p-3.5 rounded-2xl bg-slate-50 border border-slate-200/80 flex items-center justify-between">
             <div>
               <h4 className="font-black text-slate-900 text-sm">{facturaDetalle.nombre_paciente}</h4>
-              <p className="text-[11px] font-mono text-slate-500">
+              <p className="text-xs font-mono text-slate-500">
                 Cédula: <strong>{normalizarCedulaRif(facturaDetalle.cedula_paciente || '')}</strong> • Tel: {facturaDetalle.telefono_paciente || 'N/A'}
               </p>
             </div>
@@ -44,13 +44,13 @@ export const DetalleFacturaDialog: React.FC<DetalleFacturaDialogProps> = ({ fact
               <Badge className="bg-slate-800 text-white font-mono text-xs">
                 {facturaDetalle.fecha ? parseFechaLocal(facturaDetalle.fecha).toLocaleDateString('es-VE') : ''}
               </Badge>
-              <p className="text-[10px] text-slate-500 mt-0.5">{facturaDetalle.hora || ''}</p>
+              <p className="text-xs text-slate-500 mt-0.5">{facturaDetalle.hora || ''}</p>
             </div>
           </div>
 
           {/* Estudio y Servicios */}
           <div className="space-y-2">
-            <h5 className="font-bold text-slate-700 uppercase tracking-wider text-[10px]">
+            <h5 className="font-bold text-slate-700 uppercase tracking-wider text-xs">
               Estudios y Procedimientos Facturados
             </h5>
             <div className="p-3 rounded-2xl border border-slate-200 bg-white space-y-2">
@@ -59,13 +59,13 @@ export const DetalleFacturaDialog: React.FC<DetalleFacturaDialogProps> = ({ fact
                 <span className="font-mono text-emerald-700">{formatUSD(facturaDetalle.precio_usd)}</span>
               </div>
               {Number(facturaDetalle.descuento_usd ?? 0) > 0 && (
-                <div className="text-[11px] text-slate-700 border-t border-slate-100 pt-1.5">
+                <div className="text-xs text-slate-700 border-t border-slate-100 pt-1.5">
                   Precio de lista <strong>{formatUSD(precioListaCents(facturaDetalle) / 100)}</strong> − descuento <strong>{formatUSD(facturaDetalle.descuento_usd)}</strong>
                   {facturaDetalle.descuento_origen === 'PROMO' ? ' (promoción)' : ' (manual)'}
                   {facturaDetalle.descuento_motivo ? ` · ${facturaDetalle.descuento_motivo}` : ''}
                 </div>
               )}
-              <div className="text-[11px] text-slate-500 flex items-center justify-between border-t border-slate-100 pt-1.5">
+              <div className="text-xs text-slate-500 flex items-center justify-between border-t border-slate-100 pt-1.5">
                 <span>Médico Asignado: <strong>{facturaDetalle.medico || 'De Guardia'}</strong></span>
                 <span>Tasa BCV: <strong>{formatBs(facturaDetalle.tasa_bcv || 0)}</strong></span>
               </div>
@@ -74,24 +74,24 @@ export const DetalleFacturaDialog: React.FC<DetalleFacturaDialogProps> = ({ fact
 
           {/* Desglose Multimoneda */}
           <div className="space-y-2">
-            <h5 className="font-bold text-slate-700 uppercase tracking-wider text-[10px]">
+            <h5 className="font-bold text-slate-700 uppercase tracking-wider text-xs">
               Desglose de Formas de Pago
             </h5>
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
               <div className="p-2.5 rounded-xl bg-slate-50 border border-slate-200">
-                <p className="text-[10px] text-slate-500 font-bold">Divisas USD</p>
+                <p className="text-xs text-slate-500 font-bold">Divisas USD</p>
                 <p className="font-bold font-mono text-emerald-700">{formatUSD(facturaDetalle.pago_divisas)}</p>
               </div>
               <div className="p-2.5 rounded-xl bg-slate-50 border border-slate-200">
-                <p className="text-[10px] text-slate-500 font-bold">Pago Móvil</p>
+                <p className="text-xs text-slate-500 font-bold">Pago Móvil</p>
                 <p className="font-bold font-mono text-blue-700">{formatBs(facturaDetalle.pago_movil)}</p>
               </div>
               <div className="p-2.5 rounded-xl bg-slate-50 border border-slate-200">
-                <p className="text-[10px] text-slate-500 font-bold">Punto POS</p>
+                <p className="text-xs text-slate-500 font-bold">Punto POS</p>
                 <p className="font-bold font-mono text-blue-700">{formatBs(facturaDetalle.pago_punto)}</p>
               </div>
               <div className="p-2.5 rounded-xl bg-slate-50 border border-slate-200">
-                <p className="text-[10px] text-slate-500 font-bold">Efectivo Bs</p>
+                <p className="text-xs text-slate-500 font-bold">Efectivo Bs</p>
                 <p className="font-bold font-mono text-slate-700">{formatBs(facturaDetalle.pago_efectivo_bs)}</p>
               </div>
             </div>
@@ -108,11 +108,11 @@ export const DetalleFacturaDialog: React.FC<DetalleFacturaDialogProps> = ({ fact
                 {facturaDetalle.adjunto_nombre ? 'Adjuntado' : 'Sin Adjunto'}
               </Badge>
             </div>
-            <p className="text-[11px] font-mono text-slate-700 truncate">
+            <p className="text-xs font-mono text-slate-700 truncate">
               {facturaDetalle.adjunto_nombre || 'No se han cargado imágenes digitales para este movimiento.'}
             </p>
 
-            <div className="flex items-center justify-between pt-1 border-t border-emerald-200/40 text-[11px]">
+            <div className="flex items-center justify-between pt-1 border-t border-emerald-200/40 text-xs">
               <span className="text-slate-600">Notificación por WhatsApp:</span>
               <span className="font-bold text-emerald-800">
                 {facturaDetalle.whatsapp_enviado 
@@ -126,7 +126,7 @@ export const DetalleFacturaDialog: React.FC<DetalleFacturaDialogProps> = ({ fact
           {esAnulada(facturaDetalle.estado) && (
             <div className="p-3 rounded-2xl bg-rose-50 border border-rose-200 text-rose-800">
               <p className="font-bold">Factura Anulada</p>
-              <p className="text-[11px] mt-0.5">{facturaDetalle.motivo_anulacion || 'Sin motivo especificado.'}</p>
+              <p className="text-xs mt-0.5">{facturaDetalle.motivo_anulacion || 'Sin motivo especificado.'}</p>
             </div>
           )}
         </div>

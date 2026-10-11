@@ -96,14 +96,14 @@ export const Sidebar: React.FC<SidebarProps> = ({
       {/* Perfil y modo de operación */}
       <div className="mx-4 mb-3 rounded-xl bg-slate-50 border border-slate-200/70 p-3 space-y-2.5">
         <div className="flex items-center justify-between">
-          <span className="text-[11px] text-slate-500">Perfil activo</span>
-          <span className="text-[11px] font-semibold text-clinica-dark bg-clinica-selection rounded-full px-2 py-0.5">{perfil}</span>
+          <span className="text-xs text-slate-500">Perfil activo</span>
+          <span className="text-xs font-semibold text-clinica-dark bg-clinica-selection rounded-full px-2 py-0.5">{perfil}</span>
         </div>
         <button
           type="button"
           onClick={onToggleModoOperacion}
           title="Alternar entre Modo Operador y Modo Vista (solo lectura)"
-          className="w-full flex items-center justify-between rounded-lg bg-white border border-slate-200 px-2.5 py-1.5 text-[11px] hover:border-clinica-primary/40 transition-colors"
+          className="w-full flex items-center justify-between rounded-lg bg-white border border-slate-200 px-2.5 py-1.5 text-xs hover:border-clinica-primary/40 transition-colors"
         >
           <span className="flex items-center gap-1.5 text-slate-500">
             {modoOperacion === 'operador'

@@ -34,7 +34,7 @@ export const DescuentoPanel: React.FC<Props> = ({ deshabilitado, rol, aplicado, 
   const [autClave, setAutClave] = useState('');
 
   if (deshabilitado) {
-    return <p className="text-[11px] text-slate-600">Esta factura tiene una promoción aplicada; no admite un descuento manual adicional.</p>;
+    return <p className="text-xs text-slate-600">Esta factura tiene una promoción aplicada; no admite un descuento manual adicional.</p>;
   }
 
   if (aplicado) {
@@ -86,7 +86,7 @@ export const DescuentoPanel: React.FC<Props> = ({ deshabilitado, rol, aplicado, 
         <label className="flex items-start gap-2"><input type="radio" name="modo" checked={modo === 'PROPORCIONAL'} onChange={() => setModo('PROPORCIONAL')} className="mt-0.5" /><span>Se reparte en proporción con el doctor</span></label>
       </fieldset>
       {v && v.error === null && (
-        <p className="rounded-lg bg-white p-2 font-mono text-[11px] text-slate-800">
+        <p className="rounded-lg bg-white p-2 font-mono text-xs text-slate-800">
           Total a cobrar {usd(v.netoUSD)} (−{usd(v.descuentoUSD)}) · Doctor {usd(v.honorariosUSD)} · Clínica {usd(v.gananciaUSD)}
         </p>
       )}

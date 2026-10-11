@@ -58,14 +58,14 @@ export const TabEspecialistas: React.FC<TabEspecialistasProps> = ({ busqueda, se
                 <div className="flex-1 min-w-0">
                   <h4 className="text-sm font-black text-slate-900 leading-snug truncate">{d.nombre}</h4>
                   <div className="flex items-center gap-1.5 mt-0.5">
-                    <span className="font-mono text-[10px] font-bold text-slate-700 bg-slate-100 px-1.5 py-0.5 rounded border border-slate-200">
+                    <span className="font-mono text-xs font-bold text-slate-700 bg-slate-100 px-1.5 py-0.5 rounded border border-slate-200">
                       {d.cedula_rif || 'Sin Registrar'}
                     </span>
                     <p className="text-xs text-slate-500 font-medium truncate">{d.especialidad}</p>
                   </div>
                 </div>
               </div>
-              <Badge className={d.activo ? 'bg-emerald-100 text-emerald-800 text-[10px]' : 'bg-slate-200 text-slate-600 text-[10px]'}>
+              <Badge className={d.activo ? 'bg-emerald-100 text-emerald-800 text-xs' : 'bg-slate-200 text-slate-600 text-xs'}>
                 {d.activo ? 'Operativo' : 'Inactivo'}
               </Badge>
             </CardHeader>
@@ -73,14 +73,14 @@ export const TabEspecialistas: React.FC<TabEspecialistasProps> = ({ busqueda, se
             <CardContent className="p-4 space-y-3">
               <div className="grid grid-cols-2 gap-2 text-xs">
                 <div className="p-2.5 rounded-xl bg-slate-50 border border-slate-100">
-                  <span className="text-[10px] text-slate-500 uppercase font-bold block">Turno Asignado</span>
+                  <span className="text-xs text-slate-500 uppercase font-bold block">Turno Asignado</span>
                   <div className="flex items-center gap-1 mt-0.5 font-bold text-slate-800">
                     <Clock className="w-3 h-3 text-[#1D7A70]" />
                     <span>{d.turno === 'AM' ? 'Mañana (AM)' : d.turno === 'PM' ? 'Tarde (PM)' : 'Jornada Completa'}</span>
                   </div>
                 </div>
                 <div className="p-2.5 rounded-xl bg-slate-50 border border-slate-100">
-                  <span className="text-[10px] text-slate-500 uppercase font-bold block">Honorario Pactado</span>
+                  <span className="text-xs text-slate-500 uppercase font-bold block">Honorario Pactado</span>
                   <div className="flex items-center gap-1 mt-0.5 font-mono font-black text-[#1D7A70]">
                     <Percent className="w-3 h-3 text-[#1D7A70]" />
                     <span>{d.comision_pct}% Comisión</span>

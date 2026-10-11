@@ -86,7 +86,7 @@ export const MatrizHonorarios: React.FC = () => {
           </Button>
           {cargando && <span className="text-xs text-slate-600">Cargando…</span>}
         </div>
-        <p className="mt-2 text-[11px] text-slate-600">
+        <p className="mt-2 text-xs text-slate-600">
           Generado = honorarios de los servicios facturados (incluye la parte del patólogo cuando aplica). Pagado = lo liquidado en el sistema. Pendiente = generado − pagado.
         </p>
         {error && <p className="mt-2 text-xs font-bold text-rose-700">{error}</p>}
@@ -103,7 +103,7 @@ export const MatrizHonorarios: React.FC = () => {
               ))}
             </div>
             <div className="overflow-x-auto">
-              <table className="w-full text-[11px]">
+              <table className="w-full text-xs">
                 <thead>
                   <tr className="border-b border-slate-300 text-slate-600">
                     <th className="sticky left-0 z-10 bg-white px-3 py-2 text-left font-bold">Doctor</th>

@@ -469,7 +469,7 @@ export const ModuloAnaliticas: React.FC = () => {
 
               {menuFiltrosAbierto && (
                 <div className="absolute right-0 mt-1 w-56 bg-white rounded-xl shadow-xl border border-slate-200 p-2 z-20 space-y-1">
-                  <p className="text-[10px] font-bold text-slate-500 uppercase tracking-wider px-2 py-1">Opciones de Agrupación</p>
+                  <p className="text-xs font-bold text-slate-500 uppercase tracking-wider px-2 py-1">Opciones de Agrupación</p>
                   <button
                     onClick={() => { setAgruparPor('NINGUNO'); setMenuFiltrosAbierto(false); }}
                     className={`w-full text-left px-2.5 py-1.5 text-xs rounded-lg ${agruparPor === 'NINGUNO' ? 'bg-indigo-50 text-indigo-700 font-bold' : 'hover:bg-slate-50 text-slate-700'}`}
@@ -524,7 +524,7 @@ export const ModuloAnaliticas: React.FC = () => {
 
         {/* Fila Inferior: Chips de Filtro Rápido */}
         <div className="flex flex-wrap items-center gap-2 pt-1 border-t border-slate-100">
-          <span className="text-[10px] font-bold text-slate-500 uppercase tracking-wider mr-1 flex items-center gap-1">
+          <span className="text-xs font-bold text-slate-500 uppercase tracking-wider mr-1 flex items-center gap-1">
             <SlidersHorizontal className="w-3 h-3" /> Período:
           </span>
           {(['HOY', 'SEMANA', 'MES', 'TODOS'] as const).map(p => (
@@ -541,7 +541,7 @@ export const ModuloAnaliticas: React.FC = () => {
             </button>
           ))}
 
-          <span className="text-[10px] font-bold text-slate-500 uppercase tracking-wider ml-3 mr-1">
+          <span className="text-xs font-bold text-slate-500 uppercase tracking-wider ml-3 mr-1">
             Método:
           </span>
           <select
@@ -556,7 +556,7 @@ export const ModuloAnaliticas: React.FC = () => {
             <option value="PAGO_MOVIL">Pago Móvil</option>
           </select>
 
-          <span className="text-[10px] font-bold text-slate-500 uppercase tracking-wider ml-3 mr-1">
+          <span className="text-xs font-bold text-slate-500 uppercase tracking-wider ml-3 mr-1">
             Especialidad:
           </span>
           <select
@@ -575,9 +575,9 @@ export const ModuloAnaliticas: React.FC = () => {
       <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4">
         <Card className="bg-white border-slate-200 shadow-sm">
           <CardContent className="p-4">
-            <p className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">Facturación Bruta Filtrada</p>
+            <p className="text-xs font-bold text-slate-500 uppercase tracking-wider">Facturación Bruta Filtrada</p>
             <p className="text-2xl font-black text-slate-900 mt-1">${totalFacturadoUSD.toFixed(2)}</p>
-            <p className="text-[11px] font-mono text-cyan-700 font-bold mt-0.5">
+            <p className="text-xs font-mono text-cyan-700 font-bold mt-0.5">
               Bs. {totalFacturadoBS.toLocaleString('es-VE', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
             </p>
           </CardContent>
@@ -585,17 +585,17 @@ export const ModuloAnaliticas: React.FC = () => {
 
         <Card className="bg-white border-slate-200 shadow-sm">
           <CardContent className="p-4">
-            <p className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">Pacientes & Estudios</p>
+            <p className="text-xs font-bold text-slate-500 uppercase tracking-wider">Pacientes & Estudios</p>
             <p className="text-2xl font-black text-slate-900 mt-1">{totalPacientes}</p>
-            <p className="text-[10px] text-slate-500 mt-0.5">Procedimientos en el período activo</p>
+            <p className="text-xs text-slate-500 mt-0.5">Procedimientos en el período activo</p>
           </CardContent>
         </Card>
 
         <Card className="bg-white border-slate-200 shadow-sm">
           <CardContent className="p-4">
-            <p className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">Ticket Promedio</p>
+            <p className="text-xs font-bold text-slate-500 uppercase tracking-wider">Ticket Promedio</p>
             <p className="text-2xl font-black text-slate-900 mt-1">${ticketPromedioUSD.toFixed(2)}</p>
-            <p className="text-[11px] font-mono text-slate-500 font-bold mt-0.5">
+            <p className="text-xs font-mono text-slate-500 font-bold mt-0.5">
               Bs. {ticketPromedioBS.toLocaleString('es-VE', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
             </p>
           </CardContent>
@@ -603,13 +603,13 @@ export const ModuloAnaliticas: React.FC = () => {
 
         <Card className="bg-white border-slate-200 shadow-sm">
           <CardContent className="p-4">
-            <p className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">Honorarios vs Clínica</p>
+            <p className="text-xs font-bold text-slate-500 uppercase tracking-wider">Honorarios vs Clínica</p>
             <div className="flex items-baseline gap-2 mt-1">
               <span className="text-lg font-black text-cyan-700">${totalHonorariosMedicosUSD.toFixed(2)}</span>
               <span className="text-xs text-slate-500">/</span>
               <span className="text-lg font-black text-emerald-700">${totalMargenClinicaUSD.toFixed(2)}</span>
             </div>
-            <p className="text-[10px] text-slate-500 mt-0.5">Honorarios Médicos / Margen Clínica</p>
+            <p className="text-xs text-slate-500 mt-0.5">Honorarios Médicos / Margen Clínica</p>
           </CardContent>
         </Card>
       </div>
@@ -646,33 +646,33 @@ export const ModuloAnaliticas: React.FC = () => {
         <CardContent className="p-5">
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
             <div className="p-3.5 rounded-xl bg-emerald-50 border border-emerald-100">
-              <p className="text-[10px] font-bold text-emerald-800 uppercase">Efectivo Divisas ($)</p>
+              <p className="text-xs font-bold text-emerald-800 uppercase">Efectivo Divisas ($)</p>
               <p className="text-xl font-black text-emerald-950 mt-1">${divisasUSD.toFixed(2)}</p>
-              <p className="text-[10px] text-emerald-700 font-semibold mt-0.5">
+              <p className="text-xs text-emerald-700 font-semibold mt-0.5">
                 {totalFacturadoUSD > 0 ? ((divisasUSD / totalFacturadoUSD) * 100).toFixed(1) : 0}% del total
               </p>
             </div>
 
             <div className="p-3.5 rounded-xl bg-blue-50 border border-blue-100">
-              <p className="text-[10px] font-bold text-blue-800 uppercase">Efectivo Bolívares</p>
+              <p className="text-xs font-bold text-blue-800 uppercase">Efectivo Bolívares</p>
               <p className="text-xl font-black text-blue-950 mt-1">${efectivoBsUSD.toFixed(2)}</p>
-              <p className="text-[10px] text-blue-700 font-semibold mt-0.5">
+              <p className="text-xs text-blue-700 font-semibold mt-0.5">
                 {totalFacturadoUSD > 0 ? ((efectivoBsUSD / totalFacturadoUSD) * 100).toFixed(1) : 0}% del total
               </p>
             </div>
 
             <div className="p-3.5 rounded-xl bg-indigo-50 border border-indigo-100">
-              <p className="text-[10px] font-bold text-indigo-800 uppercase">Punto POS (Bs)</p>
+              <p className="text-xs font-bold text-indigo-800 uppercase">Punto POS (Bs)</p>
               <p className="text-xl font-black text-indigo-950 mt-1">${puntoBsUSD.toFixed(2)}</p>
-              <p className="text-[10px] text-indigo-700 font-semibold mt-0.5">
+              <p className="text-xs text-indigo-700 font-semibold mt-0.5">
                 {totalFacturadoUSD > 0 ? ((puntoBsUSD / totalFacturadoUSD) * 100).toFixed(1) : 0}% del total
               </p>
             </div>
 
             <div className="p-3.5 rounded-xl bg-cyan-50 border border-cyan-100">
-              <p className="text-[10px] font-bold text-cyan-800 uppercase">Pago Móvil (Bs)</p>
+              <p className="text-xs font-bold text-cyan-800 uppercase">Pago Móvil (Bs)</p>
               <p className="text-xl font-black text-cyan-950 mt-1">${pagoMovilBsUSD.toFixed(2)}</p>
-              <p className="text-[10px] text-cyan-700 font-semibold mt-0.5">
+              <p className="text-xs text-cyan-700 font-semibold mt-0.5">
                 {totalFacturadoUSD > 0 ? ((pagoMovilBsUSD / totalFacturadoUSD) * 100).toFixed(1) : 0}% del total
               </p>
             </div>
@@ -691,7 +691,7 @@ export const ModuloAnaliticas: React.FC = () => {
             <div className="flex gap-2">
               <button 
                 onClick={() => setGruposColapsados({})} 
-                className="text-[11px] font-bold text-indigo-600 hover:text-indigo-800"
+                className="text-xs font-bold text-indigo-600 hover:text-indigo-800"
               >
                 Expandir todos
               </button>
@@ -702,7 +702,7 @@ export const ModuloAnaliticas: React.FC = () => {
                   Object.keys(gruposClinicos).forEach(k => { todos[k] = true; });
                   setGruposColapsados(todos);
                 }} 
-                className="text-[11px] font-bold text-slate-500 hover:text-slate-800"
+                className="text-xs font-bold text-slate-500 hover:text-slate-800"
               >
                 Colapsar todos
               </button>
@@ -723,13 +723,13 @@ export const ModuloAnaliticas: React.FC = () => {
                   <div className="flex items-center gap-2">
                     {isColapsado ? <ChevronRight className="w-4 h-4 text-slate-500" /> : <ChevronDown className="w-4 h-4 text-slate-500" />}
                     <span className="font-black text-xs text-slate-900">{nombreGrupo}</span>
-                    <Badge variant="secondary" className="text-[10px] font-bold">
+                    <Badge variant="secondary" className="text-xs font-bold">
                       {items.length} {items.length === 1 ? 'estudio' : 'estudios'}
                     </Badge>
                   </div>
                   <div className="text-right font-mono">
                     <span className="text-xs font-black text-slate-900 mr-2">${subtotalUSD.toFixed(2)}</span>
-                    <span className="text-[10px] font-bold text-slate-500">
+                    <span className="text-xs font-bold text-slate-500">
                       (Bs. {subtotalBS.toLocaleString('es-VE', { minimumFractionDigits: 0, maximumFractionDigits: 0 })})
                     </span>
                   </div>
@@ -739,7 +739,7 @@ export const ModuloAnaliticas: React.FC = () => {
                   <div className="overflow-x-auto">
                     <table className="w-full text-left text-xs border-collapse">
                       <thead>
-                        <tr className="bg-white border-b border-slate-100 text-slate-500 text-[10px] font-black uppercase">
+                        <tr className="bg-white border-b border-slate-100 text-slate-500 text-xs font-black uppercase">
                           <th className="py-2 px-4">Paciente</th>
                           <th className="py-2 px-4">Cédula</th>
                           <th className="py-2 px-4">Estudio</th>
@@ -756,7 +756,7 @@ export const ModuloAnaliticas: React.FC = () => {
                             <td className="py-2 px-4 text-slate-700">{f.estudio}</td>
                             <td className="py-2 px-4 text-slate-600">{f.medico || 'No asignado'}</td>
                             <td className="py-2 px-4 text-right font-mono font-black text-slate-900">${Number(f.precio_usd || 0).toFixed(2)}</td>
-                            <td className="py-2 px-4 text-right font-mono text-slate-500 text-[11px]">
+                            <td className="py-2 px-4 text-right font-mono text-slate-500 text-xs">
                               Bs. {(Number(f.precio_usd || 0) * tasaBcv).toLocaleString('es-VE', { minimumFractionDigits: 0, maximumFractionDigits: 0 })}
                             </td>
                           </tr>
@@ -782,7 +782,7 @@ export const ModuloAnaliticas: React.FC = () => {
         <div className="overflow-x-auto">
           <table className="w-full text-left text-xs border-collapse">
             <thead>
-              <tr className="bg-slate-50 border-b border-slate-200 text-slate-500 text-[10px] font-black uppercase">
+              <tr className="bg-slate-50 border-b border-slate-200 text-slate-500 text-xs font-black uppercase">
                 <th className="py-2.5 px-4">Médico / Especialista</th>
                 <th className="py-2.5 px-4 text-center">Estudios</th>
                 <th className="py-2.5 px-4 text-right">Facturación ($)</th>
@@ -802,7 +802,7 @@ export const ModuloAnaliticas: React.FC = () => {
                     <td className="py-2.5 px-4 font-bold text-slate-900">{med.nombre}</td>
                     <td className="py-2.5 px-4 text-center font-mono font-bold text-slate-700">{med.count}</td>
                     <td className="py-2.5 px-4 text-right font-mono font-black text-slate-900">${med.totalUSD.toFixed(2)}</td>
-                    <td className="py-2.5 px-4 text-right font-mono font-bold text-slate-600 text-[11px]">
+                    <td className="py-2.5 px-4 text-right font-mono font-bold text-slate-600 text-xs">
                       Bs. {(med.totalUSD * tasaBcv).toLocaleString('es-VE', { minimumFractionDigits: 0, maximumFractionDigits: 0 })}
                     </td>
                     <td className="py-2.5 px-4 text-right font-mono font-bold text-cyan-700">${med.honorariosUSD.toFixed(2)}</td>

@@ -210,7 +210,7 @@ export const ModuloRetencionesSeniat: React.FC<ModuloRetencionesSeniatProps> = (
           <div>
             <div className="flex items-center gap-2">
               <h2 className="text-xl font-black text-slate-900">Retenciones SENIAT (IVA e ISLR)</h2>
-              <Badge className="bg-clinica-primary text-white text-[10px] font-mono">
+              <Badge className="bg-clinica-primary text-white text-xs font-mono">
                 Providencia SNAT
               </Badge>
             </div>
@@ -258,27 +258,27 @@ export const ModuloRetencionesSeniat: React.FC<ModuloRetencionesSeniatProps> = (
       {/* Tarjetas KPI */}
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
         <Card className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
-          <p className="text-[11px] font-bold text-slate-500 uppercase tracking-wider">Total Retenido (Bs)</p>
+          <p className="text-xs font-bold text-slate-500 uppercase tracking-wider">Total Retenido (Bs)</p>
           <h3 className="text-2xl font-black text-clinica-primary mt-1">
             Bs. {totalRetenidoBsAcumulado.toLocaleString('es-VE', { minimumFractionDigits: 2 })}
           </h3>
-          <p className="text-[11px] text-slate-500 mt-1">Deducido de cobranza fiscal</p>
+          <p className="text-xs text-slate-500 mt-1">Deducido de cobranza fiscal</p>
         </Card>
 
         <Card className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
-          <p className="text-[11px] font-bold text-slate-500 uppercase tracking-wider">Equivalente Divisas ($)</p>
+          <p className="text-xs font-bold text-slate-500 uppercase tracking-wider">Equivalente Divisas ($)</p>
           <h3 className="text-2xl font-black text-slate-900 mt-1">
             $ {totalRetenidoUsdAcumulado.toFixed(2)}
           </h3>
-          <p className="text-[11px] text-slate-500 mt-1">{tasaBcv > 0 ? `Tasa oficial BCV Bs. ${tasaBcv.toFixed(2)}` : 'Tasa BCV no disponible'}</p>
+          <p className="text-xs text-slate-500 mt-1">{tasaBcv > 0 ? `Tasa oficial BCV Bs. ${tasaBcv.toFixed(2)}` : 'Tasa BCV no disponible'}</p>
         </Card>
 
         <Card className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
-          <p className="text-[11px] font-bold text-slate-500 uppercase tracking-wider">Comprobantes Emitidos</p>
+          <p className="text-xs font-bold text-slate-500 uppercase tracking-wider">Comprobantes Emitidos</p>
           <h3 className="text-2xl font-black text-cyan-700 mt-1">
             {retencionesFiltradas.length}
           </h3>
-          <p className="text-[11px] text-slate-500 mt-1">Período {periodoActual}</p>
+          <p className="text-xs text-slate-500 mt-1">Período {periodoActual}</p>
         </Card>
       </div>
 
@@ -299,7 +299,7 @@ export const ModuloRetencionesSeniat: React.FC<ModuloRetencionesSeniatProps> = (
       <Card className="rounded-2xl border border-slate-200 bg-white shadow-sm overflow-hidden">
         <div className="overflow-x-auto">
           <table className="w-full text-left text-xs">
-            <thead className="bg-slate-50 border-b border-slate-200 text-slate-500 uppercase text-[10px] font-black tracking-wider">
+            <thead className="bg-slate-50 border-b border-slate-200 text-slate-500 uppercase text-xs font-black tracking-wider">
               <tr>
                 <th className="p-3">Comprobante (14 Dígitos)</th>
                 <th className="p-3">Fecha</th>
@@ -322,38 +322,38 @@ export const ModuloRetencionesSeniat: React.FC<ModuloRetencionesSeniatProps> = (
                 retencionesFiltradas.map((r) => (
                   <tr key={r.id} className="hover:bg-slate-50/80 transition-colors">
                     <td className="p-3 font-mono font-bold text-slate-900">
-                      <span className="px-2 py-0.5 bg-slate-100 rounded-lg border border-slate-200 text-[11px]">
+                      <span className="px-2 py-0.5 bg-slate-100 rounded-lg border border-slate-200 text-xs">
                         {r.nro_comprobante}
                       </span>
                     </td>
                     <td className="p-3 text-slate-600 font-medium">{r.fecha_emision}</td>
                     <td className="p-3">
                       <p className="font-bold text-slate-900">{r.paciente_cliente}</p>
-                      <p className="text-[11px] font-mono text-slate-500">{r.cedula_rif}</p>
+                      <p className="text-xs font-mono text-slate-500">{r.cedula_rif}</p>
                     </td>
                     <td className="p-3 font-mono text-slate-700">{r.factura_asociada_id || 'S/F'}</td>
                     <td className="p-3 text-right font-mono font-medium text-slate-700">
                       Bs. {r.base_imponible_bs.toLocaleString('es-VE', { minimumFractionDigits: 2 })}
-                      <div className="text-[10px] text-slate-500">${r.base_imponible_usd.toFixed(2)}</div>
+                      <div className="text-xs text-slate-500">${r.base_imponible_usd.toFixed(2)}</div>
                     </td>
                     <td className="p-3 text-center">
-                      <Badge className="bg-clinica-selection text-clinica-dark text-[10px] font-bold mr-1">
+                      <Badge className="bg-clinica-selection text-clinica-dark text-xs font-bold mr-1">
                         IVA {r.porcentaje_iva_retenido}%
                       </Badge>
-                      <Badge variant="outline" className="text-[10px] text-slate-600">
+                      <Badge variant="outline" className="text-xs text-slate-600">
                         ISLR {r.porcentaje_islr_retenido}%
                       </Badge>
                     </td>
                     <td className="p-3 text-right font-mono font-black text-clinica-primary text-sm">
                       Bs. {r.total_retenido_bs.toLocaleString('es-VE', { minimumFractionDigits: 2 })}
-                      <div className="text-[10px] text-slate-500 font-normal">≈ ${r.total_retenido_usd.toFixed(2)} USD</div>
+                      <div className="text-xs text-slate-500 font-normal">≈ ${r.total_retenido_usd.toFixed(2)} USD</div>
                     </td>
                     <td className="p-3 text-center">
                       <Button
                         size="sm"
                         variant="outline"
                         onClick={() => setComprobanteActivoImprimir(r)}
-                        className="rounded-xl text-[11px] h-8 px-2.5 font-bold flex items-center gap-1 mx-auto"
+                        className="rounded-xl text-xs h-8 px-2.5 font-bold flex items-center gap-1 mx-auto"
                       >
                         <Printer className="w-3.5 h-3.5 text-slate-600" />
                         <span>Ver Formato</span>
@@ -524,7 +524,7 @@ export const ModuloRetencionesSeniat: React.FC<ModuloRetencionesSeniatProps> = (
             <DialogHeader>
               <DialogTitle className="text-base font-black text-slate-900 flex items-center justify-between">
                 <span>Comprobante Oficial de Retención de Impuestos</span>
-                <Badge className="bg-slate-900 text-white font-mono text-[10px]">
+                <Badge className="bg-slate-900 text-white font-mono text-xs">
                   N° {comprobanteActivoImprimir.nro_comprobante}
                 </Badge>
               </DialogTitle>
@@ -554,7 +554,7 @@ export const ModuloRetencionesSeniat: React.FC<ModuloRetencionesSeniatProps> = (
               </div>
 
               <div className="border border-slate-200 rounded-xl overflow-hidden bg-white">
-                <table className="w-full text-left text-[11px]">
+                <table className="w-full text-left text-xs">
                   <thead className="bg-slate-100 font-bold text-slate-700">
                     <tr>
                       <th className="p-2">Concepto</th>
@@ -588,7 +588,7 @@ export const ModuloRetencionesSeniat: React.FC<ModuloRetencionesSeniatProps> = (
                 </table>
               </div>
 
-              <div className="flex justify-between items-center text-[10px] text-slate-500 pt-1">
+              <div className="flex justify-between items-center text-xs text-slate-500 pt-1">
                 <span>Comprobante emitido de acuerdo a la Providencia Administrativa SENIAT vigente.</span>
                 <span>Firma y Sello Autorizado</span>
               </div>

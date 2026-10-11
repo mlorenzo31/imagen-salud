@@ -207,10 +207,10 @@ export const ModuloConciliacionPOS: React.FC<Props> = ({ currentRole, modoOperac
       </Card>
 
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-        <Card><CardContent><p className="text-[11px] uppercase tracking-wide text-slate-500">Bruto en terminal (90 días)</p><p className="text-xl font-semibold text-slate-900 mt-1">{bs(centsToNumber(totales.bruto))}</p></CardContent></Card>
-        <Card><CardContent><p className="text-[11px] uppercase tracking-wide text-slate-500">Comisiones retenidas</p><p className="text-xl font-semibold text-clinica-coral mt-1">{bs(centsToNumber(totales.comision))}</p></CardContent></Card>
-        <Card><CardContent><p className="text-[11px] uppercase tracking-wide text-slate-500">Neto acreditado en banco</p><p className="text-xl font-semibold text-clinica-dark mt-1">{bs(centsToNumber(totales.neto))}</p></CardContent></Card>
-        <Card><CardContent><p className="text-[11px] uppercase tracking-wide text-slate-500">Lotes por conciliar</p><p className={`text-xl font-semibold mt-1 ${totales.pendientes > 0 ? 'text-clinica-coral' : 'text-clinica-dark'}`}>{totales.pendientes}</p></CardContent></Card>
+        <Card><CardContent><p className="text-xs uppercase tracking-wide text-slate-500">Bruto en terminal (90 días)</p><p className="text-xl font-semibold text-slate-900 mt-1">{bs(centsToNumber(totales.bruto))}</p></CardContent></Card>
+        <Card><CardContent><p className="text-xs uppercase tracking-wide text-slate-500">Comisiones retenidas</p><p className="text-xl font-semibold text-clinica-coral mt-1">{bs(centsToNumber(totales.comision))}</p></CardContent></Card>
+        <Card><CardContent><p className="text-xs uppercase tracking-wide text-slate-500">Neto acreditado en banco</p><p className="text-xl font-semibold text-clinica-dark mt-1">{bs(centsToNumber(totales.neto))}</p></CardContent></Card>
+        <Card><CardContent><p className="text-xs uppercase tracking-wide text-slate-500">Lotes por conciliar</p><p className={`text-xl font-semibold mt-1 ${totales.pendientes > 0 ? 'text-clinica-coral' : 'text-clinica-dark'}`}>{totales.pendientes}</p></CardContent></Card>
       </div>
 
       <Card>
@@ -231,7 +231,7 @@ export const ModuloConciliacionPOS: React.FC<Props> = ({ currentRole, modoOperac
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
               <thead>
-                <tr className="text-left text-[11px] uppercase text-slate-500 border-b border-slate-200">
+                <tr className="text-left text-xs uppercase text-slate-500 border-b border-slate-200">
                   <th className="py-2 pr-3 w-6" />
                   <th className="py-2 pr-3">Fecha</th>
                   <th className="py-2 pr-3 text-right">Cobros</th>
@@ -256,7 +256,7 @@ export const ModuloConciliacionPOS: React.FC<Props> = ({ currentRole, modoOperac
                           </button>
                         )}
                       </td>
-                      <td className="py-3 pr-3 font-medium text-slate-800 tabular-nums">{l.fecha} <span className="text-[10px] font-bold text-slate-500">· {etiquetaMedio(l.medio)}</span></td>
+                      <td className="py-3 pr-3 font-medium text-slate-800 tabular-nums">{l.fecha} <span className="text-xs font-bold text-slate-500">· {etiquetaMedio(l.medio)}</span></td>
                       <td className="py-3 pr-3 text-right tabular-nums">{l.cantidad}</td>
                       <td className="py-3 pr-3 text-right tabular-nums">{bs(l.bruto)}</td>
                       <td className="py-3 pr-3 text-right tabular-nums text-clinica-coral">{l.estado === 'CONCILIADO' ? bs(l.comision) : '—'}</td>

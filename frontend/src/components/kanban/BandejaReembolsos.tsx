@@ -33,7 +33,7 @@ export const BandejaReembolsos: React.FC<BandejaReembolsosProps> = ({ reembolsos
 
     <div className="overflow-x-auto">
       <table className="w-full text-left text-xs">
-        <thead className="bg-slate-50 border-b border-slate-200 text-slate-500 uppercase text-[10px] font-black">
+        <thead className="bg-slate-50 border-b border-slate-200 text-slate-500 uppercase text-xs font-black">
           <tr>
             <th className="p-3">Turno / Paciente</th>
             <th className="p-3">Cédula</th>
@@ -63,10 +63,10 @@ export const BandejaReembolsos: React.FC<BandejaReembolsosProps> = ({ reembolsos
                 <td className="p-3 text-slate-600 max-w-xs">{r.motivo_anulacion}</td>
                 <td className="p-3 text-right font-mono font-black text-rose-600 text-sm">
                   Bs. {r.monto_bs.toLocaleString('es-VE', { minimumFractionDigits: 2 })}
-                  <div className="text-[10px] text-slate-500">${r.monto_usd.toFixed(2)} USD</div>
+                  <div className="text-xs text-slate-500">${r.monto_usd.toFixed(2)} USD</div>
                 </td>
                 <td className="p-3 text-center">
-                  <Badge className="bg-amber-100 text-amber-800 text-[10px] font-bold">
+                  <Badge className="bg-amber-100 text-amber-800 text-xs font-bold">
                     Pendiente Reversión
                   </Badge>
                 </td>
@@ -80,7 +80,7 @@ export const BandejaReembolsos: React.FC<BandejaReembolsosProps> = ({ reembolsos
                           alert('Reversión confirmada y conciliada en bancos.');
                         }
                       }}
-                      className="bg-emerald-600 hover:bg-emerald-700 text-white text-[11px] font-bold rounded-xl h-7 px-2.5"
+                      className="bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold rounded-xl h-7 px-2.5"
                     >
                       Confirmar Reversión
                     </Button>

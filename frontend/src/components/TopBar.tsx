@@ -75,12 +75,12 @@ export const TopBar: React.FC<Props> = ({ seccion, tasaBcv, nombreUsuario, role,
           </div>
 
           <div className="flex items-center gap-2.5 pl-3 border-l border-slate-200">
-            <div className="size-8 rounded-full bg-gradient-to-br from-clinica-aquamarine to-clinica-primary text-white text-[11px] font-semibold flex items-center justify-center">
+            <div className="size-8 rounded-full bg-gradient-to-br from-clinica-aquamarine to-clinica-primary text-white text-xs font-semibold flex items-center justify-center">
               {iniciales(nombreUsuario) || 'IS'}
             </div>
             <div className="hidden sm:block leading-tight">
               <p className="text-xs font-medium text-slate-800">{nombreUsuario}</p>
-              <p className="text-[11px] text-slate-500">{role === 'admin' ? 'Dirección' : role === 'asistente' ? 'Administración' : 'Caja'}</p>
+              <p className="text-xs text-slate-500">{role === 'admin' ? 'Dirección' : role === 'asistente' ? 'Administración' : 'Caja'}</p>
             </div>
           </div>
         </div>

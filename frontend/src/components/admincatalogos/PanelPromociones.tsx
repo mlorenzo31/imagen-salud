@@ -105,7 +105,7 @@ export const PanelPromociones: React.FC = () => {
               {areas.flatMap((a) => (catalogo[a] ?? []).map((e) => (
                 <label key={`${a}|${e.nombre}`} className="flex items-center gap-1.5 text-xs">
                   <input type="checkbox" checked={form.estudios.includes(e.nombre)} onChange={() => setForm({ ...form, estudios: alternar(form.estudios, e.nombre) })} />
-                  <span className="font-mono text-[10px] text-slate-600">{a}</span> {e.nombre}
+                  <span className="font-mono text-xs text-slate-600">{a}</span> {e.nombre}
                 </label>
               )))}
             </div>
@@ -116,7 +116,7 @@ export const PanelPromociones: React.FC = () => {
               {areas.flatMap((a) => (catalogo[a] ?? []).map((e) => (
                 <label key={`req|${a}|${e.nombre}`} className="flex items-center gap-1.5 text-xs">
                   <input type="checkbox" checked={form.requiere.includes(e.nombre)} onChange={() => setForm({ ...form, requiere: alternar(form.requiere, e.nombre) })} />
-                  <span className="font-mono text-[10px] text-slate-600">{a}</span> {e.nombre}
+                  <span className="font-mono text-xs text-slate-600">{a}</span> {e.nombre}
                 </label>
               )))}
             </div>

@@ -30,14 +30,14 @@ export const ToolbarFiltrosHistorial: React.FC<ToolbarFiltrosHistorialProps> = (
           <Layers className="w-4 h-4 text-clinica-primary" />
           Historial Detallado de Movimientos y Estudios
         </CardTitle>
-        <Badge variant="outline" className="text-[10px] font-mono border-slate-300 bg-white">
+        <Badge variant="outline" className="text-xs font-mono border-slate-300 bg-white">
           {movimientosFiltrados.length} de {movimientos.length} atenciones
         </Badge>
-        <Badge className="bg-emerald-50 text-emerald-800 border border-emerald-200 text-[10px] font-mono font-bold">
+        <Badge className="bg-emerald-50 text-emerald-800 border border-emerald-200 text-xs font-mono font-bold">
           Subtotal: {formatUSD(totalUSDFiltrado)}
         </Badge>
       </div>
-      <p className="text-[11px] text-slate-500 mt-0.5">
+      <p className="text-xs text-slate-500 mt-0.5">
         Trazabilidad cronológica de servicios clínicos, cobros y estado de entrega de resultados
       </p>
     </div>
@@ -47,7 +47,7 @@ export const ToolbarFiltrosHistorial: React.FC<ToolbarFiltrosHistorialProps> = (
       {/* Selector de Agrupación */}
       <div className="flex items-center gap-1.5 bg-white border border-slate-200 rounded-xl px-2.5 py-1 shadow-2xs">
         <FolderTree className="w-3.5 h-3.5 text-clinica-primary" />
-        <span className="text-[10px] font-black text-slate-500 uppercase">Agrupar:</span>
+        <span className="text-xs font-black text-slate-500 uppercase">Agrupar:</span>
         <select
           value={agrupacion}
           onChange={(e) => setAgrupacion(e.target.value as Parameters<typeof setAgrupacion>[0])}

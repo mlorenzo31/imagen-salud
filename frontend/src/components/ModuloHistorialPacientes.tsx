@@ -550,7 +550,7 @@ export const ModuloHistorialPacientes: React.FC<ModuloHistorialPacientesProps> =
                       <h3 className="text-lg font-black text-slate-900">
                         Auditoría General de la Clínica
                       </h3>
-                      <Badge className="bg-clinica-selection text-clinica-dark text-[10px] font-bold border border-clinica-primary/30">
+                      <Badge className="bg-clinica-selection text-clinica-dark text-xs font-bold border border-clinica-primary/30">
                         Modo Consolidado (Todos los Pacientes)
                       </Badge>
                     </div>
@@ -573,46 +573,46 @@ export const ModuloHistorialPacientes: React.FC<ModuloHistorialPacientesProps> =
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
             <Card className="rounded-2xl border border-slate-200/80 bg-white p-3.5 shadow-sm space-y-1">
               <div className="flex items-center justify-between">
-                <span className="text-[10px] font-black uppercase text-slate-500 tracking-wider">
+                <span className="text-xs font-black uppercase text-slate-500 tracking-wider">
                   {pacienteSeleccionado ? 'Atenciones Paciente' : 'Total Atenciones'}
                 </span>
                 <Activity className="w-4 h-4 text-clinica-primary" />
               </div>
               <p className="text-xl font-black text-slate-900 font-mono">{kpis.totalVisitas}</p>
-              <p className="text-[10px] text-slate-500">Última: {kpis.ultimaVisita}</p>
+              <p className="text-xs text-slate-500">Última: {kpis.ultimaVisita}</p>
             </Card>
 
             <Card className="rounded-2xl border border-slate-200/80 bg-white p-3.5 shadow-sm space-y-1">
               <div className="flex items-center justify-between">
-                <span className="text-[10px] font-black uppercase text-slate-500 tracking-wider">Total Facturado</span>
+                <span className="text-xs font-black uppercase text-slate-500 tracking-wider">Total Facturado</span>
                 <DollarSign className="w-4 h-4 text-emerald-600" />
               </div>
               <p className="text-xl font-black text-emerald-600 font-mono">{formatUSD(kpis.totalUSD)}</p>
-              <p className="text-[10px] text-slate-500">{formatBs(kpis.totalBs)}</p>
+              <p className="text-xs text-slate-500">{formatBs(kpis.totalBs)}</p>
             </Card>
 
             <Card className="rounded-2xl border border-slate-200/80 bg-white p-3.5 shadow-sm space-y-1">
               <div className="flex items-center justify-between">
-                <span className="text-[10px] font-black uppercase text-slate-500 tracking-wider">Con Imágenes</span>
+                <span className="text-xs font-black uppercase text-slate-500 tracking-wider">Con Imágenes</span>
                 <Paperclip className="w-4 h-4 text-cyan-600" />
               </div>
               <p className="text-xl font-black text-slate-900 font-mono">
                 {kpis.conAdjunto} <span className="text-xs font-normal text-slate-500">/ {kpis.totalVisitas}</span>
               </p>
-              <p className="text-[10px] text-cyan-600 font-medium">
+              <p className="text-xs text-cyan-600 font-medium">
                 {kpis.totalVisitas > 0 ? Math.round((kpis.conAdjunto / kpis.totalVisitas) * 100) : 0}% con informe
               </p>
             </Card>
 
             <Card className="rounded-2xl border border-slate-200/80 bg-white p-3.5 shadow-sm space-y-1">
               <div className="flex items-center justify-between">
-                <span className="text-[10px] font-black uppercase text-slate-500 tracking-wider">WhatsApp Entregados</span>
+                <span className="text-xs font-black uppercase text-slate-500 tracking-wider">WhatsApp Entregados</span>
                 <MessageCircle className="w-4 h-4 text-emerald-600" />
               </div>
               <p className="text-xl font-black text-slate-900 font-mono">
                 {kpis.conWhatsApp} <span className="text-xs font-normal text-slate-500">/ {kpis.conAdjunto}</span>
               </p>
-              <p className="text-[10px] text-emerald-600 font-medium">
+              <p className="text-xs text-emerald-600 font-medium">
                 {kpis.conAdjunto > 0 ? Math.round((kpis.conWhatsApp / kpis.conAdjunto) * 100) : 0}% notificados
               </p>
             </Card>
@@ -646,7 +646,7 @@ export const ModuloHistorialPacientes: React.FC<ModuloHistorialPacientesProps> =
                 </div>
 
                 {/* Selector Rápido de Estado */}
-                <div className="flex bg-slate-200/70 p-0.5 rounded-xl text-[10px] font-bold shrink-0 self-start sm:self-auto">
+                <div className="flex bg-slate-200/70 p-0.5 rounded-xl text-xs font-bold shrink-0 self-start sm:self-auto">
                   <button
                     onClick={() => setFiltroEstado('TODOS')}
                     className={`px-3 py-1 rounded-lg transition-all ${

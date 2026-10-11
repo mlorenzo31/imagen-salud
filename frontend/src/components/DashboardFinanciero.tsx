@@ -347,7 +347,7 @@ export const DashboardFinanciero: React.FC<DashboardFinancieroProps> = ({ tasaBc
         {vista === 'TABLA' && (
           <div className="overflow-x-auto">
             <table className="w-full text-left text-xs">
-              <thead className="bg-slate-50 border-b border-slate-200 text-slate-500 uppercase text-[10px] font-black">
+              <thead className="bg-slate-50 border-b border-slate-200 text-slate-500 uppercase text-xs font-black">
                 <tr>
                   <th className="p-3">Jornada / Fecha</th>
                   <th className="p-3 text-right">Ingresos ($ USD)</th>

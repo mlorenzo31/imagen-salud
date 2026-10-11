@@ -27,14 +27,14 @@ export const TremorDashboard: React.FC = () => {
           <CardContent className="p-5">
             <div className="flex items-center justify-between">
               <span className="text-xs font-bold text-slate-500 uppercase tracking-wider">Recaudación USD</span>
-              <Badge className="bg-emerald-50 text-emerald-700 border border-emerald-200 text-[10px] font-bold">
+              <Badge className="bg-emerald-50 text-emerald-700 border border-emerald-200 text-xs font-bold">
                 Mes en curso
               </Badge>
             </div>
             <div className="text-2xl font-black font-mono text-slate-900 mt-2">
               ${ingresosUsd.toLocaleString('en-US', { minimumFractionDigits: 2 })}
             </div>
-            <div className="mt-3 flex items-center text-[11px] text-emerald-600 font-bold space-x-1">
+            <div className="mt-3 flex items-center text-xs text-emerald-600 font-bold space-x-1">
               <TrendingUp className="w-3.5 h-3.5" />
               <span>Efectivo en divisas cobrado</span>
             </div>
@@ -45,14 +45,14 @@ export const TremorDashboard: React.FC = () => {
           <CardContent className="p-5">
             <div className="flex items-center justify-between">
               <span className="text-xs font-bold text-slate-500 uppercase tracking-wider">Recaudación Bs</span>
-              <Badge className="bg-blue-50 text-blue-700 border border-blue-200 text-[10px] font-bold">
+              <Badge className="bg-blue-50 text-blue-700 border border-blue-200 text-xs font-bold">
                 Punto + PM
               </Badge>
             </div>
             <div className="text-2xl font-black font-mono text-slate-900 mt-2">
               {ingresosBs.toLocaleString('es-VE', { minimumFractionDigits: 2 })} Bs
             </div>
-            <div className="mt-3 flex items-center text-[11px] text-blue-600 font-bold space-x-1">
+            <div className="mt-3 flex items-center text-xs text-blue-600 font-bold space-x-1">
               <Activity className="w-3.5 h-3.5" />
               <span>Punto + Pago Móvil + Efectivo Bs</span>
             </div>
@@ -63,14 +63,14 @@ export const TremorDashboard: React.FC = () => {
           <CardContent className="p-5">
             <div className="flex items-center justify-between">
               <span className="text-xs font-bold text-slate-500 uppercase tracking-wider">Egresos Operativos</span>
-              <Badge className="bg-rose-50 text-rose-700 border border-rose-200 text-[10px] font-bold">
+              <Badge className="bg-rose-50 text-rose-700 border border-rose-200 text-xs font-bold">
                 Gastos
               </Badge>
             </div>
             <div className="text-2xl font-black font-mono text-slate-900 mt-2">
               {egresosBs.toLocaleString('es-VE', { minimumFractionDigits: 2 })} Bs
             </div>
-            <div className="mt-3 flex items-center text-[11px] text-rose-600 font-bold space-x-1">
+            <div className="mt-3 flex items-center text-xs text-rose-600 font-bold space-x-1">
               <TrendingDown className="w-3.5 h-3.5" />
               <span>Doble asiento contable</span>
             </div>
@@ -81,14 +81,14 @@ export const TremorDashboard: React.FC = () => {
           <CardContent className="p-5">
             <div className="flex items-center justify-between">
               <span className="text-xs font-bold text-slate-500 uppercase tracking-wider">Comisiones Pago Móvil</span>
-              <Badge className="bg-amber-50 text-amber-700 border border-amber-200 text-[10px] font-bold">
+              <Badge className="bg-amber-50 text-amber-700 border border-amber-200 text-xs font-bold">
                 Bs
               </Badge>
             </div>
             <div className="text-2xl font-black font-mono text-slate-900 mt-2">
               {comisionesBs.toLocaleString('es-VE', { minimumFractionDigits: 2 })} Bs
             </div>
-            <div className="mt-3 flex items-center text-[11px] text-amber-700 font-bold space-x-1">
+            <div className="mt-3 flex items-center text-xs text-amber-700 font-bold space-x-1">
               <Percent className="w-3.5 h-3.5" />
               <span>Sin discrepancias bancarias</span>
             </div>
