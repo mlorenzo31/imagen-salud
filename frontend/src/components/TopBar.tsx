@@ -59,7 +59,7 @@ export const TopBar: React.FC<Props> = ({ seccion, tasaBcv, nombreUsuario, role,
         </div>
 
         <div className="flex items-center gap-3 shrink-0">
-          <span className="hidden md:block text-xs text-slate-500">{fecha}</span>
+          <span className="hidden xl:block text-xs text-slate-500">{fecha}</span>
 
           <WhatsAppEstado />
 

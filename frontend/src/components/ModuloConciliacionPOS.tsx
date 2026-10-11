@@ -6,7 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
-import { AlertTriangle, CheckCircle2, ChevronDown, ChevronRight, CreditCard, FileSpreadsheet, RefreshCw } from 'lucide-react';
+import { AlertTriangle, CheckCircle2, ChevronDown, ChevronRight, FileSpreadsheet, RefreshCw } from 'lucide-react';
 import { exportarAExcel } from '@/lib/exportUtils';
 import { centsToNumber, toCents } from '@/lib/money';
 import { hoyLocal } from '@/lib/date';
@@ -186,25 +186,14 @@ export const ModuloConciliacionPOS: React.FC<Props> = ({ currentRole, modoOperac
         </div>
       )}
 
-      <Card>
-        <CardContent className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-          <div className="flex items-center gap-3">
-            <div className="p-2.5 bg-clinica-selection rounded-xl text-clinica-primary"><CreditCard className="w-6 h-6" /></div>
-            <div>
-              <h2 className="text-lg font-semibold text-slate-900">Conciliación de punto de venta</h2>
-              <p className="text-sm text-slate-500">Cobros con tarjeta por día, pendientes de abono y ya acreditados en banco</p>
-            </div>
-          </div>
-          <div className="flex items-center gap-2">
-            <Button variant="outline" size="sm" onClick={cargar} disabled={cargando}>
-              <RefreshCw className={`w-3.5 h-3.5 ${cargando ? 'animate-spin' : ''}`} /> Actualizar
-            </Button>
-            <Button variant="outline" size="sm" onClick={exportar} disabled={visibles.length === 0}>
-              <FileSpreadsheet className="w-3.5 h-3.5" /> Excel
-            </Button>
-          </div>
-        </CardContent>
-      </Card>
+      <div className="flex items-center justify-end gap-2">
+        <Button variant="outline" size="sm" onClick={cargar} disabled={cargando}>
+          <RefreshCw className={`w-3.5 h-3.5 ${cargando ? 'animate-spin' : ''}`} /> Actualizar
+        </Button>
+        <Button variant="outline" size="sm" onClick={exportar} disabled={visibles.length === 0}>
+          <FileSpreadsheet className="w-3.5 h-3.5" /> Excel
+        </Button>
+      </div>
 
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
         <Card><CardContent><p className="text-xs uppercase tracking-wide text-slate-500">Bruto en terminal (90 días)</p><p className="text-xl font-semibold text-slate-900 mt-1">{bs(centsToNumber(totales.bruto))}</p></CardContent></Card>

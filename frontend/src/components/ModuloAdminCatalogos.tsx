@@ -1,7 +1,7 @@
 'use client';
 
-import React, { useState } from 'react';import { UserRole, PacienteCatalogo, DoctorCatalogo, ServicioCatalogo } from '@/types';import { Badge } from '@/components/ui/badge';
-import { Users, Stethoscope, Activity, FileSpreadsheet, Building2, BadgePercent } from 'lucide-react';import { normalizarCedulaRif, extraerDigitos, validarEstructuraCedulaRif } from '@/lib/cedulaRif';import { calcularEdadReal } from '@/lib/date';import { getErrorMessage } from '@/lib/utils';
+import React, { useState } from 'react';import { UserRole, PacienteCatalogo, DoctorCatalogo, ServicioCatalogo } from '@/types';
+import { Users, Stethoscope, Activity, FileSpreadsheet, BadgePercent } from 'lucide-react';import { normalizarCedulaRif, extraerDigitos, validarEstructuraCedulaRif } from '@/lib/cedulaRif';import { calcularEdadReal } from '@/lib/date';import { getErrorMessage } from '@/lib/utils';
 import { ModalEstudio } from '@/components/admincatalogos/ModalEstudio';
 import { ModalEspecialista } from '@/components/admincatalogos/ModalEspecialista';
 import { ModalPaciente } from '@/components/admincatalogos/ModalPaciente';
@@ -378,25 +378,7 @@ export const ModuloAdminCatalogos: React.FC<ModuloAdminCatalogosProps> = ({ curr
   return (
     <div className="space-y-6">
       {/* Encabezado Principal */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 bg-white p-5 rounded-2xl border border-slate-200 shadow-sm">
-        <div className="flex items-center gap-3">
-          <div className="p-2.5 bg-clinica-selection rounded-xl text-clinica-primary">
-            <Building2 className="w-6 h-6" />
-          </div>
-          <div>
-            <div className="flex items-center gap-2">
-              <h2 className="text-xl font-black text-slate-900">Catálogos Maestros & Carga Masiva</h2>
-              <Badge className="bg-[#1D7A70] text-white text-xs font-mono">
-                ERP Clínico
-              </Badge>
-            </div>
-            <p className="text-xs text-slate-500 mt-0.5">
-              Gestión visual interactiva de pacientes, especialistas médicos, tarifas de estudios y motor inteligente de importación
-            </p>
-          </div>
-        </div>
-
-        {/* Selector de Pestañas */}
+      <div className="flex flex-wrap items-center justify-end gap-2">
         <div className="flex bg-slate-100 p-1 rounded-xl text-xs font-bold">
           <button
             onClick={() => { setTabActiva('pacientes'); setBusqueda(''); }}

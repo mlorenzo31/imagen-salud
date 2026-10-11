@@ -5,29 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
-import { 
-  BarChart3, 
-  TrendingUp, 
-  PieChart, 
-  Users, 
-  Stethoscope, 
-  Calendar, 
-  DollarSign, 
-  CreditCard,
-  Building2,
-  Download,
-  FileSpreadsheet,
-  FileText,
-  Search,
-  Filter,
-  SlidersHorizontal,
-  FolderTree,
-  X,
-  ChevronDown,
-  ChevronRight,
-  RefreshCw,
-  Sparkles
-} from 'lucide-react';
+import { Stethoscope, CreditCard, FileSpreadsheet, FileText, Search, SlidersHorizontal, FolderTree, X, ChevronDown, ChevronRight, RefreshCw } from 'lucide-react';
 import { FacturaCaja, DataPoint } from '@/types';
 import { UniversalDataView } from '@/components/analytics/UniversalDataView';
 import { exportarAExcel, exportarAPDF } from '@/lib/exportUtils';
@@ -383,21 +361,8 @@ export const ModuloAnaliticas: React.FC = () => {
   return (
     <div className="space-y-6">
       {/* Header con Acciones y Exportaciones */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 bg-white p-5 rounded-2xl border border-slate-200 shadow-sm">
-        <div>
-          <h2 className="text-xl font-black text-slate-900 flex items-center gap-2">
-            <BarChart3 className="w-6 h-6 text-indigo-600" />
-            Analítica Clínica, Médica y Financiera con Filtros Clínicos Avanzados
-          </h2>
-          <p className="text-xs text-slate-500 mt-1">
-            Métricas de productividad médica, recurrencia de estudios y exportación ejecutiva
-          </p>
-        </div>
-
+      <div className="flex flex-wrap items-center justify-end gap-2">
         <div className="flex flex-wrap items-center gap-2">
-          <Badge className="bg-slate-900 text-white font-mono text-xs px-3 py-1">
-            BCV: Bs. {tasaBcv.toFixed(2)}
-          </Badge>
           <Button 
             variant="outline" 
             size="sm" 
@@ -409,21 +374,23 @@ export const ModuloAnaliticas: React.FC = () => {
             <span>Actualizar</span>
           </Button>
           <Button
+ variant="outline"
             size="sm"
             onClick={handleExportarExcel}
             disabled={facturasFiltradas.length === 0}
-            className="bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold rounded-xl shadow-sm shadow-emerald-600/20 flex items-center gap-1.5"
+            className="gap-1.5 text-xs"
           >
-            <FileSpreadsheet className="w-3.5 h-3.5" />
+            <FileSpreadsheet className="w-3.5 h-3.5 text-emerald-600" />
             <span>Excel (.xlsx)</span>
           </Button>
           <Button
+ variant="outline"
             size="sm"
             onClick={handleExportarPDF}
             disabled={facturasFiltradas.length === 0}
-            className="bg-slate-800 hover:bg-slate-900 text-white text-xs font-bold rounded-xl shadow-sm shadow-slate-800/20 flex items-center gap-1.5"
+            className="gap-1.5 text-xs"
           >
-            <FileText className="w-3.5 h-3.5" />
+            <FileText className="w-3.5 h-3.5 text-rose-600" />
             <span>PDF (.pdf)</span>
           </Button>
         </div>

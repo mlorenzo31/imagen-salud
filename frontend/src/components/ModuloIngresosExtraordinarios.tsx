@@ -2,7 +2,7 @@
 
 import { useFechaOperacion } from './FechaOperacion';
 import React, { useState, useEffect, useMemo } from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
@@ -13,25 +13,7 @@ import {
   DialogTitle,
   DialogFooter
 } from '@/components/ui/dialog';
-import {
-  ArrowUpRight,
-  TrendingUp,
-  Building2,
-  DollarSign,
-  FileSpreadsheet,
-  FileText,
-  Search,
-  Filter,
-  Plus,
-  RefreshCw,
-  Calendar,
-  Layers,
-  CheckCircle2,
-  ChevronDown,
-  ChevronRight,
-  Wallet,
-  AlertCircle
-} from 'lucide-react';
+import { TrendingUp, FileSpreadsheet, FileText, Search, Plus, RefreshCw, Layers, CheckCircle2, ChevronDown, ChevronRight, Wallet } from 'lucide-react';
 import { exportarAExcel, exportarAPDF } from '@/lib/exportUtils';
 import { CuentaBancaria } from '@/types';
 import { getErrorMessage } from '@/lib/utils';
@@ -308,21 +290,7 @@ export const ModuloIngresosExtraordinarios: React.FC<ModuloIngresosExtraordinari
   return (
     <div className="space-y-6">
       {/* Header Corporativo */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 bg-white p-5 rounded-2xl border border-slate-200 shadow-sm">
-        <div>
-          <div className="flex items-center gap-2">
-            <div className="p-2 bg-emerald-50 rounded-xl text-emerald-600">
-              <TrendingUp className="w-6 h-6" />
-            </div>
-            <div>
-              <h2 className="text-xl font-black text-slate-900">Ingresos Extraordinarios</h2>
-              <p className="text-xs text-slate-500">
-                Registro y auditoría de entradas no asistenciales (alquiler de consultorios, aportes de capital, venta de insumos)
-              </p>
-            </div>
-          </div>
-        </div>
-
+      <div className="flex flex-wrap items-center justify-end gap-2">
         <div className="flex flex-wrap items-center gap-2">
           <Button
             variant="outline"
@@ -336,22 +304,24 @@ export const ModuloIngresosExtraordinarios: React.FC<ModuloIngresosExtraordinari
           </Button>
 
           <Button
+ variant="outline"
             size="sm"
             onClick={handleExportarExcel}
             disabled={ingresosFiltrados.length === 0}
-            className="bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold rounded-xl shadow-sm shadow-emerald-600/20 flex items-center gap-1.5 h-9"
+            className="gap-1.5 text-xs"
           >
-            <FileSpreadsheet className="w-3.5 h-3.5" />
+            <FileSpreadsheet className="w-3.5 h-3.5 text-emerald-600" />
             <span>Excel (.xlsx)</span>
           </Button>
 
           <Button
+ variant="outline"
             size="sm"
             onClick={handleExportarPDF}
             disabled={ingresosFiltrados.length === 0}
-            className="bg-slate-800 hover:bg-slate-900 text-white text-xs font-bold rounded-xl shadow-sm shadow-slate-800/20 flex items-center gap-1.5 h-9"
+            className="gap-1.5 text-xs"
           >
-            <FileText className="w-3.5 h-3.5" />
+            <FileText className="w-3.5 h-3.5 text-rose-600" />
             <span>PDF (.pdf)</span>
           </Button>
 

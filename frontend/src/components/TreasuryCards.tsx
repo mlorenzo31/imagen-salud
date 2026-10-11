@@ -3,16 +3,14 @@
 import React from 'react';
 import { CuentaBancaria } from '@/lib/api';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { DollarSign, Landmark, CreditCard, Smartphone, RefreshCw } from 'lucide-react';
-import { Button } from '@/components/ui/button';
+import { DollarSign, Landmark, CreditCard, Smartphone } from 'lucide-react';
+
 
 interface TreasuryCardsProps {
   cuentas: CuentaBancaria[];
-  loading?: boolean;
-  onRefresh?: () => void;
 }
 
-export const TreasuryCards: React.FC<TreasuryCardsProps> = ({ cuentas, loading, onRefresh }) => {
+export const TreasuryCards: React.FC<TreasuryCardsProps> = ({ cuentas }) => {
   const getCardIcon = (codigo: string) => {
     switch (codigo) {
       case 'EFECTIVO_USD': return DollarSign;
@@ -50,25 +48,6 @@ export const TreasuryCards: React.FC<TreasuryCardsProps> = ({ cuentas, loading, 
 
   return (
     <div className="space-y-4">
-      <div className="flex items-center justify-between">
-        <div>
-          <h2 className="text-xl font-black text-slate-900 tracking-tight">Tesorería & Bóveda</h2>
-          <p className="text-xs text-slate-500">Saldos operativos independientes en tiempo real</p>
-        </div>
-        {onRefresh && (
-          <Button 
-            variant="outline" 
-            size="sm" 
-            onClick={onRefresh} 
-            disabled={loading}
-            className="text-xs font-bold border-slate-300 hover:bg-slate-100"
-          >
-            <RefreshCw className={`w-3.5 h-3.5 mr-1.5 ${loading ? 'animate-spin' : ''}`} />
-            <span>Actualizar</span>
-          </Button>
-        )}
-      </div>
-
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
         {cuentas.map((cta) => {
           const Icon = getCardIcon(cta.codigo);

@@ -4,7 +4,7 @@ import React, { useCallback, useEffect, useState } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { RefreshCw, ScrollText } from 'lucide-react';
+import { RefreshCw } from 'lucide-react';
 import { diferir } from '@/lib/diferir';
 
 interface Registro {
@@ -51,13 +51,7 @@ export const ModuloBitacora: React.FC = () => {
 
   return (
     <div className="space-y-4">
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-3 bg-white p-5 rounded-2xl border border-slate-200 shadow-sm">
-        <div>
-          <h2 className="text-xl font-black text-slate-900 flex items-center gap-2">
-            <ScrollText className="w-6 h-6 text-slate-700" /> Bitácora
-          </h2>
-          <p className="text-xs text-slate-500 mt-1">Hechos de jornadas anteriores: cierres tardíos, resoluciones y anulaciones. Solo administrador.</p>
-        </div>
+      <div className="flex flex-wrap items-center justify-end gap-2">
         <div className="flex items-center gap-2">
           {([[true, 'A destiempo'], [false, 'Todo']] as const).map(([v, t]) => (
             <button

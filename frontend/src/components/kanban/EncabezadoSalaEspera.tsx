@@ -3,7 +3,7 @@
 import React from 'react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Tv, ExternalLink, RefreshCw, Send } from 'lucide-react';
+import { ExternalLink, RefreshCw, Send } from 'lucide-react';
 import { ReembolsoPendiente } from '@/types';
 import type { PacienteTurno } from '../ModuloKanbanSalaEspera';
 
@@ -18,26 +18,7 @@ interface EncabezadoSalaEsperaProps {
 }
 
 export const EncabezadoSalaEspera: React.FC<EncabezadoSalaEsperaProps> = ({ setModalMasivoWhatsApp, pacientesPendientesWhatsApp, setTabActiva, tabActiva, reembolsos, cargarPacientes, loading }) => (
-  <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 bg-white p-5 rounded-2xl border border-slate-200 shadow-sm">
-    <div>
-      <div className="flex items-center gap-3">
-        <div className="p-2.5 bg-clinica-selection rounded-xl text-clinica-primary">
-          <Tv className="w-6 h-6" />
-        </div>
-        <div>
-          <div className="flex items-center gap-2">
-            <h2 className="text-xl font-black text-slate-900">Sala de Espera y Turnero Clínico</h2>
-            <Badge className="bg-clinica-primary text-white text-xs font-mono">
-              Full HD / 4K
-            </Badge>
-          </div>
-          <p className="text-xs text-slate-500 mt-0.5">
-            Un turno por estudio, salas simultáneas por grupo (A, B, C), retorno prioritario y despacho de WhatsApp
-          </p>
-        </div>
-      </div>
-    </div>
-
+  <div className="flex flex-wrap items-center justify-end gap-2">
     <div className="flex flex-wrap items-center gap-2">
       {/* Botón de Envío Masivo de WhatsApp para Cierre Diario */}
       <Button

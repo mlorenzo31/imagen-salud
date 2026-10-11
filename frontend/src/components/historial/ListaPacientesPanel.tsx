@@ -21,7 +21,7 @@ interface ListaPacientesPanelProps {
 }
 
 export const ListaPacientesPanel: React.FC<ListaPacientesPanelProps> = ({ pacientesFiltrados, searchTerm, setSearchTerm, cargarMovimientosGlobales, pacienteSeleccionado, cargarMovimientosPaciente, ocultarGlobal = false }) => (
-  <div className="lg:col-span-4 space-y-4">
+  <div className="xl:col-span-4 space-y-4">
     <Card className="rounded-3xl border border-slate-200/80 bg-white shadow-sm overflow-hidden">
       <CardHeader className="p-4 pb-3 border-b border-slate-100 bg-slate-50/50">
         <CardTitle className="text-xs font-black uppercase tracking-wider text-slate-700 flex items-center justify-between">
