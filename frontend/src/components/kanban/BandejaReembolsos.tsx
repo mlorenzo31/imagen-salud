@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Undo2 } from 'lucide-react';
 import { ReembolsoPendiente } from '@/types';
+import { useAvisos } from '@/components/ui/avisos';
 
 interface BandejaReembolsosProps {
   reembolsos: ReembolsoPendiente[];
@@ -14,7 +15,9 @@ interface BandejaReembolsosProps {
   setReembolsos: React.Dispatch<React.SetStateAction<ReembolsoPendiente[]>>;
 }
 
-export const BandejaReembolsos: React.FC<BandejaReembolsosProps> = ({ reembolsos, isAdmin, isReadOnly, setReembolsos }) => (
+export const BandejaReembolsos: React.FC<BandejaReembolsosProps> = ({ reembolsos, isAdmin, isReadOnly, setReembolsos }) => {
+  const { avisar, confirmar } = useAvisos();
+  return (
   <Card className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm space-y-4">
     <div className="flex items-center justify-between border-b border-slate-100 pb-3">
       <div>
@@ -74,10 +77,15 @@ export const BandejaReembolsos: React.FC<BandejaReembolsosProps> = ({ reembolsos
                   {isAdmin && !isReadOnly && (
                     <Button
                       size="sm"
-                      onClick={() => {
-                        if (confirm('¿Confirmar que la reversión de Bs. ' + r.monto_bs + ' a ' + r.paciente_nombre + ' fue transferida y ejecutada en banco?')) {
+                      onClick={async () => {
+                        const ok = await confirmar({
+                          titulo: 'Confirmar reversión',
+                          mensaje: 'Bs. ' + r.monto_bs + ' a ' + r.paciente_nombre + ': confirme que ya se transfirió y se ejecutó en el banco.',
+                          textoConfirmar: 'Confirmar reversión',
+                        });
+                        if (ok) {
                           setReembolsos(prev => prev.filter(x => x.id !== r.id));
-                          alert('Reversión confirmada y conciliada en bancos.');
+                          avisar({ tipo: 'exito', mensaje: 'Reversión confirmada y conciliada en bancos.' });
                         }
                       }}
                       className="bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold rounded-xl h-7 px-2.5"
@@ -94,3 +102,4 @@ export const BandejaReembolsos: React.FC<BandejaReembolsosProps> = ({ reembolsos
     </div>
   </Card>
 );
+};
