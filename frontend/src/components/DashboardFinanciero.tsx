@@ -158,7 +158,12 @@ export const DashboardFinanciero: React.FC<DashboardFinancieroProps> = ({ tasaBc
   };
 
   return (
-    <div className="space-y-6">
+    <div className={`space-y-6 transition-opacity duration-200 ${cargando ? 'opacity-60' : 'opacity-100'}`} aria-busy={cargando}>
+      {error && (
+        <p role="alert" className="rounded-xl border border-rose-200 bg-rose-50 px-4 py-2.5 text-xs font-semibold text-rose-800">
+          No se pudieron actualizar las métricas: {error}. Se muestran los últimos datos disponibles.
+        </p>
+      )}
       {/* Selector de Vistas Interactivas (Pillar 10) */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-white p-4 rounded-2xl border border-slate-200 shadow-sm">
         <div className="flex items-center gap-2">

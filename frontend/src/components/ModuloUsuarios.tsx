@@ -1,5 +1,6 @@
 'use client';
 
+import { FilasSkeleton } from '@/components/ui/skeleton';
 import React, { useCallback, useEffect, useState } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -104,7 +105,9 @@ export const ModuloUsuarios: React.FC = () => {
               <tr><th className="p-3">Usuario</th><th className="p-3">Nombre</th><th className="p-3">Rol</th><th className="p-3">WhatsApp</th><th className="p-3">Estado</th><th className="p-3" /></tr>
             </thead>
             <tbody>
-              {usuarios.length === 0 && <tr><td colSpan={6} className="p-6 text-center text-slate-500">{cargando ? 'Cargando…' : 'Sin usuarios.'}</td></tr>}
+              {usuarios.length === 0 && (cargando
+                ? <FilasSkeleton columnas={6} />
+                : <tr><td colSpan={6} className="p-6 text-center text-slate-500">Sin usuarios.</td></tr>)}
               {usuarios.map((u) => (
                 <tr key={u.id} className="border-t border-slate-100">
                   <td className="p-3 font-mono font-bold">{u.usuario}</td>

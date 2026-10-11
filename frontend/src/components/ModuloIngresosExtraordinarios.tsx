@@ -1,5 +1,6 @@
 'use client';
 
+import { FilasSkeleton } from '@/components/ui/skeleton';
 import { useFechaOperacion } from './FechaOperacion';
 import React, { useState, useEffect, useMemo } from 'react';
 import { useAvisos } from '@/components/ui/avisos';
@@ -473,12 +474,7 @@ export const ModuloIngresosExtraordinarios: React.FC<ModuloIngresosExtraordinari
             </thead>
             <tbody className="divide-y divide-slate-100">
               {loading ? (
-                <tr>
-                  <td colSpan={8} className="p-8 text-center text-slate-500">
-                    <RefreshCw className="w-6 h-6 animate-spin mx-auto mb-2 text-emerald-500" />
-                    Cargando libro de ingresos extraordinarios...
-                  </td>
-                </tr>
+                <FilasSkeleton columnas={8} />
               ) : ingresosFiltrados.length === 0 ? (
                 <tr>
                   <td colSpan={8} className="p-8 text-center text-slate-500">

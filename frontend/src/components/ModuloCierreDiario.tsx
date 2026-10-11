@@ -5,8 +5,10 @@ import { useAvisos } from '@/components/ui/avisos';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { Skeleton } from '@/components/ui/skeleton';
+import { Dialog, DialogContent, DialogDescription, DialogTitle } from '@/components/ui/dialog';
 
-import { ShieldAlert, Lock, CheckCircle2, Calendar, FileCheck, RefreshCw } from 'lucide-react';
+import { ShieldAlert, Lock, CheckCircle2, Calendar, FileCheck, RefreshCw, Check } from 'lucide-react';
 import { UserRole, PacientePendiente, ResumenCierre } from '@/types';
 import { BloqueoCierrePendiente } from './BloqueoCierrePendiente';
 import { ReabrirDiaDialog } from './ReabrirDiaDialog';
@@ -148,6 +150,15 @@ export const ModuloCierreDiario: React.FC<ModuloCierreDiarioProps> = ({ currentR
     }
   };
 
+  const cargandoInicial = loading && !estadoDiario;
+  const arqueoListo = conteoCompleto && (!hayDif || observacionesCierre.trim() !== '');
+  const pasos = [
+    { n: 1, titulo: 'Pendientes', detalle: estadoDiario?.puedeCerrar ? 'Sin pendientes' : 'Hay pendientes', hecho: !!estadoDiario?.puedeCerrar },
+    { n: 2, titulo: 'Arqueo', detalle: arqueoListo ? 'Conteo completo' : 'Contar los 4 métodos', hecho: arqueoListo },
+    { n: 3, titulo: 'Cierre', detalle: estadoDiario?.yaCerrado ? 'Día cerrado' : 'Con PIN', hecho: !!estadoDiario?.yaCerrado },
+  ];
+  const pasoActual = estadoDiario?.yaCerrado ? 4 : (pasos.find((p) => !p.hecho)?.n ?? 3);
+
   const hayPacientesSala = (estadoDiario?.pacientesPendientes?.length || 0) > 0;
   const hayWhatsAppPendientes = (estadoDiario?.pacientesWhatsAppPendientes?.length || 0) > 0;
 
@@ -186,6 +197,29 @@ export const ModuloCierreDiario: React.FC<ModuloCierreDiarioProps> = ({ currentR
           </Button>
         </div>
       </div>
+
+      {/* Pasos del cierre */}
+      <ol className="grid grid-cols-3 gap-2" aria-label="Pasos del cierre diario">
+        {pasos.map((p) => {
+          const activo = p.n === pasoActual;
+          return (
+            <li key={p.n} aria-current={activo ? 'step' : undefined}
+              className={`flex items-center gap-2.5 rounded-xl border px-3 py-2.5 transition-colors duration-200 ${
+                p.hecho ? 'border-emerald-200 bg-emerald-50' : activo ? 'border-clinica-primary bg-white shadow-sm' : 'border-slate-200 bg-slate-50'
+              }`}>
+              <span className={`flex h-6 w-6 shrink-0 items-center justify-center rounded-full text-xs font-bold transition-colors duration-200 ${
+                p.hecho ? 'bg-emerald-600 text-white' : activo ? 'bg-clinica-primary text-white' : 'bg-slate-200 text-slate-500'
+              }`}>
+                {p.hecho ? <Check className="h-3.5 w-3.5" /> : p.n}
+              </span>
+              <span className="min-w-0">
+                <span className="block truncate text-xs font-bold text-slate-800">{p.titulo}</span>
+                <span className="hidden truncate text-[11px] text-slate-500 sm:block">{cargandoInicial ? '…' : p.detalle}</span>
+              </span>
+            </li>
+          );
+        })}
+      </ol>
 
       {estadoDiario?.yaCerrado && (
         <Card className="bg-slate-50 border-2 border-slate-300">
@@ -254,9 +288,10 @@ export const ModuloCierreDiario: React.FC<ModuloCierreDiarioProps> = ({ currentR
         <Card className="bg-white border-slate-200">
           <CardContent className="p-4">
             <p className="text-xs font-bold text-slate-500 uppercase tracking-wider">Efectivo Divisas ($)</p>
-            <p className="text-2xl font-black text-emerald-600 mt-1">
-              ${estadoDiario?.resumen?.totalDivisasUSD ? Number(estadoDiario.resumen.totalDivisasUSD).toFixed(2) : '0.00'}
-            </p>
+            {cargandoInicial ? <Skeleton className="mt-1 h-8 w-28" /> : (
+              <p className="text-2xl font-black text-emerald-600 mt-1">
+                ${estadoDiario?.resumen?.totalDivisasUSD ? Number(estadoDiario.resumen.totalDivisasUSD).toFixed(2) : '0.00'}
+              </p>)}
             <p className="text-xs text-slate-500 mt-0.5">Ingresos directos en caja</p>
           </CardContent>
         </Card>
@@ -264,9 +299,10 @@ export const ModuloCierreDiario: React.FC<ModuloCierreDiarioProps> = ({ currentR
         <Card className="bg-white border-slate-200">
           <CardContent className="p-4">
             <p className="text-xs font-bold text-slate-500 uppercase tracking-wider">Efectivo Bolívares</p>
-            <p className="text-2xl font-black text-blue-600 mt-1">
-              Bs. {estadoDiario?.resumen?.totalEfectivoBs ? Number(estadoDiario.resumen.totalEfectivoBs).toFixed(2) : '0.00'}
-            </p>
+            {cargandoInicial ? <Skeleton className="mt-1 h-8 w-28" /> : (
+              <p className="text-2xl font-black text-blue-600 mt-1">
+                Bs. {estadoDiario?.resumen?.totalEfectivoBs ? Number(estadoDiario.resumen.totalEfectivoBs).toFixed(2) : '0.00'}
+              </p>)}
             <p className="text-xs text-slate-500 mt-0.5">Billetes moneda nacional</p>
           </CardContent>
         </Card>
@@ -274,9 +310,10 @@ export const ModuloCierreDiario: React.FC<ModuloCierreDiarioProps> = ({ currentR
         <Card className="bg-white border-slate-200">
           <CardContent className="p-4">
             <p className="text-xs font-bold text-slate-500 uppercase tracking-wider">Punto de Venta</p>
-            <p className="text-2xl font-black text-indigo-600 mt-1">
-              Bs. {estadoDiario?.resumen?.totalPuntoBs ? Number(estadoDiario.resumen.totalPuntoBs).toFixed(2) : '0.00'}
-            </p>
+            {cargandoInicial ? <Skeleton className="mt-1 h-8 w-28" /> : (
+              <p className="text-2xl font-black text-indigo-600 mt-1">
+                Bs. {estadoDiario?.resumen?.totalPuntoBs ? Number(estadoDiario.resumen.totalPuntoBs).toFixed(2) : '0.00'}
+              </p>)}
             <p className="text-xs text-slate-500 mt-0.5">Lote bancario POS</p>
           </CardContent>
         </Card>
@@ -284,9 +321,10 @@ export const ModuloCierreDiario: React.FC<ModuloCierreDiarioProps> = ({ currentR
         <Card className="bg-white border-slate-200">
           <CardContent className="p-4">
             <p className="text-xs font-bold text-slate-500 uppercase tracking-wider">Pago Móvil</p>
-            <p className="text-2xl font-black text-cyan-600 mt-1">
-              Bs. {estadoDiario?.resumen?.totalPagoMovilBs ? Number(estadoDiario.resumen.totalPagoMovilBs).toFixed(2) : '0.00'}
-            </p>
+            {cargandoInicial ? <Skeleton className="mt-1 h-8 w-28" /> : (
+              <p className="text-2xl font-black text-cyan-600 mt-1">
+                Bs. {estadoDiario?.resumen?.totalPagoMovilBs ? Number(estadoDiario.resumen.totalPagoMovilBs).toFixed(2) : '0.00'}
+              </p>)}
             <p className="text-xs text-slate-500 mt-0.5">Transferencias acreditadas</p>
           </CardContent>
         </Card>
@@ -358,7 +396,8 @@ export const ModuloCierreDiario: React.FC<ModuloCierreDiarioProps> = ({ currentR
                   : 'bg-slate-300 text-slate-500 cursor-not-allowed shadow-none'
               }`}
             >
-              <Lock className="w-4 h-4" />
+              {estadoDiario?.yaCerrado ? <Check className="w-4 h-4" /> : <RefreshCw className={`w-4 h-4 ${ejecutandoCierre ? 'animate-spin' : 'hidden'}`} />}
+              {!ejecutandoCierre && !estadoDiario?.yaCerrado && <Lock className="w-4 h-4" />}
               <span>
                 {ejecutandoCierre 
                   ? 'Consolidando Cierre...' 
@@ -374,9 +413,12 @@ export const ModuloCierreDiario: React.FC<ModuloCierreDiarioProps> = ({ currentR
       </Card>
 
       {/* Modal / Acta de Cierre Diario Certificada */}
-      {mostrarCertificado && cierreRealizado && (
-        <div className="fixed inset-0 z-50 bg-black/70 backdrop-blur-sm flex items-center justify-center p-4">
-          <div className="bg-white rounded-2xl shadow-2xl max-w-lg w-full p-6 border border-slate-200">
+      {cierreRealizado && (
+        <Dialog open={mostrarCertificado} onOpenChange={setMostrarCertificado}>
+          <DialogContent showCloseButton={false} className="max-w-lg p-6 sm:max-w-lg max-h-[92dvh] overflow-y-auto">
+            <DialogTitle className="sr-only">Acta oficial de cierre de caja</DialogTitle>
+            <DialogDescription className="sr-only">Resumen certificado del cierre diario con el arqueo</DialogDescription>
+          <div>
             <div className="text-center border-b border-slate-200 pb-4 mb-4">
               <div className="w-12 h-12 bg-emerald-100 text-emerald-700 rounded-full flex items-center justify-center mx-auto mb-2">
                 <CheckCircle2 className="w-7 h-7" />
@@ -450,7 +492,8 @@ export const ModuloCierreDiario: React.FC<ModuloCierreDiarioProps> = ({ currentR
               </Button>
             </div>
           </div>
-        </div>
+          </DialogContent>
+        </Dialog>
       )}
     </div>
   );

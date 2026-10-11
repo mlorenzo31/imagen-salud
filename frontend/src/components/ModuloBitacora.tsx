@@ -1,5 +1,6 @@
 'use client';
 
+import { FilasSkeleton } from '@/components/ui/skeleton';
 import React, { useCallback, useEffect, useState } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -84,9 +85,9 @@ export const ModuloBitacora: React.FC = () => {
               </tr>
             </thead>
             <tbody>
-              {registros.length === 0 && (
-                <tr><td colSpan={5} className="p-6 text-center text-slate-500">{cargando ? 'Cargando…' : 'Sin registros.'}</td></tr>
-              )}
+              {registros.length === 0 && (cargando
+                ? <FilasSkeleton columnas={5} />
+                : <tr><td colSpan={5} className="p-6 text-center text-slate-500">Sin registros.</td></tr>)}
               {registros.map((r) => (
                 <tr key={r.id} className="border-t border-slate-100 align-top">
                   <td className="p-3 whitespace-nowrap font-mono">{fechaHora(r.creado_en)}</td>
