@@ -386,7 +386,7 @@ export const ModuloAdminCatalogos: React.FC<ModuloAdminCatalogosProps> = ({ curr
           <div>
             <div className="flex items-center gap-2">
               <h2 className="text-xl font-black text-slate-900">Catálogos Maestros & Carga Masiva</h2>
-              <Badge className="bg-[#1D7A70] text-white text-[10px] font-mono">
+              <Badge className="bg-[#1D7A70] text-white text-xs font-mono">
                 ERP Clínico
               </Badge>
             </div>

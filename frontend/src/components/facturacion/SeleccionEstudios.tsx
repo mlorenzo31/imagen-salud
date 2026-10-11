@@ -27,7 +27,7 @@ export const SeleccionEstudios: React.FC<SeleccionEstudiosProps> = ({ selectedAr
     
     {/* 1. Selector de Área Médica */}
     <div className="md:col-span-4">
-      <label className="block text-[10px] font-black text-slate-600 uppercase mb-1">Área Médica</label>
+      <label className="block text-xs font-black text-slate-600 uppercase mb-1">Área Médica</label>
       <select
         value={selectedArea}
         onChange={(e) => setSelectedArea(e.target.value)}
@@ -45,7 +45,7 @@ export const SeleccionEstudios: React.FC<SeleccionEstudiosProps> = ({ selectedAr
     {/* 2. Selector de Estudio (Consultas no lo usa: el precio depende del médico) */}
     {selectedArea !== 'CONSULTAS' && (
     <div className="md:col-span-8">
-      <label className="block text-[10px] font-black text-slate-600 uppercase mb-1">
+      <label className="block text-xs font-black text-slate-600 uppercase mb-1">
         Estudio o Procedimiento
       </label>
       <select
@@ -67,7 +67,7 @@ export const SeleccionEstudios: React.FC<SeleccionEstudiosProps> = ({ selectedAr
 
     {/* 3. Selector / Reglas de Médico Tratante */}
     <div className="md:col-span-8">
-      <label className="block text-[10px] font-black text-slate-600 uppercase mb-1">
+      <label className="block text-xs font-black text-slate-600 uppercase mb-1">
         Médico Especialista Asignado
       </label>
       
@@ -123,12 +123,12 @@ export const SeleccionEstudios: React.FC<SeleccionEstudiosProps> = ({ selectedAr
           <Microscope className="w-4 h-4 text-purple-700 shrink-0" />
           <div>
             <p className="text-xs font-black text-purple-950">Estudio con Análisis de Patología</p>
-            <p className="text-[10px] text-purple-700">
+            <p className="text-xs text-purple-700">
               Asignado automáticamente a: <span className="font-bold">{PATOLOGO_OFICIAL.nombre}</span>
             </p>
           </div>
         </div>
-        <Badge className="bg-purple-200 text-purple-900 font-mono text-[10px] font-bold">
+        <Badge className="bg-purple-200 text-purple-900 font-mono text-xs font-bold">
           Patología Activa
         </Badge>
       </div>

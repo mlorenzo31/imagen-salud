@@ -275,41 +275,41 @@ export const ModuloCierreDiario: React.FC<ModuloCierreDiarioProps> = ({ currentR
       <div className="grid grid-cols-1 md:grid-cols-4 gap-3">
         <Card className="bg-white border-slate-200">
           <CardContent className="p-4">
-            <p className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">Efectivo Divisas ($)</p>
+            <p className="text-xs font-bold text-slate-500 uppercase tracking-wider">Efectivo Divisas ($)</p>
             <p className="text-2xl font-black text-emerald-600 mt-1">
               ${estadoDiario?.resumen?.totalDivisasUSD ? Number(estadoDiario.resumen.totalDivisasUSD).toFixed(2) : '0.00'}
             </p>
-            <p className="text-[10px] text-slate-500 mt-0.5">Ingresos directos en caja</p>
+            <p className="text-xs text-slate-500 mt-0.5">Ingresos directos en caja</p>
           </CardContent>
         </Card>
 
         <Card className="bg-white border-slate-200">
           <CardContent className="p-4">
-            <p className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">Efectivo Bolívares</p>
+            <p className="text-xs font-bold text-slate-500 uppercase tracking-wider">Efectivo Bolívares</p>
             <p className="text-2xl font-black text-blue-600 mt-1">
               Bs. {estadoDiario?.resumen?.totalEfectivoBs ? Number(estadoDiario.resumen.totalEfectivoBs).toFixed(2) : '0.00'}
             </p>
-            <p className="text-[10px] text-slate-500 mt-0.5">Billetes moneda nacional</p>
+            <p className="text-xs text-slate-500 mt-0.5">Billetes moneda nacional</p>
           </CardContent>
         </Card>
 
         <Card className="bg-white border-slate-200">
           <CardContent className="p-4">
-            <p className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">Punto de Venta</p>
+            <p className="text-xs font-bold text-slate-500 uppercase tracking-wider">Punto de Venta</p>
             <p className="text-2xl font-black text-indigo-600 mt-1">
               Bs. {estadoDiario?.resumen?.totalPuntoBs ? Number(estadoDiario.resumen.totalPuntoBs).toFixed(2) : '0.00'}
             </p>
-            <p className="text-[10px] text-slate-500 mt-0.5">Lote bancario POS</p>
+            <p className="text-xs text-slate-500 mt-0.5">Lote bancario POS</p>
           </CardContent>
         </Card>
 
         <Card className="bg-white border-slate-200">
           <CardContent className="p-4">
-            <p className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">Pago Móvil</p>
+            <p className="text-xs font-bold text-slate-500 uppercase tracking-wider">Pago Móvil</p>
             <p className="text-2xl font-black text-cyan-600 mt-1">
               Bs. {estadoDiario?.resumen?.totalPagoMovilBs ? Number(estadoDiario.resumen.totalPagoMovilBs).toFixed(2) : '0.00'}
             </p>
-            <p className="text-[10px] text-slate-500 mt-0.5">Transferencias acreditadas</p>
+            <p className="text-xs text-slate-500 mt-0.5">Transferencias acreditadas</p>
           </CardContent>
         </Card>
       </div>
@@ -340,7 +340,7 @@ export const ModuloCierreDiario: React.FC<ModuloCierreDiarioProps> = ({ currentR
                   <label className="block text-xs font-bold text-slate-700">Contado: {m.etiqueta} ({m.simbolo})</label>
                   <Input type="number" min="0" step="0.01" placeholder="0.00 (obligatorio)" value={conteo[m.clave]}
                     onChange={(e) => setConteo((p) => ({ ...p, [m.clave]: e.target.value }))} className="rounded-xl text-sm font-mono" />
-                  <div className="flex justify-between text-[11px]">
+                  <div className="flex justify-between text-xs">
                     <span className="text-slate-500">Sistema: <span className="font-mono font-bold">{m.simbolo} {(esperado(m.clave) / 100).toFixed(2)}</span></span>
                     {dif !== null && (
                       <span className={`font-bold ${dif === 0 ? 'text-emerald-600' : dif > 0 ? 'text-amber-600' : 'text-rose-600'}`}>
@@ -352,7 +352,7 @@ export const ModuloCierreDiario: React.FC<ModuloCierreDiarioProps> = ({ currentR
               );
             })}
           </div>
-          {hayDif && <p className="text-[11px] font-bold text-amber-700">Hay sobrante o faltante: explíquelo en observaciones para poder cerrar.</p>}
+          {hayDif && <p className="text-xs font-bold text-amber-700">Hay sobrante o faltante: explíquelo en observaciones para poder cerrar.</p>}
 
           <div>
             <label className="block text-xs font-bold text-slate-700 mb-1">
@@ -405,7 +405,7 @@ export const ModuloCierreDiario: React.FC<ModuloCierreDiarioProps> = ({ currentR
               </div>
               <h3 className="text-lg font-black text-slate-900">Acta Oficial de Cierre de Caja</h3>
               <p className="text-xs text-slate-500">Centro Clínico Imagen Salud C.A.</p>
-              <p className="text-[11px] font-mono text-emerald-700 font-bold mt-1">Folio Certificado #{cierreRealizado.id || 'CIE-001'}</p>
+              <p className="text-xs font-mono text-emerald-700 font-bold mt-1">Folio Certificado #{cierreRealizado.id || 'CIE-001'}</p>
             </div>
 
             <div className="space-y-2 text-xs text-slate-700">
@@ -455,10 +455,10 @@ export const ModuloCierreDiario: React.FC<ModuloCierreDiarioProps> = ({ currentR
 
             <div className="mt-6 pt-4 border-t border-slate-200 grid grid-cols-2 gap-4 text-center">
               <div className="border-t border-slate-400 pt-1">
-                <p className="text-[10px] font-bold text-slate-700">Firma Cajero Entregante</p>
+                <p className="text-xs font-bold text-slate-700">Firma Cajero Entregante</p>
               </div>
               <div className="border-t border-slate-400 pt-1">
-                <p className="text-[10px] font-bold text-slate-700">Firma Administrador Receptor</p>
+                <p className="text-xs font-bold text-slate-700">Firma Administrador Receptor</p>
               </div>
             </div>
 

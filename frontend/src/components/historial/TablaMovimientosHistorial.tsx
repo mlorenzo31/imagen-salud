@@ -55,7 +55,7 @@ export const TablaMovimientosHistorial: React.FC<TablaMovimientosHistorialProps>
     ) : (
       <div className="overflow-x-auto">
         <table className="w-full text-left text-xs">
-          <thead className="bg-slate-50/80 text-slate-500 font-bold border-b border-slate-100 text-[11px] uppercase tracking-wider">
+          <thead className="bg-slate-50/80 text-slate-500 font-bold border-b border-slate-100 text-xs uppercase tracking-wider">
             <tr>
               <th className="py-3 px-4">Fecha / Hora</th>
               <th className="py-3 px-3">N° Control</th>
@@ -90,7 +90,7 @@ export const TablaMovimientosHistorial: React.FC<TablaMovimientosHistorialProps>
                             <span className="font-black text-slate-800 text-xs tracking-tight">
                               {nombreGrupo}
                             </span>
-                            <Badge variant="outline" className="text-[10px] font-mono bg-white text-slate-700 ml-1">
+                            <Badge variant="outline" className="text-xs font-mono bg-white text-slate-700 ml-1">
                               {listaEnGrupo.length} {listaEnGrupo.length === 1 ? 'estudio' : 'estudios'}
                             </Badge>
                           </div>
@@ -110,12 +110,12 @@ export const TablaMovimientosHistorial: React.FC<TablaMovimientosHistorialProps>
                           {/* Fecha y Hora */}
                           <td className="py-3 px-4">
                             <p className="font-bold text-slate-900">{fechaFormateada}</p>
-                            <p className="text-[10px] text-slate-500">{m.hora || '--:--'}</p>
+                            <p className="text-xs text-slate-500">{m.hora || '--:--'}</p>
                           </td>
 
                           {/* N° Control / ID Factura */}
                           <td className="py-3 px-3">
-                            <span className="font-mono font-bold text-slate-700 bg-slate-100 px-2 py-0.5 rounded-lg text-[10px]">
+                            <span className="font-mono font-bold text-slate-700 bg-slate-100 px-2 py-0.5 rounded-lg text-xs">
                               #{m.id} {m.turno_num ? `(T-${m.turno_num})` : ''}
                             </span>
                           </td>
@@ -142,7 +142,7 @@ export const TablaMovimientosHistorial: React.FC<TablaMovimientosHistorialProps>
                                 <p className="font-bold text-slate-900 truncate group-hover:text-clinica-primary transition-colors">
                                   {m.nombre_paciente || 'Paciente'}
                                 </p>
-                                <p className="text-[10px] font-mono font-bold text-slate-500 group-hover:text-clinica-primary transition-colors">
+                                <p className="text-xs font-mono font-bold text-slate-500 group-hover:text-clinica-primary transition-colors">
                                   {normalizarCedulaRif(m.cedula_paciente || '')}
                                 </p>
                               </div>
@@ -155,7 +155,7 @@ export const TablaMovimientosHistorial: React.FC<TablaMovimientosHistorialProps>
                               {m.estudio}
                             </p>
                             {m.servicios && Array.isArray(m.servicios) && m.servicios.length > 1 && (
-                              <Badge variant="outline" className="text-[9px] font-bold text-clinica-primary border-clinica-primary/30 mt-0.5">
+                              <Badge variant="outline" className="text-xs font-bold text-clinica-primary border-clinica-primary/30 mt-0.5">
                                 {m.servicios.length} estudios en paquete
                               </Badge>
                             )}
@@ -171,7 +171,7 @@ export const TablaMovimientosHistorial: React.FC<TablaMovimientosHistorialProps>
                             <p className="font-bold font-mono text-slate-900">
                               {formatUSD(m.precio_usd)}
                             </p>
-                            <div className="flex items-center gap-1 mt-0.5 text-[9px] text-slate-500 font-mono">
+                            <div className="flex items-center gap-1 mt-0.5 text-xs text-slate-500 font-mono">
                               {parseFloat(String(m.pago_divisas)) > 0 && (
                                 <span className="text-emerald-700 font-bold bg-emerald-50 px-1 rounded">
                                   Div: {formatUSD(m.pago_divisas)}
@@ -188,15 +188,15 @@ export const TablaMovimientosHistorial: React.FC<TablaMovimientosHistorialProps>
                           {/* Estado Clínico */}
                           <td className="py-3 px-3 text-center">
                             {m.estado === 'FINALIZADO' || m.estado === 'COMPLETADO' ? (
-                              <Badge className="bg-emerald-100 text-emerald-800 text-[9px] font-bold border border-emerald-200">
+                              <Badge className="bg-emerald-100 text-emerald-800 text-xs font-bold border border-emerald-200">
                                 Culminado
                               </Badge>
                             ) : esAnulada(m.estado) ? (
-                              <Badge className="bg-rose-100 text-rose-800 text-[9px] font-bold border border-rose-200">
+                              <Badge className="bg-rose-100 text-rose-800 text-xs font-bold border border-rose-200">
                                 Anulado
                               </Badge>
                             ) : (
-                              <Badge className="bg-amber-100 text-amber-800 text-[9px] font-bold border border-amber-200">
+                              <Badge className="bg-amber-100 text-amber-800 text-xs font-bold border border-amber-200">
                                 {m.estado || 'En Sala'}
                               </Badge>
                             )}
@@ -205,14 +205,14 @@ export const TablaMovimientosHistorial: React.FC<TablaMovimientosHistorialProps>
                           {/* Imágenes / Informe Adjunto */}
                           <td className="py-3 px-3">
                             {tieneAdjunto ? (
-                              <div className="flex items-center gap-1 text-[11px] text-emerald-800 font-mono bg-emerald-50 px-2 py-1 rounded-lg border border-emerald-200/60 max-w-[150px] truncate">
+                              <div className="flex items-center gap-1 text-xs text-emerald-800 font-mono bg-emerald-50 px-2 py-1 rounded-lg border border-emerald-200/60 max-w-[150px] truncate">
                                 <Paperclip className="w-3 h-3 text-emerald-600 shrink-0" />
                                 <span className="truncate" title={m.adjunto_nombre}>
                                   {m.adjunto_nombre}
                                 </span>
                               </div>
                             ) : (
-                              <div className="flex items-center gap-1 text-[10px] text-slate-500">
+                              <div className="flex items-center gap-1 text-xs text-slate-500">
                                 <AlertTriangle className="w-3 h-3 text-slate-300" />
                                 <span>Sin adjunto</span>
                               </div>
@@ -222,17 +222,17 @@ export const TablaMovimientosHistorial: React.FC<TablaMovimientosHistorialProps>
                           {/* Estado de WhatsApp */}
                           <td className="py-3 px-3 text-center">
                             {waEnviado ? (
-                              <Badge className="bg-emerald-100 text-emerald-800 text-[9px] font-bold border border-emerald-200 flex items-center justify-center gap-1">
+                              <Badge className="bg-emerald-100 text-emerald-800 text-xs font-bold border border-emerald-200 flex items-center justify-center gap-1">
                                 <CheckCircle2 className="w-2.5 h-2.5" />
                                 <span>Enviado</span>
                               </Badge>
                             ) : tieneAdjunto ? (
-                              <Badge className="bg-amber-50 text-amber-800 text-[9px] font-bold border border-amber-200 flex items-center justify-center gap-1">
+                              <Badge className="bg-amber-50 text-amber-800 text-xs font-bold border border-amber-200 flex items-center justify-center gap-1">
                                 <Clock className="w-2.5 h-2.5" />
                                 <span>Listo WA</span>
                               </Badge>
                             ) : (
-                              <Badge className="bg-slate-100 text-slate-500 text-[9px] font-bold border border-slate-200">
+                              <Badge className="bg-slate-100 text-slate-500 text-xs font-bold border border-slate-200">
                                 Inactivo
                               </Badge>
                             )}
@@ -268,12 +268,12 @@ export const TablaMovimientosHistorial: React.FC<TablaMovimientosHistorialProps>
                     {/* Fecha y Hora */}
                     <td className="py-3 px-4">
                       <p className="font-bold text-slate-900">{fechaFormateada}</p>
-                      <p className="text-[10px] text-slate-500">{m.hora || '--:--'}</p>
+                      <p className="text-xs text-slate-500">{m.hora || '--:--'}</p>
                     </td>
 
                     {/* N° Control / ID Factura */}
                     <td className="py-3 px-3">
-                      <span className="font-mono font-bold text-slate-700 bg-slate-100 px-2 py-0.5 rounded-lg text-[10px]">
+                      <span className="font-mono font-bold text-slate-700 bg-slate-100 px-2 py-0.5 rounded-lg text-xs">
                         #{m.id} {m.turno_num ? `(T-${m.turno_num})` : ''}
                       </span>
                     </td>
@@ -300,7 +300,7 @@ export const TablaMovimientosHistorial: React.FC<TablaMovimientosHistorialProps>
                           <p className="font-bold text-slate-900 truncate group-hover:text-clinica-primary transition-colors">
                             {m.nombre_paciente || 'Paciente'}
                           </p>
-                          <p className="text-[10px] font-mono font-bold text-slate-500 group-hover:text-clinica-primary transition-colors">
+                          <p className="text-xs font-mono font-bold text-slate-500 group-hover:text-clinica-primary transition-colors">
                             {normalizarCedulaRif(m.cedula_paciente || '')}
                           </p>
                         </div>
@@ -313,7 +313,7 @@ export const TablaMovimientosHistorial: React.FC<TablaMovimientosHistorialProps>
                         {m.estudio}
                       </p>
                       {m.servicios && Array.isArray(m.servicios) && m.servicios.length > 1 && (
-                        <Badge variant="outline" className="text-[9px] font-bold text-clinica-primary border-clinica-primary/30 mt-0.5">
+                        <Badge variant="outline" className="text-xs font-bold text-clinica-primary border-clinica-primary/30 mt-0.5">
                           {m.servicios.length} estudios en paquete
                         </Badge>
                       )}
@@ -329,7 +329,7 @@ export const TablaMovimientosHistorial: React.FC<TablaMovimientosHistorialProps>
                       <p className="font-bold font-mono text-slate-900">
                         {formatUSD(m.precio_usd)}
                       </p>
-                      <div className="flex items-center gap-1 mt-0.5 text-[9px] text-slate-500 font-mono">
+                      <div className="flex items-center gap-1 mt-0.5 text-xs text-slate-500 font-mono">
                         {parseFloat(String(m.pago_divisas)) > 0 && (
                           <span className="text-emerald-700 font-bold bg-emerald-50 px-1 rounded">
                             Div: {formatUSD(m.pago_divisas)}
@@ -346,15 +346,15 @@ export const TablaMovimientosHistorial: React.FC<TablaMovimientosHistorialProps>
                     {/* Estado Clínico */}
                     <td className="py-3 px-3 text-center">
                       {m.estado === 'FINALIZADO' || m.estado === 'COMPLETADO' ? (
-                        <Badge className="bg-emerald-100 text-emerald-800 text-[9px] font-bold border border-emerald-200">
+                        <Badge className="bg-emerald-100 text-emerald-800 text-xs font-bold border border-emerald-200">
                           Culminado
                         </Badge>
                       ) : esAnulada(m.estado) ? (
-                        <Badge className="bg-rose-100 text-rose-800 text-[9px] font-bold border border-rose-200">
+                        <Badge className="bg-rose-100 text-rose-800 text-xs font-bold border border-rose-200">
                           Anulado
                         </Badge>
                       ) : (
-                        <Badge className="bg-amber-100 text-amber-800 text-[9px] font-bold border border-amber-200">
+                        <Badge className="bg-amber-100 text-amber-800 text-xs font-bold border border-amber-200">
                           {m.estado || 'En Sala'}
                         </Badge>
                       )}
@@ -363,14 +363,14 @@ export const TablaMovimientosHistorial: React.FC<TablaMovimientosHistorialProps>
                     {/* Imágenes / Informe Adjunto */}
                     <td className="py-3 px-3">
                       {tieneAdjunto ? (
-                        <div className="flex items-center gap-1 text-[11px] text-emerald-800 font-mono bg-emerald-50 px-2 py-1 rounded-lg border border-emerald-200/60 max-w-[150px] truncate">
+                        <div className="flex items-center gap-1 text-xs text-emerald-800 font-mono bg-emerald-50 px-2 py-1 rounded-lg border border-emerald-200/60 max-w-[150px] truncate">
                           <Paperclip className="w-3 h-3 text-emerald-600 shrink-0" />
                           <span className="truncate" title={m.adjunto_nombre}>
                             {m.adjunto_nombre}
                           </span>
                         </div>
                       ) : (
-                        <div className="flex items-center gap-1 text-[10px] text-slate-500">
+                        <div className="flex items-center gap-1 text-xs text-slate-500">
                           <AlertTriangle className="w-3 h-3 text-slate-300" />
                           <span>Sin adjunto</span>
                         </div>
@@ -380,17 +380,17 @@ export const TablaMovimientosHistorial: React.FC<TablaMovimientosHistorialProps>
                     {/* Estado de WhatsApp */}
                     <td className="py-3 px-3 text-center">
                       {waEnviado ? (
-                        <Badge className="bg-emerald-100 text-emerald-800 text-[9px] font-bold border border-emerald-200 flex items-center justify-center gap-1">
+                        <Badge className="bg-emerald-100 text-emerald-800 text-xs font-bold border border-emerald-200 flex items-center justify-center gap-1">
                           <CheckCircle2 className="w-2.5 h-2.5" />
                           <span>Enviado</span>
                         </Badge>
                       ) : tieneAdjunto ? (
-                        <Badge className="bg-amber-50 text-amber-800 text-[9px] font-bold border border-amber-200 flex items-center justify-center gap-1">
+                        <Badge className="bg-amber-50 text-amber-800 text-xs font-bold border border-amber-200 flex items-center justify-center gap-1">
                           <Clock className="w-2.5 h-2.5" />
                           <span>Listo WA</span>
                         </Badge>
                       ) : (
-                        <Badge className="bg-slate-100 text-slate-500 text-[9px] font-bold border border-slate-200">
+                        <Badge className="bg-slate-100 text-slate-500 text-xs font-bold border border-slate-200">
                           Inactivo
                         </Badge>
                       )}

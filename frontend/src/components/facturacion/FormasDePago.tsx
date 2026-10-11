@@ -23,7 +23,7 @@ interface FormasDePagoProps {
 
 export const FormasDePago: React.FC<FormasDePagoProps> = ({ handleAutocompletar, pagoDivisas, setPagoDivisas, numDivisas, tasaBcv, pagoEfectivoBs, setPagoEfectivoBs, numEfectivoBs, pagoPuntoBs, setPagoPuntoBs, numPuntoBs, pagoMovilBs, setPagoMovilBs, numPagoMovilBs }) => (
   <div className="space-y-3">
-    <p className="text-[10px] font-black text-slate-600 uppercase tracking-wider">
+    <p className="text-xs font-black text-slate-600 uppercase tracking-wider">
       Desglose de Pago Multimoneda Simultáneo
     </p>
 
@@ -37,7 +37,7 @@ export const FormasDePago: React.FC<FormasDePagoProps> = ({ handleAutocompletar,
         <button
           type="button"
           onClick={() => handleAutocompletar('divisas')}
-          className="text-[10px] text-cyan-600 font-bold hover:underline"
+          className="text-xs text-cyan-600 font-bold hover:underline"
         >
           Completar Faltante
         </button>
@@ -51,7 +51,7 @@ export const FormasDePago: React.FC<FormasDePagoProps> = ({ handleAutocompletar,
           onChange={(e) => setPagoDivisas(e.target.value)}
           className="text-xs font-mono font-bold rounded-xl bg-white flex-1"
         />
-        <span className="text-[10px] font-mono text-emerald-700 font-bold shrink-0 bg-emerald-50 px-2 py-1 rounded-lg border border-emerald-200">
+        <span className="text-xs font-mono text-emerald-700 font-bold shrink-0 bg-emerald-50 px-2 py-1 rounded-lg border border-emerald-200">
           ≈ Bs. {(numDivisas * tasaBcv).toLocaleString('es-VE', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
         </span>
       </div>
@@ -67,7 +67,7 @@ export const FormasDePago: React.FC<FormasDePagoProps> = ({ handleAutocompletar,
         <button
           type="button"
           onClick={() => handleAutocompletar('efectivoBs')}
-          className="text-[10px] text-cyan-600 font-bold hover:underline"
+          className="text-xs text-cyan-600 font-bold hover:underline"
         >
           Completar Faltante
         </button>
@@ -81,7 +81,7 @@ export const FormasDePago: React.FC<FormasDePagoProps> = ({ handleAutocompletar,
           onChange={(e) => setPagoEfectivoBs(e.target.value)}
           className="text-xs font-mono font-bold rounded-xl bg-white flex-1"
         />
-        <span className="text-[10px] font-mono text-blue-700 font-bold shrink-0 bg-blue-50 px-2 py-1 rounded-lg border border-blue-200">
+        <span className="text-xs font-mono text-blue-700 font-bold shrink-0 bg-blue-50 px-2 py-1 rounded-lg border border-blue-200">
           ≈ ${(numEfectivoBs / (tasaBcv > 0 ? tasaBcv : 1)).toFixed(2)} USD
         </span>
       </div>
@@ -97,7 +97,7 @@ export const FormasDePago: React.FC<FormasDePagoProps> = ({ handleAutocompletar,
         <button
           type="button"
           onClick={() => handleAutocompletar('punto')}
-          className="text-[10px] text-cyan-600 font-bold hover:underline"
+          className="text-xs text-cyan-600 font-bold hover:underline"
         >
           Completar Faltante
         </button>
@@ -111,7 +111,7 @@ export const FormasDePago: React.FC<FormasDePagoProps> = ({ handleAutocompletar,
           onChange={(e) => setPagoPuntoBs(e.target.value)}
           className="text-xs font-mono font-bold rounded-xl bg-white flex-1"
         />
-        <span className="text-[10px] font-mono text-indigo-700 font-bold shrink-0 bg-indigo-50 px-2 py-1 rounded-lg border border-indigo-200">
+        <span className="text-xs font-mono text-indigo-700 font-bold shrink-0 bg-indigo-50 px-2 py-1 rounded-lg border border-indigo-200">
           ≈ ${(numPuntoBs / (tasaBcv > 0 ? tasaBcv : 1)).toFixed(2)} USD
         </span>
       </div>
@@ -127,7 +127,7 @@ export const FormasDePago: React.FC<FormasDePagoProps> = ({ handleAutocompletar,
         <button
           type="button"
           onClick={() => handleAutocompletar('pagoMovil')}
-          className="text-[10px] text-cyan-600 font-bold hover:underline"
+          className="text-xs text-cyan-600 font-bold hover:underline"
         >
           Completar Faltante
         </button>
@@ -141,7 +141,7 @@ export const FormasDePago: React.FC<FormasDePagoProps> = ({ handleAutocompletar,
           onChange={(e) => setPagoMovilBs(e.target.value)}
           className="text-xs font-mono font-bold rounded-xl bg-white flex-1"
         />
-        <span className="text-[10px] font-mono text-cyan-700 font-bold shrink-0 bg-cyan-50 px-2 py-1 rounded-lg border border-cyan-200">
+        <span className="text-xs font-mono text-cyan-700 font-bold shrink-0 bg-cyan-50 px-2 py-1 rounded-lg border border-cyan-200">
           ≈ ${(numPagoMovilBs / (tasaBcv > 0 ? tasaBcv : 1)).toFixed(2)} USD
         </span>
       </div>

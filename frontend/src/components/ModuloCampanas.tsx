@@ -17,11 +17,11 @@ const digitos = (s: string) => s.replace(/\D/g, '');
 
 const Barra: React.FC<{ titulo: string; items: { etiqueta: string; total: number }[]; onClick?: (e: string) => void }> = ({ titulo, items, onClick }) => (
   <div className="p-3 bg-white rounded-2xl border border-slate-200/90 space-y-1.5">
-    <p className="text-[10px] font-black uppercase text-slate-500">{titulo}</p>
-    {items.length === 0 && <p className="text-[11px] text-slate-400">Sin datos</p>}
+    <p className="text-xs font-black uppercase text-slate-500">{titulo}</p>
+    {items.length === 0 && <p className="text-xs text-slate-400">Sin datos</p>}
     {items.map((i) => (
       <button key={i.etiqueta} type="button" disabled={!onClick} onClick={() => onClick?.(i.etiqueta)}
-        className="w-full flex items-center justify-between text-[11px] text-left hover:bg-slate-50 rounded-md px-1 disabled:hover:bg-transparent">
+        className="w-full flex items-center justify-between text-xs text-left hover:bg-slate-50 rounded-md px-1 disabled:hover:bg-transparent">
         <span className="font-semibold text-slate-700 truncate">{i.etiqueta}</span>
         <span className="font-mono font-bold text-clinica-primary-dark">{i.total}</span>
       </button>
@@ -149,7 +149,7 @@ export const ModuloCampanas: React.FC = () => {
           <div className="bg-white rounded-2xl border border-slate-200/90 overflow-hidden">
             <div className="max-h-80 overflow-auto">
               <table className="w-full text-xs">
-                <thead className="bg-slate-50 sticky top-0 text-[10px] uppercase text-slate-500">
+                <thead className="bg-slate-50 sticky top-0 text-xs uppercase text-slate-500">
                   <tr>
                     <th className="p-2 w-8">Enviar</th><th className="p-2 text-left">Paciente</th><th className="p-2">Edad</th>
                     <th className="p-2">Visitas</th><th className="p-2">Gasto USD</th><th className="p-2">Última</th><th className="p-2 text-left">Teléfono</th>
@@ -172,7 +172,7 @@ export const ModuloCampanas: React.FC = () => {
                 </tbody>
               </table>
             </div>
-            {pacientes.length > 500 && <p className="p-2 text-[11px] text-slate-500 border-t">Se muestran 500 de {pacientes.length}; afine los filtros para ver el resto.</p>}
+            {pacientes.length > 500 && <p className="p-2 text-xs text-slate-500 border-t">Se muestran 500 de {pacientes.length}; afine los filtros para ver el resto.</p>}
           </div>
         </>
       )}
@@ -182,8 +182,8 @@ export const ModuloCampanas: React.FC = () => {
         <Input value={nombre} onChange={(e) => setNombre(e.target.value)} placeholder="Nombre interno (ej. Mamografía mujeres 40+)" className="h-9 text-xs rounded-xl" />
         <textarea value={mensaje} onChange={(e) => setMensaje(e.target.value)} maxLength={900} rows={4}
           className="w-full text-xs rounded-xl border border-slate-200 p-3 focus:outline-none focus:ring-2 focus:ring-emerald-300" />
-        <p className="text-[11px] text-slate-500">Use <b>{'{nombre}'}</b> para el primer nombre. Se agrega automáticamente el pie de baja. {mensaje.length}/900</p>
-        <pre className="text-[11px] whitespace-pre-wrap bg-slate-50 rounded-xl p-3 border border-slate-200 font-sans">{vistaPrevia}</pre>
+        <p className="text-xs text-slate-500">Use <b>{'{nombre}'}</b> para el primer nombre. Se agrega automáticamente el pie de baja. {mensaje.length}/900</p>
+        <pre className="text-xs whitespace-pre-wrap bg-slate-50 rounded-xl p-3 border border-slate-200 font-sans">{vistaPrevia}</pre>
         <div className="flex items-center justify-between">
           <span className="text-xs text-slate-600">Destinatarios: <b>{destinatarios.length}</b> (máx. {MAX_DESTINATARIOS})</span>
           <Button disabled={!puedeEnviar} onClick={() => setConfirmando(true)} className="rounded-xl text-xs font-bold bg-emerald-600 hover:bg-emerald-700 text-white">
@@ -193,19 +193,19 @@ export const ModuloCampanas: React.FC = () => {
       </div>
 
       <div className="p-4 bg-white rounded-2xl border border-slate-200/90 space-y-2">
-        <p className="text-[10px] font-black uppercase text-slate-500">Campañas anteriores</p>
+        <p className="text-xs font-black uppercase text-slate-500">Campañas anteriores</p>
         {campanas.length === 0 && <p className="text-xs text-slate-400">Aún no hay campañas.</p>}
         {campanas.map((c) => (
           <div key={c.id} className="flex items-center justify-between text-xs border-t border-slate-100 pt-2">
             <div className="min-w-0">
               <p className="font-bold text-slate-800 truncate">{c.nombre}</p>
-              <p className="text-[10px] text-slate-500">{c.creado.slice(0, 16).replace('T', ' ')} · {c.usuario ?? '—'}</p>
+              <p className="text-xs text-slate-500">{c.creado.slice(0, 16).replace('T', ' ')} · {c.usuario ?? '—'}</p>
             </div>
             <div className="flex items-center gap-2 shrink-0">
               <Badge className="bg-emerald-600 text-white">{c.enviados} enviados</Badge>
               <Badge variant="outline">{c.pendientes} pendientes</Badge>
               {c.fallidos > 0 && <Badge variant="outline" className="text-red-700 border-red-300">{c.fallidos} fallidos</Badge>}
-              {c.pendientes > 0 && <Button variant="outline" className="h-7 text-[11px] rounded-lg" onClick={() => void cancelar(c.id)}>Cancelar</Button>}
+              {c.pendientes > 0 && <Button variant="outline" className="h-7 text-xs rounded-lg" onClick={() => void cancelar(c.id)}>Cancelar</Button>}
             </div>
           </div>
         ))}

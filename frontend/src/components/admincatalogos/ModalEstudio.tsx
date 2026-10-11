@@ -21,7 +21,7 @@ export const ModalEstudio: React.FC<ModalEstudioProps> = ({ modalServicio, formS
       </h3>
       <div className="space-y-3 text-xs">
         <div>
-          <label className="text-[11px] font-bold text-slate-600 block mb-1">Nombre del Estudio / Procedimiento</label>
+          <label className="text-xs font-bold text-slate-600 block mb-1">Nombre del Estudio / Procedimiento</label>
           <Input
             value={formServicio.nombre || ''}
             onChange={e => setFormServicio({ ...formServicio, nombre: e.target.value.toUpperCase() })}
@@ -31,7 +31,7 @@ export const ModalEstudio: React.FC<ModalEstudioProps> = ({ modalServicio, formS
         </div>
         <div className="grid grid-cols-2 gap-2">
           <div>
-            <label className="text-[11px] font-bold text-slate-600 block mb-1">Área médica</label>
+            <label className="text-xs font-bold text-slate-600 block mb-1">Área médica</label>
             <select
               value={formServicio.area || 'ECOGRAFIA_AM'}
               onChange={e => setFormServicio({ ...formServicio, area: e.target.value })}
@@ -46,7 +46,7 @@ export const ModalEstudio: React.FC<ModalEstudioProps> = ({ modalServicio, formS
             </select>
           </div>
           <div>
-            <label className="text-[11px] font-bold text-slate-600 block mb-1">Precio Base ($ USD)</label>
+            <label className="text-xs font-bold text-slate-600 block mb-1">Precio Base ($ USD)</label>
             <Input
               type="number"
               value={formServicio.precio_usd || ''}
@@ -60,16 +60,16 @@ export const ModalEstudio: React.FC<ModalEstudioProps> = ({ modalServicio, formS
         {/* Repartos Porcentuales */}
         <div className="p-3 bg-slate-50 rounded-xl border border-slate-200/80 space-y-2">
           <div className="flex items-center justify-between">
-            <span className="text-[10px] font-bold text-slate-500 uppercase block">Reglas de Reparto (%):</span>
+            <span className="text-xs font-bold text-slate-500 uppercase block">Reglas de Reparto (%):</span>
             {(() => {
               const suma = (formServicio.reparto_clinica_pct ?? 0) + (formServicio.reparto_medico_pct ?? 0) + (formServicio.reparto_eco_pct ?? 0) + (formServicio.reparto_patologo_pct ?? 0);
               const ok = Math.abs(suma - 100) < 0.01;
-              return <span className={`text-[10px] font-semibold ${ok ? 'text-clinica-dark' : 'text-clinica-coral'}`}>Suma: {suma.toFixed(2)}% {ok ? '✓' : '(debe ser 100%)'}</span>;
+              return <span className={`text-xs font-semibold ${ok ? 'text-clinica-dark' : 'text-clinica-coral'}`}>Suma: {suma.toFixed(2)}% {ok ? '✓' : '(debe ser 100%)'}</span>;
             })()}
           </div>
           <div className="grid grid-cols-2 gap-2">
             <div>
-              <label className="text-[10px] text-slate-500 block">Clínica %</label>
+              <label className="text-xs text-slate-500 block">Clínica %</label>
               <Input
                 type="number"
                 value={formServicio.reparto_clinica_pct ?? 0}
@@ -78,7 +78,7 @@ export const ModalEstudio: React.FC<ModalEstudioProps> = ({ modalServicio, formS
               />
             </div>
             <div>
-              <label className="text-[10px] text-slate-500 block">Médico %</label>
+              <label className="text-xs text-slate-500 block">Médico %</label>
               <Input
                 type="number"
                 value={formServicio.reparto_medico_pct ?? 0}
@@ -87,7 +87,7 @@ export const ModalEstudio: React.FC<ModalEstudioProps> = ({ modalServicio, formS
               />
             </div>
             <div>
-              <label className="text-[10px] text-slate-500 block">Ecógrafo %</label>
+              <label className="text-xs text-slate-500 block">Ecógrafo %</label>
               <Input
                 type="number"
                 value={formServicio.reparto_eco_pct ?? 0}
@@ -96,7 +96,7 @@ export const ModalEstudio: React.FC<ModalEstudioProps> = ({ modalServicio, formS
               />
             </div>
             <div>
-              <label className="text-[10px] text-slate-500 block">Patólogo %</label>
+              <label className="text-xs text-slate-500 block">Patólogo %</label>
               <Input
                 type="number"
                 value={formServicio.reparto_patologo_pct ?? 0}

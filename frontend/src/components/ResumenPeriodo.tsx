@@ -29,7 +29,7 @@ const Fila: React.FC<{ nombre: string; t: Totales; sangria?: boolean; fuerte?: b
 
 const Encabezado: React.FC<{ primera: string }> = ({ primera }) => (
   <thead>
-    <tr className="border-b border-slate-300 text-left text-[10px] font-bold uppercase tracking-wider text-slate-600">
+    <tr className="border-b border-slate-300 text-left text-xs font-bold uppercase tracking-wider text-slate-600">
       <th className="py-1.5 pr-2">{primera}</th>
       <th className="px-2 text-right">Cant.</th>
       <th className="px-2 text-right">Lista</th>

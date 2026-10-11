@@ -170,7 +170,7 @@ export const CierreObligatorio: React.FC<Props> = ({ role, onResuelto }) => {
                     <div key={m.clave} className="grid grid-cols-[1fr_7rem] items-center gap-2">
                       <label htmlFor={`conteo-${m.clave}`} className="text-xs text-slate-700">
                         {m.etiqueta} ({m.simbolo})
-                        <span className="block text-[11px] text-slate-500">
+                        <span className="block text-xs text-slate-500">
                           Sistema: {m.simbolo} {(esperado(m.campo) / 100).toFixed(2)}
                           {dif !== null && (
                             <span className={`ml-1 font-bold ${dif === 0 ? 'text-emerald-700' : 'text-amber-700'}`}>
@@ -186,7 +186,7 @@ export const CierreObligatorio: React.FC<Props> = ({ role, onResuelto }) => {
                 })}
                 {hayDif && (
                   <div>
-                    <p className="text-[11px] font-bold text-amber-700 mb-1">Hay sobrante o faltante: explíquelo para poder cerrar.</p>
+                    <p className="text-xs font-bold text-amber-700 mb-1">Hay sobrante o faltante: explíquelo para poder cerrar.</p>
                     <Input aria-label="Explicación del sobrante o faltante" placeholder="Explicación" value={observaciones} onChange={(e) => setObservaciones(e.target.value)} className="rounded-xl text-xs" />
                   </div>
                 )}

@@ -22,13 +22,13 @@ export const PanelFiltrosAvanzados: React.FC<PanelFiltrosAvanzadosProps> = ({ fe
     <div className="grid grid-cols-1 md:grid-cols-12 gap-3 text-xs">
       {/* 1. Rango de Fechas */}
       <div className="md:col-span-6 space-y-1.5">
-        <label className="text-[10px] font-black uppercase text-slate-500 flex items-center gap-1.5">
+        <label className="text-xs font-black uppercase text-slate-500 flex items-center gap-1.5">
           <CalendarRange className="w-3.5 h-3.5 text-clinica-primary" />
           Rango de Fechas
         </label>
         <div className="grid grid-cols-2 gap-2">
           <div>
-            <span className="text-[9px] text-slate-500 block mb-0.5">Desde:</span>
+            <span className="text-xs text-slate-500 block mb-0.5">Desde:</span>
             <Input
               type="date"
               value={fechaDesde}
@@ -37,7 +37,7 @@ export const PanelFiltrosAvanzados: React.FC<PanelFiltrosAvanzadosProps> = ({ fe
             />
           </div>
           <div>
-            <span className="text-[9px] text-slate-500 block mb-0.5">Hasta:</span>
+            <span className="text-xs text-slate-500 block mb-0.5">Hasta:</span>
             <Input
               type="date"
               value={fechaHasta}
@@ -50,31 +50,31 @@ export const PanelFiltrosAvanzados: React.FC<PanelFiltrosAvanzadosProps> = ({ fe
         <div className="flex flex-wrap items-center gap-1 pt-0.5">
           <button
             onClick={() => aplicarRangoRapido('HOY')}
-            className="px-2 py-0.5 text-[10px] font-bold rounded-md bg-slate-100 hover:bg-slate-200 text-slate-700"
+            className="px-2 py-0.5 text-xs font-bold rounded-md bg-slate-100 hover:bg-slate-200 text-slate-700"
           >
             Hoy
           </button>
           <button
             onClick={() => aplicarRangoRapido('7DIAS')}
-            className="px-2 py-0.5 text-[10px] font-bold rounded-md bg-slate-100 hover:bg-slate-200 text-slate-700"
+            className="px-2 py-0.5 text-xs font-bold rounded-md bg-slate-100 hover:bg-slate-200 text-slate-700"
           >
             7 Días
           </button>
           <button
             onClick={() => aplicarRangoRapido('ESTE_MES')}
-            className="px-2 py-0.5 text-[10px] font-bold rounded-md bg-slate-100 hover:bg-slate-200 text-slate-700"
+            className="px-2 py-0.5 text-xs font-bold rounded-md bg-slate-100 hover:bg-slate-200 text-slate-700"
           >
             Este Mes
           </button>
           <button
             onClick={() => aplicarRangoRapido('ANO')}
-            className="px-2 py-0.5 text-[10px] font-bold rounded-md bg-slate-100 hover:bg-slate-200 text-slate-700"
+            className="px-2 py-0.5 text-xs font-bold rounded-md bg-slate-100 hover:bg-slate-200 text-slate-700"
           >
             Este Año
           </button>
           <button
             onClick={() => aplicarRangoRapido('TODO')}
-            className="px-2 py-0.5 text-[10px] font-bold rounded-md bg-slate-100 hover:bg-slate-200 text-slate-700"
+            className="px-2 py-0.5 text-xs font-bold rounded-md bg-slate-100 hover:bg-slate-200 text-slate-700"
           >
             Todo
           </button>
@@ -83,7 +83,7 @@ export const PanelFiltrosAvanzados: React.FC<PanelFiltrosAvanzadosProps> = ({ fe
 
       {/* 2. Tipo / Área de Estudio */}
       <div className="md:col-span-3 space-y-1.5">
-        <label className="text-[10px] font-black uppercase text-slate-500 flex items-center gap-1.5">
+        <label className="text-xs font-black uppercase text-slate-500 flex items-center gap-1.5">
           <Stethoscope className="w-3.5 h-3.5 text-clinica-primary" />
           Área / Especialidad
         </label>
@@ -109,7 +109,7 @@ export const PanelFiltrosAvanzados: React.FC<PanelFiltrosAvanzadosProps> = ({ fe
 
       {/* 3. Entrega de Resultados & WhatsApp */}
       <div className="md:col-span-3 space-y-1.5">
-        <label className="text-[10px] font-black uppercase text-slate-500 flex items-center gap-1.5">
+        <label className="text-xs font-black uppercase text-slate-500 flex items-center gap-1.5">
           <MessageCircle className="w-3.5 h-3.5 text-emerald-600" />
           Entrega y WhatsApp
         </label>

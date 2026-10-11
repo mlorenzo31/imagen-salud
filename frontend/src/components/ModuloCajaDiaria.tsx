@@ -385,17 +385,17 @@ export const ModuloCajaDiaria: React.FC<ModuloCajaDiariaProps> = ({ currentRole 
       <div className="grid grid-cols-2 md:grid-cols-6 gap-3">
         <Card className="bg-white border-slate-200">
           <CardContent className="p-3.5">
-            <p className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">Facturas Totales</p>
+            <p className="text-xs font-bold text-slate-500 uppercase tracking-wider">Facturas Totales</p>
             <p className="text-2xl font-black text-slate-900 mt-1">{totalFacturas}</p>
-            <p className="text-[10px] text-slate-500 mt-0.5">{facturasActivas.length} activas • {totalAnuladas} anuladas</p>
+            <p className="text-xs text-slate-500 mt-0.5">{facturasActivas.length} activas • {totalAnuladas} anuladas</p>
           </CardContent>
         </Card>
 
         <Card className="bg-emerald-50/70 border-emerald-200">
           <CardContent className="p-3.5">
-            <p className="text-[10px] font-bold text-emerald-700 uppercase tracking-wider">Total Facturado</p>
+            <p className="text-xs font-bold text-emerald-700 uppercase tracking-wider">Total Facturado</p>
             <p className="text-xl font-black text-emerald-950 mt-1">${totalCobradoUSD.toFixed(2)}</p>
-            <p className="text-[11px] font-mono font-bold text-emerald-800 mt-0.5">
+            <p className="text-xs font-mono font-bold text-emerald-800 mt-0.5">
               Bs. {totalCobradoBs.toLocaleString('es-VE', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
             </p>
           </CardContent>
@@ -403,9 +403,9 @@ export const ModuloCajaDiaria: React.FC<ModuloCajaDiariaProps> = ({ currentRole 
 
         <Card className="bg-white border-slate-200">
           <CardContent className="p-3.5">
-            <p className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">Efectivo Divisas</p>
+            <p className="text-xs font-bold text-slate-500 uppercase tracking-wider">Efectivo Divisas</p>
             <p className="text-xl font-black text-emerald-600 mt-1">${totalDivisasUSD.toFixed(2)}</p>
-            <p className="text-[10px] font-mono text-slate-500 mt-0.5">
+            <p className="text-xs font-mono text-slate-500 mt-0.5">
               ≈ Bs. {totalDivisasEquivBs.toLocaleString('es-VE', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
             </p>
           </CardContent>
@@ -413,11 +413,11 @@ export const ModuloCajaDiaria: React.FC<ModuloCajaDiariaProps> = ({ currentRole 
 
         <Card className="bg-white border-slate-200">
           <CardContent className="p-3.5">
-            <p className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">Efectivo Bs</p>
+            <p className="text-xs font-bold text-slate-500 uppercase tracking-wider">Efectivo Bs</p>
             <p className="text-lg font-black text-blue-600 mt-1">
               Bs. {totalEfectivoBs.toLocaleString('es-VE', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
             </p>
-            <p className="text-[10px] font-mono text-slate-500 mt-0.5">
+            <p className="text-xs font-mono text-slate-500 mt-0.5">
               ≈ ${totalEfectivoEquivUSD.toFixed(2)} USD
             </p>
           </CardContent>
@@ -425,11 +425,11 @@ export const ModuloCajaDiaria: React.FC<ModuloCajaDiariaProps> = ({ currentRole 
 
         <Card className="bg-white border-slate-200">
           <CardContent className="p-3.5">
-            <p className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">Punto de Venta</p>
+            <p className="text-xs font-bold text-slate-500 uppercase tracking-wider">Punto de Venta</p>
             <p className="text-lg font-black text-indigo-600 mt-1">
               Bs. {totalPuntoBs.toLocaleString('es-VE', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
             </p>
-            <p className="text-[10px] font-mono text-slate-500 mt-0.5">
+            <p className="text-xs font-mono text-slate-500 mt-0.5">
               ≈ ${totalPuntoEquivUSD.toFixed(2)} USD
             </p>
           </CardContent>
@@ -437,11 +437,11 @@ export const ModuloCajaDiaria: React.FC<ModuloCajaDiariaProps> = ({ currentRole 
 
         <Card className="bg-white border-slate-200">
           <CardContent className="p-3.5">
-            <p className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">Pago Móvil</p>
+            <p className="text-xs font-bold text-slate-500 uppercase tracking-wider">Pago Móvil</p>
             <p className="text-lg font-black text-cyan-600 mt-1">
               Bs. {totalPagoMovilBs.toLocaleString('es-VE', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
             </p>
-            <p className="text-[10px] font-mono text-slate-500 mt-0.5">
+            <p className="text-xs font-mono text-slate-500 mt-0.5">
               ≈ ${totalPagoMovilEquivUSD.toFixed(2)} USD
             </p>
           </CardContent>
@@ -461,7 +461,7 @@ export const ModuloCajaDiaria: React.FC<ModuloCajaDiariaProps> = ({ currentRole 
               
               {/* SECCIÓN 1: FILTROS PREDETERMINADOS */}
               <div className="space-y-2 border-r border-slate-200/80 pr-3">
-                <p className="text-[10px] font-black text-slate-500 uppercase tracking-wider flex items-center gap-1.5">
+                <p className="text-xs font-black text-slate-500 uppercase tracking-wider flex items-center gap-1.5">
                   <Filter className="w-3 h-3 text-cyan-600" />
                   <span>Filtros Rápidos</span>
                 </p>
@@ -520,7 +520,7 @@ export const ModuloCajaDiaria: React.FC<ModuloCajaDiariaProps> = ({ currentRole 
 
               {/* SECCIÓN 2: AGRUPAR POR CRITERIO CLÍNICO */}
               <div className="space-y-2 border-r border-slate-200/80 pr-3">
-                <p className="text-[10px] font-black text-slate-500 uppercase tracking-wider flex items-center gap-1.5">
+                <p className="text-xs font-black text-slate-500 uppercase tracking-wider flex items-center gap-1.5">
                   <Layers className="w-3 h-3 text-indigo-600" />
                   <span>Agrupar Por (Group By)</span>
                 </p>
@@ -552,7 +552,7 @@ export const ModuloCajaDiaria: React.FC<ModuloCajaDiariaProps> = ({ currentRole 
               {/* SECCIÓN 3: ESTADOS Y BOTÓN DE LIMPIAR */}
               <div className="space-y-2 flex flex-col justify-between">
                 <div>
-                  <p className="text-[10px] font-black text-slate-500 uppercase tracking-wider flex items-center gap-1.5 mb-2">
+                  <p className="text-xs font-black text-slate-500 uppercase tracking-wider flex items-center gap-1.5 mb-2">
                     <Clock className="w-3 h-3 text-blue-600" />
                     <span>Filtrar por Estado Clínico</span>
                   </p>
@@ -563,7 +563,7 @@ export const ModuloCajaDiaria: React.FC<ModuloCajaDiariaProps> = ({ currentRole 
                         <button
                           key={st}
                           onClick={() => toggleFiltroEstado(st)}
-                          className={`px-2 py-1.5 rounded-lg text-[10px] font-bold border transition-all ${
+                          className={`px-2 py-1.5 rounded-lg text-xs font-bold border transition-all ${
                             isSel 
                               ? 'bg-blue-600 text-white border-blue-700' 
                               : 'bg-white text-slate-600 border-slate-200 hover:bg-slate-100'

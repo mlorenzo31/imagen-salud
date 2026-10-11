@@ -268,7 +268,7 @@ export const TablaHonorarios: React.FC<TablaHonorariosProps> = ({
           <div>
             <div className="flex items-center gap-2">
               <h2 className="text-xl font-black text-slate-900">Honorarios Médicos y Liquidación</h2>
-              <Badge className="bg-clinica-primary text-white text-[10px] font-mono">
+              <Badge className="bg-clinica-primary text-white text-xs font-mono">
                 Multiforma
               </Badge>
             </div>
@@ -302,35 +302,35 @@ export const TablaHonorarios: React.FC<TablaHonorariosProps> = ({
       {/* Tarjetas KPI */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         <Card className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
-          <p className="text-[11px] font-bold text-slate-500 uppercase tracking-wider">Total Honorarios ($ USD)</p>
+          <p className="text-xs font-bold text-slate-500 uppercase tracking-wider">Total Honorarios ($ USD)</p>
           <h3 className="text-2xl font-black text-clinica-primary mt-1">
             ${totalUSD.toFixed(2)}
           </h3>
-          <p className="text-[11px] text-slate-500 mt-1">Acumulado pendiente de liquidar</p>
+          <p className="text-xs text-slate-500 mt-1">Acumulado pendiente de liquidar</p>
         </Card>
 
         <Card className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
-          <p className="text-[11px] font-bold text-slate-500 uppercase tracking-wider">Equivalente Bolívares</p>
+          <p className="text-xs font-bold text-slate-500 uppercase tracking-wider">Equivalente Bolívares</p>
           <h3 className="text-2xl font-black text-slate-900 mt-1">
             Bs. {totalBS.toLocaleString('es-VE', { minimumFractionDigits: 2 })}
           </h3>
-          <p className="text-[11px] text-slate-500 mt-1">Tasa oficial BCV Bs. {tasaReferencia.toFixed(2)}</p>
+          <p className="text-xs text-slate-500 mt-1">Tasa oficial BCV Bs. {tasaReferencia.toFixed(2)}</p>
         </Card>
 
         <Card className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
-          <p className="text-[11px] font-bold text-slate-500 uppercase tracking-wider">Pacientes Atendidos</p>
+          <p className="text-xs font-bold text-slate-500 uppercase tracking-wider">Pacientes Atendidos</p>
           <h3 className="text-2xl font-black text-cyan-700 mt-1">
             {totalPacientes}
           </h3>
-          <p className="text-[11px] text-slate-500 mt-1">Estudios clínicos realizados</p>
+          <p className="text-xs text-slate-500 mt-1">Estudios clínicos realizados</p>
         </Card>
 
         <Card className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
-          <p className="text-[11px] font-bold text-slate-500 uppercase tracking-wider">Especialistas Filtrados</p>
+          <p className="text-xs font-bold text-slate-500 uppercase tracking-wider">Especialistas Filtrados</p>
           <h3 className="text-2xl font-black text-indigo-700 mt-1">
             {itemsFiltrados.length}
           </h3>
-          <p className="text-[11px] text-slate-500 mt-1">Con honorarios pendientes</p>
+          <p className="text-xs text-slate-500 mt-1">Con honorarios pendientes</p>
         </Card>
       </div>
 
@@ -416,7 +416,7 @@ export const TablaHonorarios: React.FC<TablaHonorariosProps> = ({
       <Card className="rounded-2xl border border-slate-200 bg-white shadow-sm overflow-hidden">
         <div className="overflow-x-auto">
           <table className="w-full text-left text-xs">
-            <thead className="bg-slate-50 border-b border-slate-200 text-slate-500 uppercase text-[10px] font-black tracking-wider">
+            <thead className="bg-slate-50 border-b border-slate-200 text-slate-500 uppercase text-xs font-black tracking-wider">
               <tr>
                 <th className="p-3">Especialista</th>
                 <th className="p-3">Especialidad</th>
@@ -449,7 +449,7 @@ export const TablaHonorarios: React.FC<TablaHonorariosProps> = ({
                           </span>
                         </td>
                         <td className="p-3">
-                          <Badge className="bg-clinica-selection text-clinica-dark border border-clinica-aquamarine/40 text-[10px]">
+                          <Badge className="bg-clinica-selection text-clinica-dark border border-clinica-aquamarine/40 text-xs">
                             {doc.especialidad}
                           </Badge>
                         </td>
@@ -497,62 +497,62 @@ export const TablaHonorarios: React.FC<TablaHonorariosProps> = ({
                                   <PieChart className="w-4 h-4 text-clinica-primary" />
                                   <span>Desglose Exacto de Formas de Pago de Pacientes de {doc.medico}:</span>
                                 </span>
-                                <span className="text-[11px] text-slate-500">Permite planificar la modalidad de liquidación</span>
+                                <span className="text-xs text-slate-500">Permite planificar la modalidad de liquidación</span>
                               </div>
 
                               <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
                                 {/* POS */}
                                 <div className="p-3 bg-slate-50 rounded-xl border border-slate-200">
-                                  <div className="flex items-center gap-1.5 text-slate-500 font-bold text-[11px]">
+                                  <div className="flex items-center gap-1.5 text-slate-500 font-bold text-xs">
                                     <CreditCard className="w-3.5 h-3.5 text-blue-600" />
                                     <span>Punto de Venta POS</span>
                                   </div>
                                   <p className="font-mono font-black text-slate-900 text-sm mt-1">
                                     ${traz.punto_de_venta_usd.toFixed(2)} USD
                                   </p>
-                                  <p className="text-[10px] font-mono text-slate-500">
+                                  <p className="text-xs font-mono text-slate-500">
                                     ≈ Bs. {(traz.punto_de_venta_usd * doc.tasa_bcv).toLocaleString('es-VE', { minimumFractionDigits: 2 })}
                                   </p>
                                 </div>
 
                                 {/* Pago Móvil */}
                                 <div className="p-3 bg-slate-50 rounded-xl border border-slate-200">
-                                  <div className="flex items-center gap-1.5 text-slate-500 font-bold text-[11px]">
+                                  <div className="flex items-center gap-1.5 text-slate-500 font-bold text-xs">
                                     <Smartphone className="w-3.5 h-3.5 text-emerald-600" />
                                     <span>Pago Móvil</span>
                                   </div>
                                   <p className="font-mono font-black text-slate-900 text-sm mt-1">
                                     ${traz.pago_movil_usd.toFixed(2)} USD
                                   </p>
-                                  <p className="text-[10px] font-mono text-slate-500">
+                                  <p className="text-xs font-mono text-slate-500">
                                     ≈ Bs. {(traz.pago_movil_usd * doc.tasa_bcv).toLocaleString('es-VE', { minimumFractionDigits: 2 })}
                                   </p>
                                 </div>
 
                                 {/* Efectivo Bs */}
                                 <div className="p-3 bg-slate-50 rounded-xl border border-slate-200">
-                                  <div className="flex items-center gap-1.5 text-slate-500 font-bold text-[11px]">
+                                  <div className="flex items-center gap-1.5 text-slate-500 font-bold text-xs">
                                     <Banknote className="w-3.5 h-3.5 text-amber-600" />
                                     <span>Efectivo Bolívares</span>
                                   </div>
                                   <p className="font-mono font-black text-slate-900 text-sm mt-1">
                                     ${traz.efectivo_bs_usd.toFixed(2)} USD
                                   </p>
-                                  <p className="text-[10px] font-mono text-slate-500">
+                                  <p className="text-xs font-mono text-slate-500">
                                     ≈ Bs. {(traz.efectivo_bs_usd * doc.tasa_bcv).toLocaleString('es-VE', { minimumFractionDigits: 2 })}
                                   </p>
                                 </div>
 
                                 {/* Divisas Cash */}
                                 <div className="p-3 bg-slate-50 rounded-xl border border-slate-200">
-                                  <div className="flex items-center gap-1.5 text-slate-500 font-bold text-[11px]">
+                                  <div className="flex items-center gap-1.5 text-slate-500 font-bold text-xs">
                                     <DollarSign className="w-3.5 h-3.5 text-emerald-600" />
                                     <span>Efectivo Divisas ($)</span>
                                   </div>
                                   <p className="font-mono font-black text-emerald-600 text-sm mt-1">
                                     ${traz.divisas_usd.toFixed(2)} USD
                                   </p>
-                                  <p className="text-[10px] font-mono text-slate-500">Directo en Bóveda Divisas</p>
+                                  <p className="text-xs font-mono text-slate-500">Directo en Bóveda Divisas</p>
                                 </div>
                               </div>
                             </div>
@@ -605,7 +605,7 @@ export const TablaHonorarios: React.FC<TablaHonorariosProps> = ({
                 </div>
                 <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
                   <div>
-                    <label className="text-[11px] font-semibold text-slate-600">Monto Neto (Bs)</label>
+                    <label className="text-xs font-semibold text-slate-600">Monto Neto (Bs)</label>
                     <Input
                       type="number"
                       step="0.01"
@@ -616,9 +616,9 @@ export const TablaHonorarios: React.FC<TablaHonorariosProps> = ({
                     />
                   </div>
                   <div>
-                    <label className="text-[11px] font-semibold text-slate-600 flex items-center justify-between">
+                    <label className="text-xs font-semibold text-slate-600 flex items-center justify-between">
                       <span>Comisión (Bs)</span>
-                      <span className="text-[10px] text-rose-500 font-bold">* Manual</span>
+                      <span className="text-xs text-rose-500 font-bold">* Manual</span>
                     </label>
                     <Input
                       type="number"
@@ -630,7 +630,7 @@ export const TablaHonorarios: React.FC<TablaHonorariosProps> = ({
                     />
                   </div>
                   <div>
-                    <label className="text-[11px] font-semibold text-slate-600">Referencia</label>
+                    <label className="text-xs font-semibold text-slate-600">Referencia</label>
                     <Input
                       placeholder="Ej. 748192"
                       value={refPM}
@@ -678,7 +678,7 @@ export const TablaHonorarios: React.FC<TablaHonorariosProps> = ({
 
               {/* Observaciones */}
               <div className="space-y-1">
-                <label className="text-[11px] font-bold text-slate-700">Observaciones del Pago</label>
+                <label className="text-xs font-bold text-slate-700">Observaciones del Pago</label>
                 <Input
                   placeholder="Detalle de liquidación o notas adicionales..."
                   value={observaciones}

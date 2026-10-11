@@ -62,12 +62,12 @@ export const TabEstudios: React.FC<TabEstudiosProps> = ({ busqueda, setBusqueda,
                         color: infoGrupo.colorTexto,
                         borderColor: infoGrupo.colorBorde
                       }}
-                      className="border text-[9px] font-black uppercase tracking-wider"
+                      className="border text-xs font-black uppercase tracking-wider"
                     >
                       Grupo {s.grupo_clinico}: {infoGrupo.nombreCorto}
                     </Badge>
                     {s.codigo && (
-                      <span className="font-mono text-[10px] text-slate-500 font-bold">
+                      <span className="font-mono text-xs text-slate-500 font-bold">
                         #{s.codigo}
                       </span>
                     )}
@@ -84,10 +84,10 @@ export const TabEstudios: React.FC<TabEstudiosProps> = ({ busqueda, setBusqueda,
               <CardContent className="p-4 space-y-3">
                 {/* Desglose de Regla de Reparto */}
                 <div>
-                  <span className="text-[10px] uppercase font-bold text-slate-500 block mb-1.5">
+                  <span className="text-xs uppercase font-bold text-slate-500 block mb-1.5">
                     Regla de Reparto Financiero:
                   </span>
-                  <div className="grid grid-cols-4 gap-1 text-center font-mono text-[10px]">
+                  <div className="grid grid-cols-4 gap-1 text-center font-mono text-xs">
                     <div className="p-1.5 rounded-lg bg-emerald-50 border border-emerald-200">
                       <span className="text-emerald-700 block font-bold">Clínica</span>
                       <span className="font-black text-emerald-900">{s.reparto_clinica_pct}%</span>

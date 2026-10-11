@@ -120,8 +120,8 @@ export const ModuloUsuarios: React.FC = () => {
                     {u.bloqueado_hasta && new Date(u.bloqueado_hasta) > new Date() && <Badge className="ml-1 bg-amber-500 text-white">Bloqueado</Badge>}
                   </td>
                   <td className="p-3 whitespace-nowrap text-right">
-                    <Button variant="outline" size="sm" className="rounded-lg text-[11px] mr-1" onClick={() => { setErrorForm(null); setForm({ id: u.id, usuario: u.usuario, nombre: u.nombre, rol: u.rol, telefono: u.telefono ?? '', email: u.email ?? '', clave: '' }); }}>Editar</Button>
-                    <Button variant="outline" size="sm" className="rounded-lg text-[11px]" disabled={guardando} onClick={() => alternarActivo(u)}>{u.activo ? 'Desactivar' : 'Activar'}</Button>
+                    <Button variant="outline" size="sm" className="rounded-lg text-xs mr-1" onClick={() => { setErrorForm(null); setForm({ id: u.id, usuario: u.usuario, nombre: u.nombre, rol: u.rol, telefono: u.telefono ?? '', email: u.email ?? '', clave: '' }); }}>Editar</Button>
+                    <Button variant="outline" size="sm" className="rounded-lg text-xs" disabled={guardando} onClick={() => alternarActivo(u)}>{u.activo ? 'Desactivar' : 'Activar'}</Button>
                   </td>
                 </tr>
               ))}

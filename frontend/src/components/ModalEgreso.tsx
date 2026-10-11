@@ -199,7 +199,7 @@ export const ModalEgreso: React.FC<ModalEgresoProps> = ({
                     <label className="block text-xs font-bold text-amber-900">
                       Comisión Manual (Bs) *
                     </label>
-                    <span className="text-[10px] font-bold text-amber-800 bg-amber-100 px-1.5 py-0.5 rounded border border-amber-300">
+                    <span className="text-xs font-bold text-amber-800 bg-amber-100 px-1.5 py-0.5 rounded border border-amber-300">
                       100% Manual
                     </span>
                   </div>
@@ -213,7 +213,7 @@ export const ModalEgreso: React.FC<ModalEgresoProps> = ({
                     className="font-mono font-bold text-amber-950 text-sm border-amber-300 bg-amber-50/50"
                     required
                   />
-                  <p className="text-[10px] text-amber-800 mt-1">
+                  <p className="text-xs text-amber-800 mt-1">
                     Monto exacto reflejado en el comprobante bancario.
                   </p>
                 </div>
@@ -223,7 +223,7 @@ export const ModalEgreso: React.FC<ModalEgresoProps> = ({
             {/* Resumen Contable de Débito */}
             <div className="p-3 bg-white border border-slate-200 rounded-lg flex items-center justify-between">
               <div>
-                <p className="text-[10px] font-bold text-slate-500 uppercase">Total a Debitar de la Cuenta</p>
+                <p className="text-xs font-bold text-slate-500 uppercase">Total a Debitar de la Cuenta</p>
                 <p className="text-xs text-slate-500 font-mono">Neto + Comisión bancaria</p>
               </div>
               <div className="text-right">
@@ -231,7 +231,7 @@ export const ModalEgreso: React.FC<ModalEgresoProps> = ({
                   {totalDebitado.toLocaleString('es-VE', { minimumFractionDigits: 2 })} {selectedCuenta?.moneda}
                 </p>
                 {isSaldoInsuficiente && (
-                  <p className="text-[10px] text-rose-600 font-bold">¡Saldo insuficiente!</p>
+                  <p className="text-xs text-rose-600 font-bold">¡Saldo insuficiente!</p>
                 )}
               </div>
             </div>

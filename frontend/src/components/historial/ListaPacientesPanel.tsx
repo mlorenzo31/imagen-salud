@@ -29,7 +29,7 @@ export const ListaPacientesPanel: React.FC<ListaPacientesPanelProps> = ({ pacien
             <User className="w-4 h-4 text-clinica-primary" />
             Directorio de Pacientes
           </span>
-          <Badge variant="outline" className="text-[10px] font-mono border-slate-300">
+          <Badge variant="outline" className="text-xs font-mono border-slate-300">
             {pacientesFiltrados.length} encontrados
           </Badge>
         </CardTitle>
@@ -66,9 +66,9 @@ export const ListaPacientesPanel: React.FC<ListaPacientesPanelProps> = ({ pacien
             <div className="truncate">
               <p className="text-xs font-black text-slate-900 truncate flex items-center gap-1.5">
                 <span>Auditoría General</span>
-                <span className="text-[10px] font-semibold text-clinica-primary">(Todos)</span>
+                <span className="text-xs font-semibold text-clinica-primary">(Todos)</span>
               </p>
-              <p className="text-[10px] text-slate-500 truncate">
+              <p className="text-xs text-slate-500 truncate">
                 Historial consolidado de toda la clínica
               </p>
             </div>
@@ -76,7 +76,7 @@ export const ListaPacientesPanel: React.FC<ListaPacientesPanelProps> = ({ pacien
 
           <Badge
             variant="outline"
-            className={`text-[9px] font-mono shrink-0 ${
+            className={`text-xs font-mono shrink-0 ${
               !pacienteSeleccionado ? 'bg-white text-clinica-primary border-clinica-primary/30 font-bold' : 'bg-slate-100 text-slate-500'
             }`}
           >
@@ -115,11 +115,11 @@ export const ListaPacientesPanel: React.FC<ListaPacientesPanelProps> = ({ pacien
                       {p.nombre || 'Sin Nombre'}
                     </p>
                     <div className="flex items-center gap-1.5 mt-0.5">
-                      <span className="text-[11px] font-mono font-bold text-slate-600">
+                      <span className="text-xs font-mono font-bold text-slate-600">
                         {cedulaCanonica}
                       </span>
                       {p.fecha_nacimiento && (
-                        <span className="text-[10px] font-bold text-teal-700 bg-teal-50 px-1 rounded border border-teal-200">
+                        <span className="text-xs font-bold text-teal-700 bg-teal-50 px-1 rounded border border-teal-200">
                           {calcularEdadReal(p.fecha_nacimiento)} años
                         </span>
                       )}

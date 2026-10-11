@@ -299,12 +299,12 @@ export const UniversalDataView: React.FC<UniversalDataViewProps> = ({
           {/* Badges de Totales Resumen */}
           <div className="flex flex-wrap items-center gap-2.5">
             <div className="px-3 py-1.5 rounded-xl bg-slate-50 border border-slate-200/80 flex items-center gap-2">
-              <span className="text-[10px] uppercase font-bold text-slate-500">Total $</span>
+              <span className="text-xs uppercase font-bold text-slate-500">Total $</span>
               <span className="text-xs font-black text-[#1D7A70]">{formatUSD(sumPrincipal)}</span>
             </div>
             {sumBS > 0 && (
               <div className="px-3 py-1.5 rounded-xl bg-cyan-50/60 border border-cyan-200/60 flex items-center gap-2">
-                <span className="text-[10px] uppercase font-bold text-cyan-600">Total Bs.</span>
+                <span className="text-xs uppercase font-bold text-cyan-600">Total Bs.</span>
                 <span className="text-xs font-black text-cyan-900">{formatBS(sumBS)}</span>
               </div>
             )}
@@ -322,7 +322,7 @@ export const UniversalDataView: React.FC<UniversalDataViewProps> = ({
                 }`}
               >
                 <BarChart3 className="w-3.5 h-3.5" />
-                <span className="hidden md:inline text-[11px]">Barras</span>
+                <span className="hidden md:inline text-xs">Barras</span>
               </button>
 
               <button
@@ -336,7 +336,7 @@ export const UniversalDataView: React.FC<UniversalDataViewProps> = ({
                 }`}
               >
                 <LineChart className="w-3.5 h-3.5" />
-                <span className="hidden md:inline text-[11px]">Líneas</span>
+                <span className="hidden md:inline text-xs">Líneas</span>
               </button>
 
               <button
@@ -350,7 +350,7 @@ export const UniversalDataView: React.FC<UniversalDataViewProps> = ({
                 }`}
               >
                 <PieChart className="w-3.5 h-3.5" />
-                <span className="hidden md:inline text-[11px]">Donut</span>
+                <span className="hidden md:inline text-xs">Donut</span>
               </button>
 
               <button
@@ -364,7 +364,7 @@ export const UniversalDataView: React.FC<UniversalDataViewProps> = ({
                 }`}
               >
                 <Table2 className="w-3.5 h-3.5" />
-                <span className="hidden md:inline text-[11px]">Tabla</span>
+                <span className="hidden md:inline text-xs">Tabla</span>
               </button>
             </div>
 
@@ -588,7 +588,7 @@ export const UniversalDataView: React.FC<UniversalDataViewProps> = ({
                       className="pl-8 h-8 text-xs rounded-xl bg-slate-50/70 border-slate-200"
                     />
                   </div>
-                  <div className="text-[11px] text-slate-500 font-medium">
+                  <div className="text-xs text-slate-500 font-medium">
                     Mostrando {datosPaginados.length} de {datosFiltrados.length} registros
                   </div>
                 </div>
@@ -596,7 +596,7 @@ export const UniversalDataView: React.FC<UniversalDataViewProps> = ({
                 {/* Tabla de Datos */}
                 <div className="overflow-x-auto rounded-xl border border-slate-200/90 shadow-none">
                   <table className="w-full text-xs text-left">
-                    <thead className="bg-slate-50 text-slate-600 font-bold border-b border-slate-200 uppercase text-[10px] tracking-wider">
+                    <thead className="bg-slate-50 text-slate-600 font-bold border-b border-slate-200 uppercase text-xs tracking-wider">
                       <tr>
                         {cols.map((col, idx) => (
                           <th
@@ -663,7 +663,7 @@ export const UniversalDataView: React.FC<UniversalDataViewProps> = ({
                 {/* Controles de Paginación */}
                 {totalPaginas > 1 && (
                   <div className="flex items-center justify-between pt-1">
-                    <span className="text-[11px] text-slate-500">
+                    <span className="text-xs text-slate-500">
                       Página {paginaActual} de {totalPaginas}
                     </span>
                     <div className="flex items-center gap-1">

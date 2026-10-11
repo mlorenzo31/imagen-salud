@@ -20,7 +20,7 @@
   --radius-lg: 0.625rem;
   --radius-xl: 0.75rem;
   --radius-2xl: 0.875rem;
-  --radius-3xl: 1.125rem;
+  --radius-3xl: 0.875rem;
 
   /* Sombras suaves y difusas */
   --shadow-xs: 0 1px 1px rgb(15 40 40 / 0.04);
@@ -32,13 +32,55 @@
 
   /* Paleta oficial del isotipo, disponible como utilidades (bg-, text-, border-, from-, con opacidad) */
   --color-clinica-aquamarine: #80DDD2;
-  --color-clinica-primary: #2EA89B;
-  --color-clinica-primary-dark: #1D7A70;
+  --color-clinica-primary: #1F8377;
+  --color-clinica-primary-dark: #17665D;
   --color-clinica-dark: #1D7A70;
   --color-clinica-selection: #EBF9F7;
   --color-clinica-blue: #9BCEDF;
   --color-clinica-coral: #E76F3D;
   --color-clinica-coral-soft: #FDF2EC;
+
+  /* Tokens semánticos que usan los componentes base (Button, Input, Badge, Card). Sin ellos, bg-primary, border-input, etc. no pintaban nada. */
+  --color-primary: #1F8377;
+  --color-primary-foreground: #FFFFFF;
+  --color-secondary: #EEF3F3;
+  --color-secondary-foreground: #243234;
+  --color-accent: #EBF9F7;
+  --color-accent-foreground: #17665D;
+  --color-muted: #F6F9F9;
+  --color-muted-foreground: #647A7C;
+  --color-destructive: #B83232;
+  --color-card: #FFFFFF;
+  --color-card-foreground: #15201F;
+  --color-border: #E1E9E9;
+  --color-input: #C9D6D6;
+  --color-ring: #1F8377;
+
+  /* Un solo verde: el "esmeralda" de Tailwind pasa a la familia de la marca (antes convivían dos verdes distintos). */
+  --color-emerald-50: #EBF9F7;
+  --color-emerald-100: #D5F3EF;
+  --color-emerald-200: #ABE7DF;
+  --color-emerald-300: #80DDD2;
+  --color-emerald-400: #54C4B7;
+  --color-emerald-500: #2EA89B;
+  --color-emerald-600: #1F8377;
+  --color-emerald-700: #17665D;
+  --color-emerald-800: #124E48;
+  --color-emerald-900: #0D3B36;
+  --color-emerald-950: #082825;
+
+  /* Peligro: rojo sobrio, distinto del coral de la marca (el rose original era un rosa fucsia muy saturado). */
+  --color-rose-50: #FDF2F2;
+  --color-rose-100: #FBE3E3;
+  --color-rose-200: #F6C6C6;
+  --color-rose-300: #EE9D9D;
+  --color-rose-400: #E36B6B;
+  --color-rose-500: #D14343;
+  --color-rose-600: #B83232;
+  --color-rose-700: #962828;
+  --color-rose-800: #7A2424;
+  --color-rose-900: #5C1F1F;
+  --color-rose-950: #3D1414;
 
   /* Superficies opacas: sin esto, bg-background / bg-popover (diálogos, menús, botones "outline") quedaban transparentes */
   --color-background: #FFFFFF;
@@ -68,8 +110,8 @@
 
   /* Paleta Oficial Isotipo Imagen Salud */
   --clinica-aquamarine: #80DDD2;       /* RGB 128, 221, 210 Isotipo Principal */
-  --clinica-primary: #2EA89B;          /* Primario Alto Contraste Botones y Texto */
-  --clinica-primary-dark: #1D7A70;     /* Énfasis Oscuro Clínico */
+  --clinica-primary: #1F8377;          /* Primario: contraste 4.6:1 sobre blanco (AA) para botones y texto */
+  --clinica-primary-dark: #17665D;     /* Énfasis Oscuro Clínico */
   --clinica-selection: #EBF9F7;        /* Fondo Suave de Selección y Hover Activo */
   --clinica-blue-secondary: #9BCEDF;   /* Azul Suave Secundario */
   --clinica-coral: #E76F3D;            /* Acento Coral Alertas Críticas y Llamado Turno */
@@ -80,7 +122,7 @@
   --card-foreground: #15201F;
   --border: #E1E9E9;
   --input: #DCE5E5;
-  --ring: #2EA89B;
+  --ring: #1F8377;
 }
 
 body {
@@ -102,7 +144,7 @@ table { border-collapse: separate; border-spacing: 0; }
 thead th { letter-spacing: 0.04em; }
 
 /* Foco accesible con el color de marca */
-:focus-visible { outline: 2px solid #2EA89B; outline-offset: 2px; }
+:focus-visible { outline: 2px solid #1F8377; outline-offset: 2px; }
 
 /* Respeta la preferencia del sistema de reducir animaciones */
 @media (prefers-reduced-motion: reduce) {
@@ -119,13 +161,13 @@ thead th { letter-spacing: 0.04em; }
 .bg-clinica-aquamarine { background-color: #80DDD2; }
 .text-clinica-aquamarine { color: #80DDD2; }
 
-.bg-clinica-primary { background-color: #2EA89B; }
-.hover\:bg-clinica-primary:hover { background-color: #1D7A70; }
-.text-clinica-primary { color: #2EA89B; }
-.border-clinica-primary { border-color: #2EA89B; }
+.bg-clinica-primary { background-color: #1F8377; }
+.hover\:bg-clinica-primary:hover { background-color: #17665D; }
+.text-clinica-primary { color: #1F8377; }
+.border-clinica-primary { border-color: #1F8377; }
 
 .bg-clinica-selection { background-color: #EBF9F7; }
-.text-clinica-dark { color: #1D7A70; }
+.text-clinica-dark { color: #17665D; }
 
 .bg-clinica-blue { background-color: #9BCEDF; }
 .text-clinica-blue { color: #529BB3; }

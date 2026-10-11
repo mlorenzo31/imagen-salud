@@ -301,13 +301,13 @@ export default function PantallaTVSalaEspera() {
 
                     {/* Consultorio / Box Asignado */}
                     <div className="p-3 bg-white rounded-2xl border border-slate-200/90 shadow-sm">
-                      <p className="text-[11px] font-bold text-slate-500 uppercase tracking-wider">
+                      <p className="text-xs font-bold text-slate-500 uppercase tracking-wider">
                         Pasar a Consultorio / Box
                       </p>
                       <p className="text-sm font-black text-slate-800 mt-0.5">
                         {enAtencion.box_asignado || info.boxConsultorioDefecto}
                       </p>
-                      <p className="text-[11px] text-[#2EA89B] font-semibold mt-0.5 line-clamp-1">
+                      <p className="text-xs text-[#2EA89B] font-semibold mt-0.5 line-clamp-1">
                         {enAtencion.estudio}
                       </p>
                     </div>
@@ -337,7 +337,7 @@ export default function PantallaTVSalaEspera() {
               <div className="pt-4 border-t border-slate-100 space-y-2">
                 <div className="flex items-center justify-between text-xs font-bold text-slate-500">
                   <span>Próximos en Espera:</span>
-                  <span className="text-[11px] font-mono text-slate-500">Turno & Paciente</span>
+                  <span className="text-xs font-mono text-slate-500">Turno & Paciente</span>
                 </div>
 
                 {proximos.length === 0 ? (
@@ -361,12 +361,12 @@ export default function PantallaTVSalaEspera() {
                           <p className="font-bold text-slate-800 text-xs leading-none">
                             {p.nombre_paciente}
                           </p>
-                          <p className="text-[10px] text-slate-500 truncate max-w-[150px] mt-0.5">
+                          <p className="text-xs text-slate-500 truncate max-w-[150px] mt-0.5">
                             {p.estudio}
                           </p>
                         </div>
                       </div>
-                      <span className="text-[10px] text-slate-500 font-mono font-semibold">
+                      <span className="text-xs text-slate-500 font-mono font-semibold">
                         Pos #{idx + 1}
                       </span>
                     </div>
@@ -391,7 +391,7 @@ export default function PantallaTVSalaEspera() {
           <span>• Por favor permanezca atento a su llamado en pantalla y altavoz</span>
         </div>
 
-        <div className="flex items-center gap-4 text-[11px] text-slate-500">
+        <div className="flex items-center gap-4 text-xs text-slate-500">
           <span>Centro Clínico Radiológico Imagen Salud, C.A.</span>
           <span>•</span>
           <span className="font-mono">Resolución TV 4K Ultra HD</span>

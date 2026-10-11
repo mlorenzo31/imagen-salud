@@ -100,7 +100,7 @@ export const TableroKanban: React.FC<TableroKanbanProps> = ({ turnosTodos, turno
                     </span>
                     <div>
                       <h4 className="font-bold text-slate-900 text-xs">{p.nombre_paciente}</h4>
-                      <div className="flex flex-wrap items-center gap-1 text-[10px] text-slate-500">
+                      <div className="flex flex-wrap items-center gap-1 text-xs text-slate-500">
                         <span className="font-mono font-bold text-slate-600">{normalizarCedulaRif(p.cedula_paciente) || 'S/C'}</span>
                         {p.telefono_paciente && (
                           <>
@@ -124,24 +124,24 @@ export const TableroKanban: React.FC<TableroKanbanProps> = ({ turnosTodos, turno
                   
                   {/* Estado de WhatsApp */}
                   {whatsappEnviado ? (
-                    <Badge className="bg-emerald-100 text-emerald-800 text-[9px] font-bold border border-emerald-200 flex items-center gap-1">
+                    <Badge className="bg-emerald-100 text-emerald-800 text-xs font-bold border border-emerald-200 flex items-center gap-1">
                       <Check className="w-2.5 h-2.5" />
                       <span>Enviado</span>
                     </Badge>
                   ) : tieneAdjunto ? (
-                    <Badge className="bg-amber-100 text-amber-800 text-[9px] font-bold border border-amber-200 flex items-center gap-1">
+                    <Badge className="bg-amber-100 text-amber-800 text-xs font-bold border border-amber-200 flex items-center gap-1">
                       <Clock className="w-2.5 h-2.5" />
                       <span>Pendiente WA</span>
                     </Badge>
                   ) : (
-                    <Badge className="bg-rose-50 text-rose-700 text-[9px] font-bold border border-rose-200 flex items-center gap-1">
+                    <Badge className="bg-rose-50 text-rose-700 text-xs font-bold border border-rose-200 flex items-center gap-1">
                       <AlertTriangle className="w-2.5 h-2.5 text-rose-600" />
                       <span>Sin Adjunto</span>
                     </Badge>
                   )}
                 </div>
 
-                <p className="text-[11px] text-slate-600 font-medium truncate">{p.estudio}</p>
+                <p className="text-xs text-slate-600 font-medium truncate">{p.estudio}</p>
 
                 {/* Sección de Documento Adjunto (Informe/PDF/Imagen) */}
                 <div className={'p-2 rounded-xl text-xs flex items-center justify-between gap-2 border transition-all ' + (
@@ -151,7 +151,7 @@ export const TableroKanban: React.FC<TableroKanbanProps> = ({ turnosTodos, turno
                 )}>
                   <div className="flex items-center gap-1.5 truncate">
                     <Paperclip className={'w-3.5 h-3.5 shrink-0 ' + (tieneAdjunto ? 'text-emerald-600' : 'text-amber-500')} />
-                    <span className={'text-[11px] truncate font-mono ' + (tieneAdjunto ? 'text-slate-800 font-medium' : 'text-amber-800 font-semibold')}>
+                    <span className={'text-xs truncate font-mono ' + (tieneAdjunto ? 'text-slate-800 font-medium' : 'text-amber-800 font-semibold')}>
                       {p.adjunto_nombre || '⚠️ Sin informe adjunto'}
                     </span>
                   </div>
@@ -160,7 +160,7 @@ export const TableroKanban: React.FC<TableroKanbanProps> = ({ turnosTodos, turno
                     size="sm"
                     variant="ghost"
                     onClick={() => handleTriggerAdjunto(p.id)}
-                    className="h-6 px-2 text-[10px] font-bold text-clinica-primary hover:bg-clinica-selection rounded-lg shrink-0"
+                    className="h-6 px-2 text-xs font-bold text-clinica-primary hover:bg-clinica-selection rounded-lg shrink-0"
                     title="Subir o cambiar informe médico digital (PDF o imagen)"
                   >
                     <UploadCloud className="w-3 h-3 mr-1" />

@@ -178,7 +178,7 @@ export const BloqueoCierrePendiente: React.FC<BloqueoCierrePendienteProps> = ({
                   <Clock className="w-4 h-4 text-amber-600" />
                   <span>1. Pacientes Activos en Sala de Espera ({listaSala.length})</span>
                 </span>
-                <span className="text-[10px] text-amber-700">Resolver para cuadrar arqueo</span>
+                <span className="text-xs text-amber-700">Resolver para cuadrar arqueo</span>
               </div>
 
               <div className="space-y-2">
@@ -193,9 +193,9 @@ export const BloqueoCierrePendiente: React.FC<BloqueoCierrePendienteProps> = ({
                           #{p.numero_turno || p.id}
                         </span>
                         <strong className="text-slate-900">{p.paciente_nombre}</strong>
-                        <Badge className="bg-amber-100 text-amber-800 text-[9px]">{p.estado}</Badge>
+                        <Badge className="bg-amber-100 text-amber-800 text-xs">{p.estado}</Badge>
                       </div>
-                      <p className="text-slate-500 text-[11px] mt-0.5">{p.especialidad} • ${p.total_usd || 0} USD</p>
+                      <p className="text-slate-500 text-xs mt-0.5">{p.especialidad} • ${p.total_usd || 0} USD</p>
                     </div>
 
                     <div className="flex items-center gap-2 shrink-0">
@@ -203,7 +203,7 @@ export const BloqueoCierrePendiente: React.FC<BloqueoCierrePendienteProps> = ({
                         size="sm"
                         disabled={loadingId === p.id}
                         onClick={() => handleAccionSala(p.id, 'COMPLETAR')}
-                        className="bg-emerald-600 hover:bg-emerald-700 text-white text-[11px] font-bold rounded-xl h-7 px-2.5"
+                        className="bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold rounded-xl h-7 px-2.5"
                       >
                         Culminar
                       </Button>
@@ -212,7 +212,7 @@ export const BloqueoCierrePendiente: React.FC<BloqueoCierrePendienteProps> = ({
                         variant="outline"
                         disabled={loadingId === p.id}
                         onClick={() => handleAccionSala(p.id, 'ANULAR')}
-                        className="border-rose-200 text-rose-600 hover:bg-rose-50 text-[11px] font-bold rounded-xl h-7 px-2.5"
+                        className="border-rose-200 text-rose-600 hover:bg-rose-50 text-xs font-bold rounded-xl h-7 px-2.5"
                       >
                         Anular
                       </Button>
@@ -235,7 +235,7 @@ export const BloqueoCierrePendiente: React.FC<BloqueoCierrePendienteProps> = ({
                   size="sm"
                   disabled={despachandoMasivo}
                   onClick={handleDespachoMasivo}
-                  className="bg-emerald-600 hover:bg-emerald-700 text-white text-[10px] font-bold h-6 px-2 rounded-lg"
+                  className="bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold h-6 px-2 rounded-lg"
                 >
                   {despachandoMasivo ? 'Enviando...' : 'Despachar Todos'}
                 </Button>
@@ -253,9 +253,9 @@ export const BloqueoCierrePendiente: React.FC<BloqueoCierrePendienteProps> = ({
                           #{p.numero_turno || p.id}
                         </span>
                         <strong className="text-slate-900">{p.paciente_nombre}</strong>
-                        <Badge className="bg-amber-100 text-amber-800 text-[9px]">WhatsApp Pendiente</Badge>
+                        <Badge className="bg-amber-100 text-amber-800 text-xs">WhatsApp Pendiente</Badge>
                       </div>
-                      <p className="text-slate-500 text-[11px] mt-0.5">
+                      <p className="text-slate-500 text-xs mt-0.5">
                         {p.especialidad} • Adjunto: {p.adjunto_nombre || 'Informe Digital'}
                       </p>
                     </div>
@@ -265,7 +265,7 @@ export const BloqueoCierrePendiente: React.FC<BloqueoCierrePendienteProps> = ({
                         size="sm"
                         disabled={loadingId === p.id}
                         onClick={() => handleDespacharWhatsApp(p)}
-                        className="bg-emerald-600 hover:bg-emerald-700 text-white text-[11px] font-bold rounded-xl h-7 px-2.5 flex items-center gap-1"
+                        className="bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold rounded-xl h-7 px-2.5 flex items-center gap-1"
                       >
                         <MessageCircle className="w-3 h-3" />
                         <span>Enviar WhatsApp</span>

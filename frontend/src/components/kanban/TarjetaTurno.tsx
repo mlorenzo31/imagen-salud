@@ -26,7 +26,7 @@ function Datos({ t }: { t: FilaSala }) {
   return (
     <div>
       <h4 className="font-bold text-slate-900 text-sm leading-snug">{t.nombre_paciente}</h4>
-      <div className="flex flex-wrap items-center gap-1.5 text-[11px] text-slate-500 font-medium">
+      <div className="flex flex-wrap items-center gap-1.5 text-xs text-slate-500 font-medium">
         <span className="font-mono text-slate-700 font-bold">{normalizarCedulaRif(t.cedula_paciente ?? '') || 'S/C'}</span>
         {edad && <><span>•</span><span className="font-bold text-teal-700">{edad}</span></>}
       </div>
@@ -45,7 +45,7 @@ function Hermanos({ t, todos }: { t: FilaSala; todos: FilaSala[] }) {
         <span
           key={o.id}
           title={o.estudio}
-          className={'text-[10px] font-semibold px-2 py-0.5 rounded-full border ' + (
+          className={'text-xs font-semibold px-2 py-0.5 rounded-full border ' + (
             o.estado === 'ATENCION' ? 'bg-blue-50 text-blue-700 border-blue-200' : 'bg-slate-50 text-slate-600 border-slate-200'
           )}
         >
@@ -83,15 +83,15 @@ export const TarjetaEspera: React.FC<PropsEspera> = ({ turno: t, todos, isReadOn
           <Datos t={t} />
         </div>
         <div className="flex flex-col items-end gap-1">
-          <Badge className={'text-[10px] font-bold ' + colorGrupo(t.grupo)}>Grupo {t.grupo}</Badge>
-          {t.retorno && <Badge className="bg-clinica-coral text-white text-[9px] font-bold">Retorno prioritario</Badge>}
-          {t.ausencias > 0 && <Badge className="bg-amber-100 text-amber-800 text-[9px] font-bold">Ausente {t.ausencias}×</Badge>}
+          <Badge className={'text-xs font-bold ' + colorGrupo(t.grupo)}>Grupo {t.grupo}</Badge>
+          {t.retorno && <Badge className="bg-clinica-coral text-white text-xs font-bold">Retorno prioritario</Badge>}
+          {t.ausencias > 0 && <Badge className="bg-amber-100 text-amber-800 text-xs font-bold">Ausente {t.ausencias}×</Badge>}
         </div>
       </div>
 
       <div className="p-2.5 bg-slate-50 rounded-xl space-y-1 text-xs">
         <p className="text-slate-800 font-semibold">{t.estudio}</p>
-        <div className="flex items-center justify-between text-[11px] text-slate-500 gap-2">
+        <div className="flex items-center justify-between text-xs text-slate-500 gap-2">
           <span>{RECURSOS[t.recurso].etiqueta}{t.recurso !== 'CONS' ? ` · ${RECURSOS[t.recurso].boxes[0]}` : ''}</span>
           <span className="truncate">{t.medico || 'De guardia'}</span>
         </div>
@@ -100,7 +100,7 @@ export const TarjetaEspera: React.FC<PropsEspera> = ({ turno: t, todos, isReadOn
             value={box}
             onChange={(e) => setBox(e.target.value)}
             disabled={isReadOnly}
-            className="mt-1 w-full text-[11px] rounded-lg border border-slate-200 bg-white px-2 py-1 text-slate-700"
+            className="mt-1 w-full text-xs rounded-lg border border-slate-200 bg-white px-2 py-1 text-slate-700"
             aria-label="Consultorio"
           >
             <option value="">Consultorio: el primero libre</option>
@@ -112,7 +112,7 @@ export const TarjetaEspera: React.FC<PropsEspera> = ({ turno: t, todos, isReadOn
       <Hermanos t={t} todos={todos} />
 
       {bloqueo && (
-        <div className="p-2 bg-amber-50 border border-amber-200 rounded-xl text-[11px] text-amber-800 font-medium flex items-start gap-1.5">
+        <div className="p-2 bg-amber-50 border border-amber-200 rounded-xl text-xs text-amber-800 font-medium flex items-start gap-1.5">
           <AlertTriangle className="w-3.5 h-3.5 text-amber-600 shrink-0 mt-px" />
           <span>{bloqueo}</span>
         </div>
@@ -169,12 +169,12 @@ export const TarjetaAtencion: React.FC<PropsAtencion> = ({ turno: t, todos, isRe
           <span className="font-mono text-base font-black px-2.5 py-1 bg-blue-600 text-white rounded-xl animate-pulse">{codigo(t)}</span>
           <Datos t={t} />
         </div>
-        <Badge className="bg-blue-100 text-blue-800 text-[10px] font-bold">Grupo {t.grupo}</Badge>
+        <Badge className="bg-blue-100 text-blue-800 text-xs font-bold">Grupo {t.grupo}</Badge>
       </div>
 
       <div className="p-2.5 bg-blue-50/50 rounded-xl space-y-1 text-xs">
         <p className="text-slate-800 font-semibold">{t.estudio}</p>
-        <p className="text-slate-500 text-[11px] flex items-center gap-1"><ArrowRightLeft className="w-3 h-3" />{t.box ?? RECURSOS[t.recurso].boxes[0]}</p>
+        <p className="text-slate-500 text-xs flex items-center gap-1"><ArrowRightLeft className="w-3 h-3" />{t.box ?? RECURSOS[t.recurso].boxes[0]}</p>
       </div>
 
       <Hermanos t={t} todos={todos} />

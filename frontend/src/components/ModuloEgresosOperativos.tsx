@@ -488,7 +488,7 @@ export const ModuloEgresosOperativos: React.FC<ModuloEgresosOperativosProps> = (
                 <ArrowDownRight className="w-4 h-4 text-rose-600" />
                 Formulario de Salida de Dinero (Gasto Operativo)
               </span>
-              <Badge className="bg-rose-100 text-rose-800 font-mono text-[10px] font-bold">
+              <Badge className="bg-rose-100 text-rose-800 font-mono text-xs font-bold">
                 Débito en Bóveda
               </Badge>
             </CardTitle>
@@ -536,7 +536,7 @@ export const ModuloEgresosOperativos: React.FC<ModuloEgresosOperativosProps> = (
               <div>
                 <label className="block text-xs font-bold text-slate-700 mb-1.5 flex items-center justify-between">
                   <span>Concepto Libre / Justificación del Gasto *</span>
-                  <span className="text-[10px] text-slate-500 font-normal">Texto descriptivo obligatorio para auditoría</span>
+                  <span className="text-xs text-slate-500 font-normal">Texto descriptivo obligatorio para auditoría</span>
                 </label>
                 <Input
                   value={egresoConceptoLibre}
@@ -606,17 +606,17 @@ export const ModuloEgresosOperativos: React.FC<ModuloEgresosOperativosProps> = (
                     <Smartphone className="w-4 h-4 text-amber-600" />
                     Validación Manual de Comisión Bancaria (Comprobante Real)
                   </span>
-                  <Badge className="bg-amber-200 text-amber-900 text-[10px] font-bold border border-amber-300">
+                  <Badge className="bg-amber-200 text-amber-900 text-xs font-bold border border-amber-300">
                     Manual 100%
                   </Badge>
                 </div>
-                <p className="text-[11px] text-amber-800 leading-relaxed">
+                <p className="text-xs text-amber-800 leading-relaxed">
                   Ingrese manualmente el monto exacto de la comisión o tarifa bancaria cobrada en el comprobante (0 si no aplica comisión).
                 </p>
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-1">
                   <div>
-                    <label className="block text-[11px] font-bold text-amber-900 mb-1">
+                    <label className="block text-xs font-bold text-amber-900 mb-1">
                       Comisión Bancaria Manual ({cuentaEgresoSeleccionada?.moneda || 'Bs'})
                     </label>
                     <Input
@@ -631,13 +631,13 @@ export const ModuloEgresosOperativos: React.FC<ModuloEgresosOperativosProps> = (
                   </div>
 
                   <div className="p-3 bg-white rounded-xl border border-amber-200 flex flex-col justify-center">
-                    <p className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">
+                    <p className="text-xs font-bold text-slate-500 uppercase tracking-wider">
                       Total Real a Debitar en Cuenta:
                     </p>
                     <p className="text-base font-black font-mono text-rose-700 mt-0.5">
                       {totalDebitadoEgreso.toLocaleString('es-VE', { minimumFractionDigits: 2 })} {cuentaEgresoSeleccionada?.moneda || 'Bs'}
                     </p>
-                    <p className="text-[9px] text-slate-500">
+                    <p className="text-xs text-slate-500">
                       ({montoEgresoNum.toFixed(2)} Neto + {comisionPMNum.toFixed(2)} Comisión Manual)
                     </p>
                   </div>
@@ -665,7 +665,7 @@ export const ModuloEgresosOperativos: React.FC<ModuloEgresosOperativosProps> = (
                 <ArrowUpRight className="w-4 h-4 text-emerald-600" />
                 Formulario de Entrada Extraordinaria de Fondos
               </span>
-              <Badge className="bg-emerald-100 text-emerald-800 font-mono text-[10px] font-bold">
+              <Badge className="bg-emerald-100 text-emerald-800 font-mono text-xs font-bold">
                 Crédito en Bóveda
               </Badge>
             </CardTitle>
@@ -713,7 +713,7 @@ export const ModuloEgresosOperativos: React.FC<ModuloEgresosOperativosProps> = (
               <div>
                 <label className="block text-xs font-bold text-slate-700 mb-1.5 flex items-center justify-between">
                   <span>Concepto Libre / Detalle de Entrada *</span>
-                  <span className="text-[10px] text-slate-500 font-normal">Justificación contable de la entrada</span>
+                  <span className="text-xs text-slate-500 font-normal">Justificación contable de la entrada</span>
                 </label>
                 <Input
                   value={ingresoConceptoLibre}
@@ -839,7 +839,7 @@ export const ModuloEgresosOperativos: React.FC<ModuloEgresosOperativosProps> = (
           <Card className="bg-white border-slate-200 shadow-sm rounded-2xl overflow-hidden">
             <div className="overflow-x-auto">
               <table className="w-full text-left text-xs">
-                <thead className="bg-slate-50 border-b border-slate-200 text-slate-500 uppercase text-[10px] font-black">
+                <thead className="bg-slate-50 border-b border-slate-200 text-slate-500 uppercase text-xs font-black">
                   <tr>
                     <th className="p-3">Ref/ID</th>
                     <th className="p-3">Tipo</th>
@@ -866,7 +866,7 @@ export const ModuloEgresosOperativos: React.FC<ModuloEgresosOperativosProps> = (
                           #{item.id} • {item.referencia}
                         </td>
                         <td className="p-3">
-                          <Badge className={item.tipo === 'EGRESO' ? 'bg-rose-100 text-rose-800 font-bold text-[10px]' : 'bg-emerald-100 text-emerald-800 font-bold text-[10px]'}>
+                          <Badge className={item.tipo === 'EGRESO' ? 'bg-rose-100 text-rose-800 font-bold text-xs' : 'bg-emerald-100 text-emerald-800 font-bold text-xs'}>
                             {item.tipo === 'EGRESO' ? 'Egreso' : 'Ingreso Extra'}
                           </Badge>
                         </td>
@@ -884,7 +884,7 @@ export const ModuloEgresosOperativos: React.FC<ModuloEgresosOperativosProps> = (
                         <td className="p-3 text-right font-mono font-black text-rose-600">
                           {item.tipo === 'EGRESO' ? `-${(item.total_debitado || item.monto).toLocaleString('es-VE', { minimumFractionDigits: 2 })}` : `+${item.monto.toLocaleString('es-VE', { minimumFractionDigits: 2 })}`} {item.moneda}
                         </td>
-                        <td className="p-3 text-center text-slate-500 font-mono text-[10px]">
+                        <td className="p-3 text-center text-slate-500 font-mono text-xs">
                           {item.fecha}
                         </td>
                       </tr>

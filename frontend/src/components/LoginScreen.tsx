@@ -69,7 +69,7 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({ onLoginSuccess }) => {
                 <Lock className="w-4 h-4 text-clinica-primary" />
                 Acceso al Sistema Clínico
               </span>
-              <Badge className="bg-clinica-selection text-clinica-dark border border-clinica-aquamarine/40 text-[10px] font-mono">
+              <Badge className="bg-clinica-selection text-clinica-dark border border-clinica-aquamarine/40 text-xs font-mono">
                 Enterprise v4.8
               </Badge>
             </CardTitle>
@@ -186,7 +186,7 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({ onLoginSuccess }) => {
               <button
                 type="button"
                 onClick={() => setRecuperando(true)}
-                className="text-[11px] font-bold text-clinica-primary hover:underline"
+                className="text-xs font-bold text-clinica-primary hover:underline"
               >
                 ¿Olvidó su clave?
               </button>
@@ -197,7 +197,7 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({ onLoginSuccess }) => {
         <RecuperarClave open={recuperando} usuarioInicial={usuario} onCerrar={() => setRecuperando(false)} />
 
         {/* Footer Institucional */}
-        <div className="text-center space-y-1 text-[11px] text-slate-500">
+        <div className="text-center space-y-1 text-xs text-slate-500">
           <p>© 2026 Centro Clínico Radiológico Imagen Salud, C.A.</p>
           <p>Módulos auditados conforme a estándares hospitalarios y providencias fiscales SENIAT</p>
         </div>
