@@ -4,10 +4,11 @@ import * as React from 'react';
 import { CheckCircle2, AlertCircle, Info, TriangleAlert, X } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 
 /**
- * Avisos y confirmaciones propios (sin dependencias): reemplazan alert() y confirm() del navegador.
+ * Avisos, confirmaciones y preguntas propios (sin dependencias): reemplazan alert(), confirm() y prompt() del navegador.
  *   const { avisar, confirmar } = useAvisos();
  *   avisar({ tipo: 'exito', mensaje: 'Paciente registrado.' });
  *   if (await confirmar({ titulo: 'Anular factura', mensaje: '…', textoConfirmar: 'Anular', tono: 'peligro' })) { … }
@@ -16,12 +17,16 @@ export type TipoAviso = 'exito' | 'error' | 'alerta' | 'info';
 
 interface OpcionesAviso { tipo?: TipoAviso; titulo?: string; mensaje: string; duracionMs?: number }
 interface OpcionesConfirmar { titulo: string; mensaje?: string; textoConfirmar?: string; textoCancelar?: string; tono?: 'normal' | 'peligro' }
+interface OpcionesPreguntar { titulo: string; mensaje?: string; valorInicial?: string; placeholder?: string; textoConfirmar?: string; inputMode?: 'text' | 'tel' | 'numeric' }
+interface PreguntaActiva extends OpcionesPreguntar { resolver: (v: string | null) => void }
 interface AvisoActivo extends OpcionesAviso { id: number; tipo: TipoAviso }
 interface ConfirmacionActiva extends OpcionesConfirmar { resolver: (v: boolean) => void }
 
 interface Contexto {
   avisar: (o: OpcionesAviso | string) => void;
   confirmar: (o: OpcionesConfirmar) => Promise<boolean>;
+  /** Pide un dato corto en un diálogo propio (reemplaza prompt()). Devuelve null si se cancela. */
+  preguntar: (o: OpcionesPreguntar) => Promise<string | null>;
 }
 
 const AvisosContext = React.createContext<Contexto | null>(null);
@@ -37,6 +42,8 @@ const ESTILO: Record<TipoAviso, { icono: React.ElementType; clase: string; icono
 export function AvisosProvider({ children }: { children: React.ReactNode }) {
   const [avisos, setAvisos] = React.useState<AvisoActivo[]>([]);
   const [confirmacion, setConfirmacion] = React.useState<ConfirmacionActiva | null>(null);
+  const [pregunta, setPregunta] = React.useState<PreguntaActiva | null>(null);
+  const [respuesta, setRespuesta] = React.useState('');
   const siguienteId = React.useRef(0);
 
   const cerrar = React.useCallback((id: number) => setAvisos((a) => a.filter((x) => x.id !== id)), []);
@@ -54,12 +61,22 @@ export function AvisosProvider({ children }: { children: React.ReactNode }) {
     []
   );
 
+  const preguntar = React.useCallback(
+    (o: OpcionesPreguntar) => new Promise<string | null>((resolver) => { setRespuesta(o.valorInicial ?? ''); setPregunta({ ...o, resolver }); }),
+    []
+  );
+
+  const responderPregunta = (valor: string | null) => {
+    pregunta?.resolver(valor);
+    setPregunta(null);
+  };
+
   const responder = (valor: boolean) => {
     confirmacion?.resolver(valor);
     setConfirmacion(null);
   };
 
-  const valor = React.useMemo(() => ({ avisar, confirmar }), [avisar, confirmar]);
+  const valor = React.useMemo(() => ({ avisar, confirmar, preguntar }), [avisar, confirmar, preguntar]);
 
   return (
     <AvisosContext.Provider value={valor}>
@@ -103,6 +120,32 @@ export function AvisosProvider({ children }: { children: React.ReactNode }) {
               {confirmacion?.textoConfirmar ?? 'Confirmar'}
             </Button>
           </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={pregunta !== null} onOpenChange={(abierto) => { if (!abierto) responderPregunta(null); }}>
+        <DialogContent showCloseButton={false} className="sm:max-w-md">
+          <form
+            className="grid gap-4"
+            onSubmit={(e) => { e.preventDefault(); const v = respuesta.trim(); if (v) responderPregunta(v); }}
+          >
+            <DialogHeader>
+              <DialogTitle>{pregunta?.titulo}</DialogTitle>
+              {pregunta?.mensaje && <DialogDescription>{pregunta.mensaje}</DialogDescription>}
+            </DialogHeader>
+            <Input
+              autoFocus
+              value={respuesta}
+              onChange={(e) => setRespuesta(e.target.value)}
+              placeholder={pregunta?.placeholder}
+              inputMode={pregunta?.inputMode}
+              aria-label={pregunta?.titulo}
+            />
+            <DialogFooter>
+              <Button type="button" variant="outline" onClick={() => responderPregunta(null)}>Cancelar</Button>
+              <Button type="submit" disabled={!respuesta.trim()}>{pregunta?.textoConfirmar ?? 'Aceptar'}</Button>
+            </DialogFooter>
+          </form>
         </DialogContent>
       </Dialog>
     </AvisosContext.Provider>

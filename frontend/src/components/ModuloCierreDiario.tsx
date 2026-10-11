@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
+import { useAvisos } from '@/components/ui/avisos';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -26,6 +27,7 @@ interface ModuloCierreDiarioProps {
 }
 
 export const ModuloCierreDiario: React.FC<ModuloCierreDiarioProps> = ({ currentRole }) => {
+  const { avisar } = useAvisos();
   const isAdmin = currentRole === 'admin';
   const [fechaCierre, setFechaCierre] = useState(() => hoyLocal());
   const [estadoDiario, setEstadoDiario] = useState<{
@@ -140,7 +142,7 @@ export const ModuloCierreDiario: React.FC<ModuloCierreDiarioProps> = ({ currentR
       }
     } catch (err) {
       console.error(err);
-      alert('Error de conexión');
+      avisar({ tipo: 'error', mensaje: 'Error de conexión' });
     } finally {
       setEjecutandoCierre(false);
     }

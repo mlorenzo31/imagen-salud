@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState } from 'react';
+import { useAvisos } from '@/components/ui/avisos';
 import { CuentaBancaria, registrarEgresoOperativo } from '@/lib/api';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
@@ -21,6 +22,7 @@ export const ModalEgreso: React.FC<ModalEgresoProps> = ({
   cuentas,
   onSuccess
 }) => {
+  const { avisar, confirmar } = useAvisos();
   const [cuentaId, setCuentaId] = useState<number>(4); // Pago Móvil por defecto
   const [categoria, setCategoria] = useState<string>('Gastos Operativos');
   const [conceptoLibre, setConceptoLibre] = useState<string>('');
@@ -51,7 +53,12 @@ export const ModalEgreso: React.FC<ModalEgresoProps> = ({
     }
 
     if (isPagoMovil && comisionNum === 0) {
-      const confirmaCero = confirm('Ha indicado 0.00 Bs de comisión bancaria para el Pago Móvil.\n¿El comprobante bancario no cobró comisión?');
+      const confirmaCero = await confirmar({
+        titulo: 'Comisión bancaria en 0,00 Bs',
+        mensaje: 'Indicó 0,00 Bs de comisión para el Pago Móvil. ¿El comprobante bancario no cobró comisión?',
+        textoConfirmar: 'Sí, sin comisión',
+        textoCancelar: 'Revisar',
+      });
       if (!confirmaCero) return;
     }
 
@@ -74,7 +81,7 @@ export const ModalEgreso: React.FC<ModalEgresoProps> = ({
         usuario: 'Administrador'
       });
 
-      alert('Egreso operativo registrado exitosamente con doble asiento contable.');
+      avisar({ tipo: 'exito', mensaje: 'Egreso operativo registrado exitosamente con doble asiento contable.' });
       onSuccess();
       onOpenChange(false);
       // Reset form

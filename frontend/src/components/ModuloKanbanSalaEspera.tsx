@@ -69,7 +69,7 @@ export const ModuloKanbanSalaEspera: React.FC<ModuloKanbanSalaEsperaProps> = ({
   const [pacientes, setPacientes] = useState<PacienteTurno[]>([]);
   const [turnos, setTurnos] = useState<FilaSala[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
-  const { avisar, confirmar } = useAvisos();
+  const { avisar, confirmar, preguntar } = useAvisos();
   const soloLectura = () => avisar({ tipo: 'alerta', mensaje: 'Modo Vista activo: no se pueden hacer cambios.' });
   const [filtroGrupo, setFiltroGrupo] = useState<'TODOS' | 'A' | 'B' | 'C'>('TODOS');
   const [llamandoId, setLlamandoId] = useState<number | null>(null);
@@ -235,7 +235,13 @@ export const ModuloKanbanSalaEspera: React.FC<ModuloKanbanSalaEsperaProps> = ({
 
     let tel = (p.telefono_paciente || '').replace(/\D/g, '');
     if (!tel) {
-      const inputTel = prompt('Ingrese el número de WhatsApp del paciente (ej: 04141234567 o 584141234567):', '04141234567');
+      const inputTel = await preguntar({
+        titulo: 'WhatsApp del paciente',
+        mensaje: 'El paciente no tiene teléfono registrado. Ingrese su número (ej: 04141234567 o 584141234567).',
+        placeholder: '04141234567',
+        inputMode: 'tel',
+        textoConfirmar: 'Enviar',
+      });
       if (!inputTel) return;
       tel = inputTel.replace(/\D/g, '');
     }

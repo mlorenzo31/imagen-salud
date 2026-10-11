@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import { useAvisos } from '@/components/ui/avisos';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -54,6 +55,7 @@ const bs = (n: number) => `Bs. ${n.toLocaleString('es-VE', { minimumFractionDigi
  * y, al confirmar el abono del banco, el servidor acredita el neto en la cuenta, registra la comisión y asienta el movimiento.
  */
 export const ModuloConciliacionPOS: React.FC<Props> = ({ currentRole, modoOperacion, onConciliacionCompletada }) => {
+  const { avisar } = useAvisos();
   const [lotes, setLotes] = useState<Lote[]>([]);
   const [cargando, setCargando] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -119,7 +121,7 @@ export const ModuloConciliacionPOS: React.FC<Props> = ({ currentRole, modoOperac
   };
 
   const abrirConciliar = (l: Lote) => {
-    if (soloLectura) return alert('Modo Vista activo.');
+    if (soloLectura) return avisar({ tipo: 'alerta', mensaje: 'Modo Vista activo.' });
     setLoteActivo(l);
     setNeto('');
     setReferencia(`ABONO-${l.medio === 'PAGO_MOVIL' ? 'PM' : 'POS'}-${l.fecha.replaceAll('-', '')}`);

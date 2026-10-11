@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState } from 'react';
+import { useAvisos } from '@/components/ui/avisos';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -40,6 +41,7 @@ export const ModalCargaMasivaExcel: React.FC<ModalCargaMasivaExcelProps> = ({
   onOpenChange,
   onSuccess
 }) => {
+  const { avisar } = useAvisos();
   const [file, setFile] = useState<File | null>(null);
   const [loading, setLoading] = useState<boolean>(false);
   const [simulationResult, setSimulationResult] = useState<SimulacionExcel | null>(null);
@@ -96,7 +98,7 @@ export const ModalCargaMasivaExcel: React.FC<ModalCargaMasivaExcelProps> = ({
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || 'Error al importar datos');
 
-      alert(data.mensaje);
+      avisar({ tipo: 'exito', mensaje: data.mensaje });
       onSuccess();
       onOpenChange(false);
       setFile(null);
