@@ -20,7 +20,6 @@ import {
   Plus,
   RefreshCw,
   Printer,
-  ShieldCheck,
   AlertCircle,
   Building2,
   Percent,
@@ -33,60 +32,15 @@ import { hoyLocal } from '@/lib/date';
 interface ModuloRetencionesSeniatProps {
   currentRole: UserRole;
   modoOperacion: ModoOperacion;
-  tasaBcv?: number;
+  tasaBcv: number;
 }
 
 export const ModuloRetencionesSeniat: React.FC<ModuloRetencionesSeniatProps> = ({
   currentRole,
   modoOperacion,
-  tasaBcv = 832.49
+  tasaBcv
 }) => {
-  const [retenciones, setRetenciones] = useState<RetencionSENIAT[]>([
-    {
-      id: 1,
-      nro_comprobante: '20260900000001',
-      periodo_fiscal: '2026-09',
-      fecha_emision: '2026-09-12',
-      paciente_cliente: 'Seguros Mercantil, C.A.',
-      cedula_rif: 'J-00012345-6',
-      factura_asociada_id: 'FAC-001045',
-      base_imponible_usd: 120.00,
-      base_imponible_bs: 99898.80,
-      tasa_bcv: 832.49,
-      iva_total_bs: 15983.81,
-      porcentaje_iva_retenido: 75,
-      monto_iva_retenido_bs: 11987.86,
-      porcentaje_islr_retenido: 2,
-      monto_islr_retenido_bs: 1997.98,
-      total_retenido_bs: 13985.84,
-      total_retenido_usd: 16.80,
-      estado: 'APLICADA',
-      usuario: 'Asistente Administrativo',
-      observaciones: 'Retención corporativa convenio mercantil 75% IVA + 2% ISLR'
-    },
-    {
-      id: 2,
-      nro_comprobante: '20260900000002',
-      periodo_fiscal: '2026-09',
-      fecha_emision: '2026-09-13',
-      paciente_cliente: 'Banesco Banco Universal',
-      cedula_rif: 'J-07013380-5',
-      factura_asociada_id: 'FAC-001089',
-      base_imponible_usd: 250.00,
-      base_imponible_bs: 208122.50,
-      tasa_bcv: 832.49,
-      iva_total_bs: 33299.60,
-      porcentaje_iva_retenido: 100,
-      monto_iva_retenido_bs: 33299.60,
-      porcentaje_islr_retenido: 3,
-      monto_islr_retenido_bs: 6243.68,
-      total_retenido_bs: 39543.28,
-      total_retenido_usd: 47.50,
-      estado: 'APLICADA',
-      usuario: 'Director Médico (Admin)',
-      observaciones: 'Contribuyente especial 100% IVA retenido'
-    }
-  ]);
+  const [retenciones, setRetenciones] = useState<RetencionSENIAT[]>([]);
 
   const [searchQuery, setSearchQuery] = useState('');
   const [openModal, setOpenModal] = useState(false);
@@ -131,6 +85,10 @@ export const ModuloRetencionesSeniat: React.FC<ModuloRetencionesSeniatProps> = (
       alert('Ingrese una base imponible válida.');
       return;
     }
+    if (!(tasaBcv > 0)) {
+      alert('No hay tasa BCV vigente. Espere a que cargue la tasa e intente de nuevo.');
+      return;
+    }
 
     setSubmitting(true);
     setTimeout(() => {
@@ -166,7 +124,7 @@ export const ModuloRetencionesSeniat: React.FC<ModuloRetencionesSeniatProps> = (
       setFormBaseUsd('');
       setFormObs('');
       setSubmitting(false);
-      alert(`✓ Comprobante SENIAT N° ${nuevoNumero} emitido y aplicado a la cuenta.`);
+      alert(`Comprobante N° ${nuevoNumero} creado en esta pantalla. Aún no se guarda en el sistema: se pierde al recargar. Expórtelo si lo necesita.`);
     }, 400);
   };
 
@@ -293,8 +251,12 @@ export const ModuloRetencionesSeniat: React.FC<ModuloRetencionesSeniatProps> = (
         </div>
       </div>
 
+      <div role="note" className="rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-xs text-amber-800">
+        Esta pantalla aún no guarda los comprobantes en el sistema: los que cree se pierden al recargar la página. Use Excel o PDF para conservarlos.
+      </div>
+
       {/* Tarjetas KPI */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
         <Card className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
           <p className="text-[11px] font-bold text-slate-500 uppercase tracking-wider">Total Retenido (Bs)</p>
           <h3 className="text-2xl font-black text-clinica-primary mt-1">
@@ -308,7 +270,7 @@ export const ModuloRetencionesSeniat: React.FC<ModuloRetencionesSeniatProps> = (
           <h3 className="text-2xl font-black text-slate-900 mt-1">
             $ {totalRetenidoUsdAcumulado.toFixed(2)}
           </h3>
-          <p className="text-[11px] text-slate-500 mt-1">Tasa oficial BCV Bs. {tasaBcv.toFixed(2)}</p>
+          <p className="text-[11px] text-slate-500 mt-1">{tasaBcv > 0 ? `Tasa oficial BCV Bs. ${tasaBcv.toFixed(2)}` : 'Tasa BCV no disponible'}</p>
         </Card>
 
         <Card className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
@@ -317,15 +279,6 @@ export const ModuloRetencionesSeniat: React.FC<ModuloRetencionesSeniatProps> = (
             {retencionesFiltradas.length}
           </h3>
           <p className="text-[11px] text-slate-500 mt-1">Período {periodoActual}</p>
-        </Card>
-
-        <Card className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
-          <p className="text-[11px] font-bold text-slate-500 uppercase tracking-wider">Estado de Validación</p>
-          <div className="flex items-center gap-1.5 mt-1">
-            <ShieldCheck className="w-5 h-5 text-emerald-600" />
-            <span className="text-sm font-bold text-emerald-700">100% Conciliado</span>
-          </div>
-          <p className="text-[11px] text-slate-500 mt-1">Sin descuadres fiscales</p>
         </Card>
       </div>
 
@@ -362,7 +315,7 @@ export const ModuloRetencionesSeniat: React.FC<ModuloRetencionesSeniatProps> = (
               {retencionesFiltradas.length === 0 ? (
                 <tr>
                   <td colSpan={8} className="p-8 text-center text-slate-500">
-                    No se encontraron comprobantes de retención para la búsqueda.
+                    {retenciones.length === 0 ? 'Aún no hay comprobantes de retención.' : 'No se encontraron comprobantes para la búsqueda.'}
                   </td>
                 </tr>
               ) : (
