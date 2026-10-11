@@ -12,4 +12,21 @@ function Skeleton({ className, ...props }: React.ComponentProps<"div">) {
   )
 }
 
-export { Skeleton }
+/** Filas de tabla en carga: úsese dentro de <tbody> mientras llegan los datos. */
+function FilasSkeleton({ columnas, filas = 5 }: { columnas: number; filas?: number }) {
+  return (
+    <>
+      {Array.from({ length: filas }, (_, i) => (
+        <tr key={i} aria-hidden="true">
+          {Array.from({ length: columnas }, (_, j) => (
+            <td key={j} className="p-3">
+              <Skeleton className="h-4 w-full max-w-[9rem]" />
+            </td>
+          ))}
+        </tr>
+      ))}
+    </>
+  )
+}
+
+export { Skeleton, FilasSkeleton }

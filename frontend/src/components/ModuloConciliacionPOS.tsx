@@ -1,5 +1,6 @@
 'use client';
 
+import { FilasSkeleton } from '@/components/ui/skeleton';
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { useAvisos } from '@/components/ui/avisos';
 import { Card, CardContent } from '@/components/ui/card';
@@ -234,9 +235,9 @@ export const ModuloConciliacionPOS: React.FC<Props> = ({ currentRole, modoOperac
                 </tr>
               </thead>
               <tbody>
-                {visibles.length === 0 && (
-                  <tr><td colSpan={8} className="py-10 text-center text-slate-500">{cargando ? 'Cargando…' : 'No hay cobros con tarjeta para mostrar.'}</td></tr>
-                )}
+                {visibles.length === 0 && (cargando
+                  ? <FilasSkeleton columnas={8} />
+                  : <tr><td colSpan={8} className="py-10 text-center text-slate-500">No hay cobros con tarjeta para mostrar.</td></tr>)}
                 {visibles.map((l) => (
                   <React.Fragment key={claveLote(l)}>
                     <tr className="border-b border-slate-100 hover:bg-slate-50/60">
