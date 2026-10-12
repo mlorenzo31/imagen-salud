@@ -70,10 +70,16 @@ export async function POST(request: NextRequest) {
       const cuenta = await client.query(
         "SELECT id, saldo_actual, saldo_transito FROM cuentas_bancarias WHERE codigo = $1 FOR UPDATE", [info.cuenta]
       );
-      if (cuenta.rows.length > 0) {
+      if (cuenta.rows.length === 0) throw new ApiError(500, `No existe la cuenta ${info.cuenta} para abonar la conciliación.`);
+      {
         const c = cuenta.rows[0];
         const saldoAnt = toCents(c.saldo_actual);
-        const nuevoTransito = Math.max(0, toCents(c.saldo_transito) - brutoCents);
+        const transitoAnt = toCents(c.saldo_transito);
+        // El tránsito siempre debe cubrir lo pendiente: si no alcanza, hay un descuadre que no se oculta.
+        if (transitoAnt < brutoCents) {
+          throw new ApiError(409, `El saldo en tránsito de ${info.etiqueta} (Bs. ${centsToStr(transitoAnt)}) es menor que el lote a conciliar (Bs. ${centsToStr(brutoCents)}). Revise el descuadre antes de conciliar.`, 'TRANSITO_DESCUADRADO');
+        }
+        const nuevoTransito = transitoAnt - brutoCents;
         const nuevoActual = saldoAnt + netoCents;
         await client.query(
           'UPDATE cuentas_bancarias SET saldo_transito = $1, saldo_actual = $2, actualizado_en = NOW() WHERE id = $3',

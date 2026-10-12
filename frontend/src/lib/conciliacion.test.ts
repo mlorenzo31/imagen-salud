@@ -12,6 +12,15 @@ describe('repartirProporcional', () => {
   it('reparte en proporción a cada monto', () => {
     expect(repartirProporcional([6000, 4000], 1000)).toEqual([600, 400]);
   });
+  it('ninguna parte es negativa ni supera el total, aun con comisiones mínimas y montos iguales', () => {
+    expect(repartirProporcional([1000, 1000, 1000, 1000], 2)).toEqual([1, 1, 0, 0]);
+    expect(repartirProporcional([5000, 5000, 5000, 5000, 5000, 5000], 3)).toEqual([1, 1, 1, 0, 0, 0]);
+    for (const [montos, total] of [[[1000, 1000, 1000, 1000], 2], [[5000, 5000, 5000, 5000, 5000, 5000], 3], [[1, 2, 3, 4, 5, 6, 7], 13], [[999, 1, 1], 2]] as [number[], number][]) {
+      const partes = repartirProporcional(montos, total);
+      expect(partes.reduce((a, p) => a + p, 0)).toBe(total);
+      expect(partes.every((p) => p >= 0 && p <= total)).toBe(true);
+    }
+  });
   it('maneja lista vacía y bruto cero', () => {
     expect(repartirProporcional([], 50)).toEqual([]);
     expect(repartirProporcional([0, 0], 50)).toEqual([0, 50]);
