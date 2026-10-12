@@ -1,7 +1,7 @@
 'use client';
 
 import { useFechaOperacion } from './FechaOperacion';
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect, useCallback } from 'react';
 import { useAvisos } from '@/components/ui/avisos';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -19,6 +19,10 @@ import { exportarAExcel, exportarAPDF } from '@/lib/exportUtils';
 import { HonorarioMedico, ModoOperacion, UserRole, DataPoint } from '@/types';
 import { UniversalDataView } from '@/components/analytics/UniversalDataView';
 import { getErrorMessage } from '@/lib/utils';
+import { toCents, centsToStr } from '@/lib/money';
+import { DeudaMedico } from '@/components/honorarios/DeudaMedico';
+import { diferir } from '@/lib/diferir';
+import type { DeudaMedico as DeudaMedicoT } from '@/lib/deudasHonorariosDb';
 
 interface TablaHonorariosProps {
   items: HonorarioMedico[];
@@ -59,6 +63,27 @@ export const TablaHonorarios: React.FC<TablaHonorariosProps> = ({
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
 
   const isReadOnly = modoOperacion === 'vista';
+
+  // Deudas de médicos: honorarios ya pagados de facturas anuladas que se descuentan al liquidar o se devuelven.
+  const [deudas, setDeudas] = useState<DeudaMedicoT[]>([]);
+  const cargarDeudas = useCallback(async () => {
+    try {
+      const res = await fetch('/api/tesoreria/honorarios/deudas');
+      if (res.ok) setDeudas(await res.json());
+    } catch {
+      /* sin conexión: la pantalla sigue sin el bloque de deudas */
+    }
+  }, []);
+  useEffect(() => diferir(cargarDeudas), [cargarDeudas]);
+  const claveMedico = (m: string) => m.trim().toUpperCase();
+  const deudaDe = (medico: string) => deudas.find((d) => claveMedico(d.medico) === claveMedico(medico));
+  const conDeuda = deudas.filter((d) => d.saldoUsd > 0);
+
+  // Desglose de la liquidación del médico elegido, en centavos (misma regla que el servidor: min(deuda, adeudado)).
+  const adeudadoCents = selectedDoctor ? toCents(selectedDoctor.total_usd) : 0;
+  const deudaCents = selectedDoctor ? toCents(deudaDe(selectedDoctor.medico)?.saldoUsd ?? 0) : 0;
+  const descuentoCents = Math.max(0, Math.min(deudaCents, adeudadoCents));
+  const aPagarCents = adeudadoCents - descuentoCents;
 
   // Especialidades únicas
   const especialidades = useMemo(() => {
@@ -167,6 +192,7 @@ export const TablaHonorarios: React.FC<TablaHonorariosProps> = ({
 
       setSelectedDoctor(null);
       if (onLiquidarSuccess) onLiquidarSuccess();
+      void cargarDeudas();
       avisar({ tipo: 'exito', mensaje: `Honorarios de ${selectedDoctor.medico} liquidados exitosamente.` });
     } catch (err) {
       setErrorMsg(getErrorMessage(err));
@@ -379,6 +405,18 @@ export const TablaHonorarios: React.FC<TablaHonorariosProps> = ({
       )}
 
       {/* Tabla de Honorarios con Trazabilidad Expandible */}
+      {conDeuda.length > 0 && (
+        <Card className="rounded-2xl border border-amber-200 bg-white p-4 shadow-sm space-y-2">
+          <div>
+            <h3 className="text-sm font-bold text-slate-900">Deudas de médicos</h3>
+            <p className="text-xs text-slate-500">Honorarios ya pagados de facturas anuladas. Se descuentan solos en la próxima liquidación o se registran como devolución.</p>
+          </div>
+          {conDeuda.map((d) => (
+            <DeudaMedico key={d.medico} deuda={d} tasaBcv={tasaReferencia} soloLectura={isReadOnly} onCambio={() => void cargarDeudas()} />
+          ))}
+        </Card>
+      )}
+
       <Card className="rounded-2xl border border-slate-200 bg-white shadow-sm overflow-hidden">
         <div className="overflow-x-auto">
           <table className="w-full text-left text-xs">
@@ -412,6 +450,9 @@ export const TablaHonorarios: React.FC<TablaHonorariosProps> = ({
                           <span className="flex items-center gap-2">
                             <span className="w-2 h-2 rounded-full bg-clinica-primary"></span>
                             <span>{doc.medico}</span>
+                            {(deudaDe(doc.medico)?.saldoUsd ?? 0) > 0 && (
+                              <Badge className="border border-amber-300 bg-amber-100 text-amber-900 text-xs">Debe ${deudaDe(doc.medico)!.saldoUsd.toFixed(2)}</Badge>
+                            )}
                           </span>
                         </td>
                         <td className="p-3">
@@ -545,13 +586,21 @@ export const TablaHonorarios: React.FC<TablaHonorariosProps> = ({
                 </div>
                 <span>Liquidar Honorarios: {selectedDoctor.medico}</span>
               </DialogTitle>
-              <div className="flex justify-between items-center bg-slate-50 p-3 rounded-xl border border-slate-200 text-xs mt-2">
-                <div>
-                  <span className="text-slate-500">Total a Liquidar:</span>
-                  <span className="font-mono font-black text-clinica-primary text-base ml-1.5">${selectedDoctor.total_usd.toFixed(2)} USD</span>
-                </div>
-                <div className="text-right font-mono text-slate-600 font-bold">
-                  ≈ Bs. {(selectedDoctor.total_usd * selectedDoctor.tasa_bcv).toLocaleString('es-VE', { minimumFractionDigits: 2 })}
+              <div className="bg-slate-50 p-3 rounded-xl border border-slate-200 text-xs mt-2 space-y-1">
+                {descuentoCents > 0 && (
+                  <>
+                    <div className="flex justify-between"><span className="text-slate-500">Adeudado</span><span className="font-mono font-bold">${centsToStr(adeudadoCents)}</span></div>
+                    <div className="flex justify-between"><span className="text-slate-500">Descuento por deuda</span><span className="font-mono font-bold text-amber-700">−${centsToStr(descuentoCents)}</span></div>
+                  </>
+                )}
+                <div className="flex justify-between items-center">
+                  <span>
+                    <span className="text-slate-500">A pagar:</span>
+                    <span className="font-mono font-black text-clinica-primary text-base ml-1.5">${centsToStr(aPagarCents)} USD</span>
+                  </span>
+                  <span className="text-right font-mono text-slate-600 font-bold">
+                    ≈ Bs. {((aPagarCents / 100) * selectedDoctor.tasa_bcv).toLocaleString('es-VE', { minimumFractionDigits: 2 })}
+                  </span>
                 </div>
               </div>
             </DialogHeader>
@@ -667,7 +716,7 @@ export const TablaHonorarios: React.FC<TablaHonorariosProps> = ({
                   disabled={loading || fechaOp.incompleta}
                   className="bg-clinica-primary hover:bg-clinica-primary-dark text-white text-xs font-bold rounded-xl shadow-md"
                 >
-                  {loading ? 'Procesando...' : 'Confirmar Liquidación y Egresar'}
+                  {loading ? 'Procesando...' : aPagarCents === 0 ? 'Registrar liquidación (cubierta por deuda)' : 'Confirmar Liquidación y Egresar'}
                 </Button>
               </DialogFooter>
             </form>
