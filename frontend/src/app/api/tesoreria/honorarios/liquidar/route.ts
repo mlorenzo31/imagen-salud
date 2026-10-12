@@ -6,7 +6,7 @@ import { camposFechaOperacion, resolverFechaOperacion } from '@/lib/fechaOperaci
 import { ApiError, parseBody, sesionUsuario, withTransaction, errorResponse } from '@/lib/apiHelpers';
 import { centsToNumber, centsToStr, toCents } from '@/lib/money';
 import { validarSeleccionHonorarios } from '@/lib/liquidacionHonorarios';
-import { cuadraPago, descuentoAplicable, usdDeBs } from '@/lib/deudasHonorarios';
+import { cuadraPago, descuentoAplicable, usdDeBs, validarMontosLiquidacion } from '@/lib/deudasHonorarios';
 import { asegurarDeudasHonorarios, bloquearYSaldo, registrarMovDeuda } from '@/lib/deudasHonorariosDb';
 
 const monto = z.union([z.string(), z.number()]).optional();
@@ -73,6 +73,7 @@ export async function POST(request: NextRequest) {
       // La deuda del médico (honorarios pagados de facturas anuladas) se descuenta sola, sin bajar de cero.
       const descuento = descuentoAplicable(deuda, sumaUsd);
       const aPagar = sumaUsd - descuento;
+      validarMontosLiquidacion(aPagar, { pm, comPm, efBs, efUsd });
       // Cuadre: lo entregado (Bs convertidos a la tasa informada + USD) debe igualar lo que hay que pagar; la comisión no cuenta.
       const entregadoUsd = usdDeBs(pm + efBs, tasa) + efUsd;
       if (!cuadraPago(entregadoUsd, aPagar)) {

@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { ApiError } from './apiHelpers';
-import { claveMedico, cuadraPago, descuentoAplicable, exigirSaldoValido, saldoDeuda, usdDeBs, validarDevolucion } from './deudasHonorarios';
+import { claveMedico, cuadraPago, validarMontosLiquidacion, descuentoAplicable, exigirSaldoValido, saldoDeuda, usdDeBs, validarDevolucion } from './deudasHonorarios';
 
 describe('saldoDeuda', () => {
   it('suma cargos y resta abonos, en centavos', () => {
@@ -51,5 +51,19 @@ describe('validarDevolucion', () => {
     expect(() => validarDevolucion(0, 1000)).toThrow(ApiError);
     expect(() => validarDevolucion(500, 0)).toThrow(ApiError);
     expect(() => validarDevolucion(1000, 1000)).not.toThrow();
+  });
+});
+
+describe('validarMontosLiquidacion', () => {
+  const cero = { pm: 0, comPm: 0, efBs: 0, efUsd: 0 };
+  it('si la deuda cubre todo (a pagar 0), no admite ningún monto, ni céntimos ni comisión', () => {
+    expect(() => validarMontosLiquidacion(0, cero)).not.toThrow();
+    expect(() => validarMontosLiquidacion(0, { ...cero, pm: 2100 })).toThrow(ApiError);
+    expect(() => validarMontosLiquidacion(0, { ...cero, efUsd: 2 })).toThrow(ApiError);
+    expect(() => validarMontosLiquidacion(0, { ...cero, comPm: 500 })).toThrow(ApiError);
+  });
+  it('no admite comisión de pago móvil sin pago móvil', () => {
+    expect(() => validarMontosLiquidacion(2000, { ...cero, efUsd: 2000, comPm: 500 })).toThrow(/comisión/);
+    expect(() => validarMontosLiquidacion(2000, { ...cero, pm: 1749464, comPm: 500 })).not.toThrow();
   });
 });

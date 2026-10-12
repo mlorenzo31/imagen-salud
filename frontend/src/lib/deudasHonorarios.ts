@@ -40,3 +40,14 @@ export function validarDevolucion(montoUsdCents: number, deudaCents: number): vo
     throw new ApiError(400, `La devolución ($${centsToStr(montoUsdCents)}) supera la deuda del médico ($${centsToStr(deudaCents)}).`);
   }
 }
+
+/**
+ * Montos de una liquidación: si la deuda cubre todo, no sale dinero de ninguna cuenta (ni céntimos dentro de la
+ * tolerancia del cuadre, ni una comisión suelta); y nunca se cobra comisión de pago móvil sin pago móvil.
+ */
+export function validarMontosLiquidacion(aPagarCents: number, m: { pm: number; comPm: number; efBs: number; efUsd: number }): void {
+  if (aPagarCents === 0 && (m.pm !== 0 || m.comPm !== 0 || m.efBs !== 0 || m.efUsd !== 0)) {
+    throw new ApiError(400, 'La deuda del médico cubre toda la liquidación: no escriba montos de pago.');
+  }
+  if (m.comPm > 0 && m.pm === 0) throw new ApiError(400, 'Hay comisión de pago móvil sin monto de pago móvil.');
+}

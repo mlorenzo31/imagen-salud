@@ -3,6 +3,7 @@ import pool from '@/lib/db';
 import { errorResponse, fechaHoraLocal, sesionUsuario } from '@/lib/apiHelpers';
 import { esAnulada } from '@/lib/estados';
 import { revertirTesoreriaPorAnulacion } from '@/lib/anulacion';
+import { asegurarDeudasHonorarios } from '@/lib/deudasHonorariosDb';
 import { actorSesion, registrarBitacora } from '@/lib/bitacora';
 
 export async function POST(req: NextRequest) {
@@ -10,6 +11,8 @@ export async function POST(req: NextRequest) {
     const { registro_id, accion } = await req.json();
     const usuario = sesionUsuario(req);
 
+    // El libro de deudas debe existir antes de la transacción (ver revertirTesoreriaPorAnulacion).
+    await asegurarDeudasHonorarios();
     const client = await pool.connect();
     try {
       await client.query('BEGIN');

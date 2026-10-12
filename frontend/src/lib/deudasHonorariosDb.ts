@@ -9,6 +9,9 @@ let listo: Promise<void> | null = null;
 export function asegurarDeudasHonorarios(): Promise<void> {
   if (!listo) {
     listo = (async () => {
+      // Consulta de catálogo, sin bloqueos: si la tabla ya existe con RLS (el último paso), no se ejecuta DDL.
+      const ya = await pool.query("SELECT relrowsecurity FROM pg_class WHERE oid = to_regclass('deudas_honorarios')");
+      if (ya.rows[0]?.relrowsecurity === true) return;
       await pool.query(`
         CREATE TABLE IF NOT EXISTS deudas_honorarios (
           id                SERIAL PRIMARY KEY,
