@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { ApiError, errorResponse, sesionUsuario, withTransaction } from '@/lib/apiHelpers';
 import { esAnulada } from '@/lib/estados';
 import { revertirTesoreriaPorAnulacion } from '@/lib/anulacion';
+import { asegurarDeudasHonorarios } from '@/lib/deudasHonorariosDb';
 import { actorSesion, registrarBitacora } from '@/lib/bitacora';
 
 const ALLOWED_FIELDS = [
@@ -44,6 +45,8 @@ export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: 
     }
     if (fields.length === 0) throw new ApiError(400, 'No hay campos para actualizar.');
 
+    // El libro de deudas debe existir antes de la transacción: la anulación puede registrar un CARGO y el DDL no corre con filas bloqueadas.
+    await asegurarDeudasHonorarios();
     const out = await withTransaction(async (client) => {
       const actual = await client.query('SELECT estado FROM facturas_caja WHERE id = $1 FOR UPDATE', [id]);
       if (actual.rows.length === 0) throw new ApiError(404, 'Factura no encontrada.');

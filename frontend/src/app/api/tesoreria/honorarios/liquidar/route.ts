@@ -4,8 +4,10 @@ import { z } from 'zod';
 import { marcarCierreModificado } from '@/lib/cierre';
 import { camposFechaOperacion, resolverFechaOperacion } from '@/lib/fechaOperacion';
 import { ApiError, parseBody, sesionUsuario, withTransaction, errorResponse } from '@/lib/apiHelpers';
-import { centsToStr, toCents } from '@/lib/money';
+import { centsToNumber, centsToStr, toCents } from '@/lib/money';
 import { validarSeleccionHonorarios } from '@/lib/liquidacionHonorarios';
+import { cuadraPago, descuentoAplicable, usdDeBs, validarMontosLiquidacion } from '@/lib/deudasHonorarios';
+import { asegurarDeudasHonorarios, bloquearYSaldo, registrarMovDeuda } from '@/lib/deudasHonorariosDb';
 
 const monto = z.union([z.string(), z.number()]).optional();
 const schema = z.object({
@@ -56,7 +58,10 @@ export async function POST(request: NextRequest) {
     const tasa = Number(b.tasa_cambio_bcv);
     if (!Number.isFinite(tasa) || tasa <= 0) throw new ApiError(400, 'Debe indicar una tasa BCV válida.');
 
+    await asegurarDeudasHonorarios();
     const out = await withTransaction(async (client) => {
+      // El candado del médico va antes de leer su deuda: dos liquidaciones simultáneas no la descuentan dos veces.
+      const deuda = await bloquearYSaldo(client, b.medico);
       const hon = await client.query(
         `SELECT id, medico, estado, monto_usd FROM honorarios_medicos_pendientes
          WHERE id = ANY($1::int[]) FOR UPDATE`,
@@ -65,10 +70,14 @@ export async function POST(request: NextRequest) {
       validarSeleccionHonorarios(b.honorarios_ids, hon.rows, b.medico);
       const sumaUsd = hon.rows.reduce((acc, r) => acc + toCents(r.monto_usd), 0);
 
-      // Cuadre: lo entregado (Bs convertidos a la tasa informada + USD) debe igualar lo adeudado; la comisión no cuenta.
-      const entregadoUsd = Math.round((pm + efBs) / tasa) + efUsd;
-      if (Math.abs(entregadoUsd - sumaUsd) > 2) {
-        throw new ApiError(400, `El pago no cubre la liquidación: entregado $${centsToStr(entregadoUsd)} vs adeudado $${centsToStr(sumaUsd)}.`);
+      // La deuda del médico (honorarios pagados de facturas anuladas) se descuenta sola, sin bajar de cero.
+      const descuento = descuentoAplicable(deuda, sumaUsd);
+      const aPagar = sumaUsd - descuento;
+      validarMontosLiquidacion(aPagar, { pm, comPm, efBs, efUsd });
+      // Cuadre: lo entregado (Bs convertidos a la tasa informada + USD) debe igualar lo que hay que pagar; la comisión no cuenta.
+      const entregadoUsd = usdDeBs(pm + efBs, tasa) + efUsd;
+      if (!cuadraPago(entregadoUsd, aPagar)) {
+        throw new ApiError(400, `El pago no cubre la liquidación: entregado $${centsToStr(entregadoUsd)} vs a pagar $${centsToStr(aPagar)} (descuento por deuda $${centsToStr(descuento)}).`);
       }
 
       const referencia = b.referencia || `HON-${Date.now()}`;
@@ -80,6 +89,10 @@ export async function POST(request: NextRequest) {
          centsToStr(efBs), centsToStr(efUsd), referencia, (b.observaciones || '') + nota, usuario]
       );
       const pago = pagoRes.rows[0];
+      await registrarMovDeuda(client, {
+        medico: b.medico, tipo: 'ABONO_LIQUIDACION', cents: descuento, pagoHonorarioId: pago.id, fecha, usuario,
+        descripcion: `Descuento en liquidación ${pago.id}`,
+      });
       await client.query(
         `UPDATE honorarios_medicos_pendientes SET estado = 'PAGADO', pago_id = $1 WHERE id = ANY($2::int[])`,
         [pago.id, hon.rows.map((r) => r.id)]
@@ -99,14 +112,16 @@ export async function POST(request: NextRequest) {
           descripcion: `Pago honorarios Dr(a). ${b.medico} en Efectivo Divisas ($)` }, ctx);
       }
       if (diaCerrado) await marcarCierreModificado(client, fecha, motivo, usuario);
-      return { pago, count: hon.rows.length, sumaUsd };
+      return { pago, count: hon.rows.length, sumaUsd, descuento, aPagar };
     });
 
     return NextResponse.json({
       mensaje: `Liquidación de honorarios a Dr(a). ${b.medico} ejecutada exitosamente.`,
       pago: out.pago,
       honorariosLiquidados: out.count,
-      totalUsd: Number(centsToStr(out.sumaUsd)),
+      totalUsd: centsToNumber(out.sumaUsd),
+      descuentoDeudaUsd: centsToNumber(out.descuento),
+      aPagarUsd: centsToNumber(out.aPagar),
     });
   } catch (err) {
     return errorResponse(err);

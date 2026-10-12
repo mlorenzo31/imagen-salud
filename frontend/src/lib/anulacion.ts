@@ -2,6 +2,7 @@ import type { PoolClient } from 'pg';
 import { centsToStr, toCents } from '@/lib/money';
 import { fechaHoraLocal } from '@/lib/apiHelpers';
 import { registrarDevolucion } from '@/lib/devoluciones';
+import { registrarMovDeuda } from '@/lib/deudasHonorariosDb';
 import { MEDIOS_TRANSITO, asegurarMedioTransito, medioValido } from '@/lib/transito';
 
 export interface ResultadoAnulacion {
@@ -29,6 +30,7 @@ async function movimiento(client: PoolClient, codigo: string, cents: number, mon
 }
 
 /**
+ * Requiere `asegurarDeudasHonorarios()` llamado ANTES de abrir la transacción (el DDL no debe correr con filas bloqueadas).
  * Revierte los efectos contables de una factura que pasa a anulada. Idempotente: si ya existe un asiento
  * ANULACION_FACTURA para la factura, no hace nada. Debe llamarse dentro de una transacción con la factura bloqueada.
  */
@@ -46,9 +48,15 @@ export async function revertirTesoreriaPorAnulacion(client: PoolClient, facturaI
 
   // 1. Honorarios: los pendientes se anulan; los ya pagados requieren recuperación con el médico.
   await client.query("UPDATE honorarios_medicos_pendientes SET estado = 'ANULADO' WHERE factura_id = $1 AND estado = 'PENDIENTE'", [facturaId]);
-  const pagados = await client.query("SELECT medico, monto_usd FROM honorarios_medicos_pendientes WHERE factura_id = $1 AND estado = 'PAGADO'", [facturaId]);
+  // Los ya pagados quedan como deuda del médico: se descuenta en su próxima liquidación o la devuelve.
+  const pagados = await client.query("SELECT id, medico, monto_usd FROM honorarios_medicos_pendientes WHERE factura_id = $1 AND estado = 'PAGADO'", [facturaId]);
   for (const h of pagados.rows) {
-    advertencias.push(`Honorario ya liquidado a ${h.medico} ($${centsToStr(toCents(h.monto_usd))}): debe compensarse en su próxima liquidación.`);
+    const cents = toCents(h.monto_usd);
+    await registrarMovDeuda(client, {
+      medico: h.medico, tipo: 'CARGO', cents, honorarioId: h.id, facturaId, fecha, usuario,
+      descripcion: `Anulación factura ${facturaId}${motivo ? `: ${motivo}` : ''}`,
+    });
+    advertencias.push(`Se registró una deuda de $${centsToStr(cents)} a ${h.medico}; se descontará en su próxima liquidación.`);
   }
 
   // 2. Punto de venta: pendiente → sale del tránsito; ya conciliado → se debita lo acreditado por el banco.
