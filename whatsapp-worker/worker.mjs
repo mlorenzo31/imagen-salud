@@ -15,6 +15,7 @@ const db = new pg.Pool({
   ssl: DATABASE_SSL === 'false' ? false : { rejectUnauthorized: false },
   max: 3,
 });
+db.on('error', (err) => console.error('[DB Pool Error]', err.message));
 const log = pino({ level: 'warn' });
 const MAX_INTENTOS = 3;
 const pausa = (ms) => new Promise((r) => setTimeout(r, ms));
