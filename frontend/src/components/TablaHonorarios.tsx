@@ -91,18 +91,8 @@ export const TablaHonorarios: React.FC<TablaHonorariosProps> = ({
     return ['TODAS', ...list];
   }, [items]);
 
-  // Generar trazabilidad estimada de pagos por especialista si no viene del backend
-  const obtenerTrazabilidad = (doc: HonorarioMedico) => {
-    if (doc.desglose_pagos) return doc.desglose_pagos;
-    // Estimación estadística clínica típica: 50% POS, 30% Pago Móvil, 10% Efectivo Bs, 10% USD
-    const total = doc.total_usd;
-    return {
-      punto_de_venta_usd: parseFloat((total * 0.50).toFixed(2)),
-      pago_movil_usd: parseFloat((total * 0.30).toFixed(2)),
-      efectivo_bs_usd: parseFloat((total * 0.10).toFixed(2)),
-      divisas_usd: parseFloat((total * 0.10).toFixed(2))
-    };
-  };
+  // Desglose real de cobro por forma de pago (viene del servidor). Sin él no se muestra nada: nunca se estima.
+  const obtenerTrazabilidad = (doc: HonorarioMedico) => doc.desglose_pagos ?? null;
 
   // Filtrado
   const itemsFiltrados = useMemo(() => {
@@ -213,10 +203,10 @@ export const TablaHonorarios: React.FC<TablaHonorariosProps> = ({
         'Total a Liquidar ($ USD)': doc.total_usd,
         'Tasa Oficial BCV': doc.tasa_bcv,
         'Total a Liquidar (Bs)': doc.total_usd * doc.tasa_bcv,
-        'Abono en POS ($)': traz.punto_de_venta_usd,
-        'Abono en Pago Móvil ($)': traz.pago_movil_usd,
-        'Abono en Efectivo Bs ($)': traz.efectivo_bs_usd,
-        'Abono en Divisas ($)': traz.divisas_usd
+        'Abono en POS ($)': traz?.punto_de_venta_usd ?? '',
+        'Abono en Pago Móvil ($)': traz?.pago_movil_usd ?? '',
+        'Abono en Efectivo Bs ($)': traz?.efectivo_bs_usd ?? '',
+        'Abono en Divisas ($)': traz?.divisas_usd ?? ''
       };
     });
 
@@ -507,6 +497,9 @@ export const TablaHonorarios: React.FC<TablaHonorariosProps> = ({
                                 <span className="text-xs text-slate-500">Permite planificar la modalidad de liquidación</span>
                               </div>
 
+                              {!traz ? (
+                                <p className="text-xs text-slate-500">Sin desglose de cobro disponible para este médico.</p>
+                              ) : (
                               <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
                                 {/* POS */}
                                 <div className="p-3 bg-slate-50 rounded-xl border border-slate-200">
@@ -562,6 +555,7 @@ export const TablaHonorarios: React.FC<TablaHonorariosProps> = ({
                                   <p className="text-xs font-mono text-slate-500">Directo en Bóveda Divisas</p>
                                 </div>
                               </div>
+                              )}
                             </div>
                           </td>
                         </tr>
