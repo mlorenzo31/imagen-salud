@@ -5,6 +5,7 @@ import { marcarCierreModificado } from '@/lib/cierre';
 import { camposFechaOperacion, resolverFechaOperacion } from '@/lib/fechaOperacion';
 import { ApiError, parseBody, sesionUsuario, withTransaction, errorResponse } from '@/lib/apiHelpers';
 import { centsToStr, toCents } from '@/lib/money';
+import { validarSeleccionHonorarios } from '@/lib/liquidacionHonorarios';
 
 const monto = z.union([z.string(), z.number()]).optional();
 const schema = z.object({
@@ -57,11 +58,11 @@ export async function POST(request: NextRequest) {
 
     const out = await withTransaction(async (client) => {
       const hon = await client.query(
-        `SELECT id, monto_usd FROM honorarios_medicos_pendientes
-         WHERE id = ANY($1::int[]) AND estado = 'PENDIENTE' FOR UPDATE`,
+        `SELECT id, medico, estado, monto_usd FROM honorarios_medicos_pendientes
+         WHERE id = ANY($1::int[]) FOR UPDATE`,
         [b.honorarios_ids]
       );
-      if (hon.rows.length === 0) throw new ApiError(400, 'Los honorarios seleccionados ya fueron pagados o no existen.');
+      validarSeleccionHonorarios(b.honorarios_ids, hon.rows, b.medico);
       const sumaUsd = hon.rows.reduce((acc, r) => acc + toCents(r.monto_usd), 0);
 
       // Cuadre: lo entregado (Bs convertidos a la tasa informada + USD) debe igualar lo adeudado; la comisión no cuenta.
