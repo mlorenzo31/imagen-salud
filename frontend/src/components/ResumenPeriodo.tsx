@@ -5,11 +5,13 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
-import { TrendingUp } from 'lucide-react';
+import { FileSpreadsheet, TrendingUp } from 'lucide-react';
 import { hoyLocal } from '@/lib/date';
 import { diferir } from '@/lib/diferir';
 import { getErrorMessage } from '@/lib/utils';
 import { rangoValido, type ResumenPeriodo as Resumen, type Totales } from '@/lib/resumenPeriodo';
+import { filasExcelHojaCierre, type FilaHoja } from '@/lib/hojaCierre';
+import { descargarExcel } from '@/lib/excel';
 
 type Respuesta = Resumen & { desde: string; hasta: string; totalFacturado: number };
 
@@ -68,8 +70,26 @@ export const ResumenPeriodo: React.FC<{ fechaInicial: string }> = ({ fechaInicia
 
   useEffect(() => diferir(() => { void consultar(fechaInicial, fechaInicial); setDesde(fechaInicial); setHasta(fechaInicial); }), [fechaInicial, consultar]);
 
+  const [exportando, setExportando] = useState(false);
+  const exportarHoja = async () => {
+    const err = rangoValido(desde, hasta);
+    if (err) { setError(err); return; }
+    setExportando(true);
+    setError(null);
+    try {
+      const r = await fetch(`/api/cierres/hoja-cierre?desde=${desde}&hasta=${hasta}`);
+      const j = (await r.json()) as { filas: FilaHoja[]; total: FilaHoja; error?: string };
+      if (!r.ok) throw new Error(j.error ?? 'No se pudo generar la hoja de cierre.');
+      await descargarExcel(`Cierre_diario_${desde}_a_${hasta}.xlsx`, [{ nombreHoja: 'CIERRE DIARIO', data: filasExcelHojaCierre(j), anchoMinimo: 12 }]);
+    } catch (e) {
+      setError(getErrorMessage(e));
+    } finally {
+      setExportando(false);
+    }
+  };
+
   const hoy = hoyLocal();
-  const atajo = (d: string, h: string) => { setDesde(d); setHasta(h); void consultar(d, h); };
+  const atajo =(d: string, h: string) => { setDesde(d); setHasta(h); void consultar(d, h); };
 
   return (
     <Card className="border-slate-200 bg-white shadow-sm">
@@ -83,6 +103,9 @@ export const ResumenPeriodo: React.FC<{ fechaInicial: string }> = ({ fechaInicia
           <Button size="sm" disabled={cargando} onClick={() => void consultar(desde, hasta)} className="rounded-lg text-xs font-bold">{cargando ? 'Consultando…' : 'Consultar'}</Button>
           <Button size="sm" variant="outline" className="rounded-lg text-xs" onClick={() => atajo(fechaInicial, fechaInicial)}>Día del cierre</Button>
           <Button size="sm" variant="outline" className="rounded-lg text-xs" onClick={() => atajo(`${hoy.slice(0, 8)}01`, hoy)}>Mes actual</Button>
+          <Button size="sm" variant="outline" disabled={exportando} onClick={() => void exportarHoja()} className="rounded-lg text-xs font-bold">
+            <FileSpreadsheet className="h-3.5 w-3.5" />{exportando ? 'Generando…' : 'Exportar hoja de cierre (Excel)'}
+          </Button>
         </div>
         {error && <p className="mt-2 text-xs font-bold text-rose-700">{error}</p>}
       </CardHeader>
