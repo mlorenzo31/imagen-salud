@@ -83,9 +83,9 @@ export async function POST(request: NextRequest) {
       const referencia = b.referencia || `HON-${Date.now()}`;
       const pagoRes = await client.query(
         `INSERT INTO pagos_honorarios
-         (medico, fecha_pago, dias_liquidados, total_usd_liquidado, tasa_cambio_bcv, pago_movil_bs, comision_pago_movil_bs, efectivo_bs, efectivo_usd, referencia, observaciones, usuario)
-         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12) RETURNING *`,
-        [b.medico, fecha, b.dias_liquidados || '', centsToStr(sumaUsd), tasa, centsToStr(pm), centsToStr(comPm),
+         (medico, fecha_pago, dias_liquidados, total_usd_liquidado, descuento_deuda_usd, tasa_cambio_bcv, pago_movil_bs, comision_pago_movil_bs, efectivo_bs, efectivo_usd, referencia, observaciones, usuario)
+         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13) RETURNING *`,
+        [b.medico, fecha, b.dias_liquidados || '', centsToStr(sumaUsd), centsToStr(descuento), tasa, centsToStr(pm), centsToStr(comPm),
          centsToStr(efBs), centsToStr(efUsd), referencia, (b.observaciones || '') + nota, usuario]
       );
       const pago = pagoRes.rows[0];

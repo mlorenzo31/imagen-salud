@@ -22,6 +22,7 @@ import { getErrorMessage } from '@/lib/utils';
 import { toCents, centsToStr } from '@/lib/money';
 import { DeudaMedico } from '@/components/honorarios/DeudaMedico';
 import { diferir } from '@/lib/diferir';
+import { claveMedico } from '@/lib/claveMedico';
 import type { DeudaMedico as DeudaMedicoT } from '@/lib/deudasHonorariosDb';
 
 interface TablaHonorariosProps {
@@ -75,7 +76,6 @@ export const TablaHonorarios: React.FC<TablaHonorariosProps> = ({
     }
   }, []);
   useEffect(() => diferir(cargarDeudas), [cargarDeudas]);
-  const claveMedico = (m: string) => m.trim().toUpperCase();
   const deudaDe = (medico: string) => deudas.find((d) => claveMedico(d.medico) === claveMedico(medico));
   const conDeuda = deudas.filter((d) => d.saldoUsd > 0);
 
