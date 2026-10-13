@@ -49,6 +49,8 @@ describe('RBAC por ruta', () => {
     expect(isAllowed('cajero', '/api/cierres/resumen-servicios', 'GET')).toBe(false);
     expect(isAllowed('asistente', '/api/cierres/resumen-servicios', 'GET')).toBe(true);
     expect(isAllowed('admin', '/api/cierres/resumen-servicios', 'GET')).toBe(true);
+    expect(isAllowed('cajero', '/api/cierres/hoja-cierre', 'GET')).toBe(false);
+    expect(isAllowed('asistente', '/api/cierres/hoja-cierre', 'GET')).toBe(true);
     expect(isAllowed('asistente', '/api/tesoreria/honorarios/matriz', 'GET')).toBe(false);
     expect(isAllowed('cajero', '/api/tesoreria/honorarios/matriz', 'GET')).toBe(false);
     expect(isAllowed('admin', '/api/tesoreria/honorarios/matriz', 'GET')).toBe(true);
