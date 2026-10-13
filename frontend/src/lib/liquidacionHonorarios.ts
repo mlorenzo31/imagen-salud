@@ -1,6 +1,5 @@
 import { ApiError } from '@/lib/apiHelpers';
-
-const norm = (s: string) => s.trim().toUpperCase();
+import { claveMedico } from '@/lib/claveMedico';
 
 /**
  * Una liquidación solo procede si TODOS los honorarios elegidos existen, siguen PENDIENTE y son del médico liquidado.
@@ -19,6 +18,6 @@ export function validarSeleccionHonorarios(
   if (noPendientes.length > 0) {
     throw new ApiError(409, `Los honorarios ${noPendientes.join(', ')} ya no están pendientes. Actualice la lista antes de liquidar.`);
   }
-  const ajenos = [...pedidos].filter((id) => norm(porId.get(id)!.medico) !== norm(medico));
+  const ajenos = [...pedidos].filter((id) => claveMedico(porId.get(id)!.medico) !== claveMedico(medico));
   if (ajenos.length > 0) throw new ApiError(400, `Los honorarios ${ajenos.join(', ')} son de otro médico, no de ${medico}.`);
 }

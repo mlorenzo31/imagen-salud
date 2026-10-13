@@ -168,6 +168,7 @@ CREATE TABLE IF NOT EXISTS pagos_honorarios (
   fecha_pago DATE NOT NULL DEFAULT CURRENT_DATE,
   dias_liquidados TEXT,
   total_usd_liquidado NUMERIC NOT NULL DEFAULT 0,
+  descuento_deuda_usd NUMERIC(12,2) NOT NULL DEFAULT 0,
   tasa_cambio_bcv NUMERIC NOT NULL DEFAULT 1,
   pago_movil_bs NUMERIC NOT NULL DEFAULT 0,
   comision_pago_movil_bs NUMERIC NOT NULL DEFAULT 0,

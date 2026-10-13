@@ -52,11 +52,12 @@ export async function revertirTesoreriaPorAnulacion(client: PoolClient, facturaI
   const pagados = await client.query("SELECT id, medico, monto_usd FROM honorarios_medicos_pendientes WHERE factura_id = $1 AND estado = 'PAGADO'", [facturaId]);
   for (const h of pagados.rows) {
     const cents = toCents(h.monto_usd);
-    await registrarMovDeuda(client, {
+    const nueva = await registrarMovDeuda(client, {
       medico: h.medico, tipo: 'CARGO', cents, honorarioId: h.id, facturaId, fecha, usuario,
       descripcion: `Anulación factura ${facturaId}${motivo ? `: ${motivo}` : ''}`,
     });
-    advertencias.push(`Se registró una deuda de $${centsToStr(cents)} a ${h.medico}; se descontará en su próxima liquidación.`);
+    // Si el cargo ya existía (factura anulada antes), la deuda no cambia y no se repite el aviso.
+    if (nueva) advertencias.push(`Se registró una deuda de $${centsToStr(cents)} a ${h.medico}; se descontará en su próxima liquidación.`);
   }
 
   // 2. Punto de venta: pendiente → sale del tránsito; ya conciliado → se debita lo acreditado por el banco.

@@ -10,8 +10,11 @@ export function asegurarDeudasHonorarios(): Promise<void> {
   if (!listo) {
     listo = (async () => {
       // Consulta de catálogo, sin bloqueos: si la tabla ya existe con RLS (el último paso), no se ejecuta DDL.
-      const ya = await pool.query("SELECT relrowsecurity FROM pg_class WHERE oid = to_regclass('deudas_honorarios')");
-      if (ya.rows[0]?.relrowsecurity === true) return;
+      const ya = await pool.query(
+        `SELECT (SELECT relrowsecurity FROM pg_class WHERE oid = to_regclass('deudas_honorarios')) AS rls,
+                EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'pagos_honorarios' AND column_name = 'descuento_deuda_usd') AS col`
+      );
+      if (ya.rows[0]?.rls === true && ya.rows[0]?.col === true) return;
       await pool.query(`
         CREATE TABLE IF NOT EXISTS deudas_honorarios (
           id                SERIAL PRIMARY KEY,
@@ -29,6 +32,8 @@ export function asegurarDeudasHonorarios(): Promise<void> {
         )`);
       await pool.query("CREATE UNIQUE INDEX IF NOT EXISTS deudas_honorarios_cargo_unico ON deudas_honorarios (honorario_id) WHERE tipo = 'CARGO'");
       await pool.query('CREATE INDEX IF NOT EXISTS deudas_honorarios_medico ON deudas_honorarios (upper(trim(medico)))');
+      // La liquidación guarda cuánto se cubrió con deuda: total_usd_liquidado − descuento = lo que salió de caja.
+      await pool.query('ALTER TABLE pagos_honorarios ADD COLUMN IF NOT EXISTS descuento_deuda_usd NUMERIC(12,2) NOT NULL DEFAULT 0');
       await pool.query('ALTER TABLE deudas_honorarios ENABLE ROW LEVEL SECURITY'); // sin acceso por la API pública de Supabase
     })().catch((err) => { listo = null; throw err; });
   }
@@ -47,15 +52,19 @@ export interface MovDeuda {
   honorarioId?: number; facturaId?: number; pagoHonorarioId?: number; movimientoId?: number;
 }
 
-/** Registra un movimiento; un honorario solo genera un CARGO (índice único), así que repetir no duplica. */
-export async function registrarMovDeuda(client: PoolClient, m: MovDeuda): Promise<void> {
-  if (m.cents <= 0) return;
-  await client.query(
+/**
+ * Registra un movimiento; un honorario solo genera un CARGO (índice único), así que repetir no duplica.
+ * Devuelve si se insertó (false si ya existía o el monto no es positivo).
+ */
+export async function registrarMovDeuda(client: PoolClient, m: MovDeuda): Promise<boolean> {
+  if (m.cents <= 0) return false;
+  const r = await client.query(
     `INSERT INTO deudas_honorarios (medico, tipo, monto_usd, honorario_id, factura_id, pago_honorario_id, movimiento_id, descripcion, usuario, fecha)
      VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10) ON CONFLICT DO NOTHING`,
     [m.medico, m.tipo, centsToStr(m.cents), m.honorarioId ?? null, m.facturaId ?? null, m.pagoHonorarioId ?? null,
      m.movimientoId ?? null, m.descripcion, m.usuario, m.fecha]
   );
+  return r.rowCount === 1;
 }
 
 export interface MovDeudaFila {

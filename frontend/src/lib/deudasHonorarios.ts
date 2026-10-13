@@ -4,8 +4,7 @@ import { centsToStr, toCents } from '@/lib/money';
 /** Movimientos del libro de deudas de honorarios: el CARGO suma a la deuda del médico, los ABONO la restan. */
 export type TipoMovDeuda = 'CARGO' | 'ABONO_LIQUIDACION' | 'ABONO_DEVOLUCION';
 
-/** Clave para comparar médicos: mismo criterio que la validación de la liquidación. */
-export const claveMedico = (medico: string): string => medico.trim().toUpperCase();
+export { claveMedico } from '@/lib/claveMedico';
 
 /** Saldo en centavos (cargos − abonos). */
 export function saldoDeuda(movs: { tipo: TipoMovDeuda; monto_usd: string | number }[]): number {
