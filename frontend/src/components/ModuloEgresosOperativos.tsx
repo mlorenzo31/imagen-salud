@@ -8,7 +8,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
-import { ArrowDownRight, ArrowUpRight, Smartphone, AlertCircle, CheckCircle2, FileSpreadsheet, FileText, Search, X, FileText as FileIcon } from 'lucide-react';
+import { ArrowDownRight, Smartphone, AlertCircle, CheckCircle2, FileSpreadsheet, FileText, Search, X, FileText as FileIcon } from 'lucide-react';
 import { exportarAExcel, exportarAPDF } from '@/lib/exportUtils';
 import { CuentaBancaria } from '@/types';
 import { getErrorMessage } from '@/lib/utils';
@@ -63,7 +63,7 @@ export const ModuloEgresosOperativos: React.FC<ModuloEgresosOperativosProps> = (
 }) => {
   const { avisar } = useAvisos();
   const isAdmin = currentRole === 'admin';
-  const [tabActiva, setTabActiva] = useState<'egreso' | 'ingreso' | 'historial'>('egreso');
+  const [tabActiva, setTabActiva] = useState<'egreso' | 'historial'>('egreso');
   const [loading, setLoading] = useState(false);
   const [mensajeExito, setMensajeExito] = useState<string | null>(null);
   const [mensajeError, setMensajeError] = useState<string | null>(null);
@@ -78,14 +78,6 @@ export const ModuloEgresosOperativos: React.FC<ModuloEgresosOperativosProps> = (
   const fechaOp = useFechaOperacion();
   const [egresoBeneficiario, setEgresoBeneficiario] = useState<string>('');
 
-  // Formulario Ingreso Extraordinario
-  const [ingresoCuentaId, setIngresoCuentaId] = useState<string>('');
-  const [ingresoCategoria, setIngresoCategoria] = useState<string>('Aporte de Capital');
-  const [ingresoConceptoLibre, setIngresoConceptoLibre] = useState<string>('');
-  const [ingresoMonto, setIngresoMonto] = useState<string>('');
-  const [ingresoReferencia, setIngresoReferencia] = useState<string>('');
-  const [ingresoOrigen, setIngresoOrigen] = useState<string>('');
-
   // Historial y Filtros
   const [historial, setHistorial] = useState<RegistroFinanciero[]>([]);
   const [busqueda, setBusqueda] = useState<string>('');
@@ -95,7 +87,6 @@ export const ModuloEgresosOperativos: React.FC<ModuloEgresosOperativosProps> = (
   // Cuenta por defecto: se ajusta durante el render (patrón recomendado por React) en vez de en un efecto
   if (cuentas.length > 0 && !egresoCuentaId) {
     setEgresoCuentaId(cuentas[0].id.toString());
-    setIngresoCuentaId(cuentas[0].id.toString());
   }
 
   // Obtiene el historial de egresos e ingresos extraordinarios (sin tocar el estado)
@@ -252,64 +243,6 @@ export const ModuloEgresosOperativos: React.FC<ModuloEgresosOperativosProps> = (
     }
   };
 
-  // Manejar Registro de Ingreso Extraordinario
-  const handleRegistrarIngreso = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setMensajeError(null);
-    setMensajeExito(null);
-
-    const montoNum = parseFloat(ingresoMonto) || 0;
-    if (!ingresoCuentaId) {
-      setMensajeError('Seleccione la cuenta bancaria de destino.');
-      return;
-    }
-    if (!ingresoConceptoLibre.trim()) {
-      setMensajeError('El campo "Concepto Libre" es obligatorio para detallar el origen de los fondos.');
-      return;
-    }
-    if (montoNum <= 0) {
-      setMensajeError('Ingrese un monto válido mayor a 0.');
-      return;
-    }
-
-    setLoading(true);
-    try {
-      const payload = {
-        cuenta_id: parseInt(ingresoCuentaId),
-        categoria: ingresoCategoria,
-        concepto_libre: ingresoConceptoLibre.trim(),
-        monto: montoNum,
-        referencia: ingresoReferencia.trim() || 'INGRESO_EXTRA',
-        origen: ingresoOrigen.trim() || 'Aporte Extraordinario',
-        ...fechaOp.payload,
-        usuario: 'Administrador'
-      };
-
-      const res = await fetch('/api/tesoreria/ingresos-extraordinarios', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(payload)
-      });
-
-      if (!res.ok) {
-        const errorData = await res.json().catch(() => ({}));
-        throw new Error(errorData.error || 'Error al procesar el ingreso extraordinario.');
-      }
-
-      setMensajeExito(`Ingreso extraordinario asentado con éxito en la cuenta seleccionada.`);
-      setIngresoConceptoLibre('');
-      setIngresoMonto('');
-      setIngresoReferencia('');
-      setIngresoOrigen('');
-      cargarHistorial();
-      if (onEgresoRegistrado) onEgresoRegistrado();
-    } catch (err) {
-      setMensajeError(getErrorMessage(err) || 'Error de conexión.');
-    } finally {
-      setLoading(false);
-    }
-  };
-
   // Filtrado de Historial
   const historialFiltrado = useMemo(() => {
     return historial.filter(item => {
@@ -401,13 +334,6 @@ export const ModuloEgresosOperativos: React.FC<ModuloEgresosOperativosProps> = (
     'Otros Egresos'
   ];
 
-  const categoriasIngreso = [
-    'Aporte de Capital de Socios',
-    'Reintegro de Fondos / Devolución',
-    'Venta de Activo Fijo / Equipos',
-    'Ingreso Financiero Extraordinario',
-    'Otros Ingresos'
-  ];
 
   return (
     <div className="space-y-6">
@@ -417,7 +343,6 @@ export const ModuloEgresosOperativos: React.FC<ModuloEgresosOperativosProps> = (
         <div className="flex flex-wrap items-center gap-2">
           {[
             { id: 'egreso', label: 'Nuevo Gasto Operativo', icon: ArrowDownRight, color: 'bg-rose-600' },
-            { id: 'ingreso', label: 'Ingreso Extraordinario', icon: ArrowUpRight, color: 'bg-emerald-600' },
             { id: 'historial', label: 'Historial y Auditoría', icon: FileIcon, color: 'bg-slate-900' }
           ].map(tab => {
             const Icon = tab.icon;
@@ -625,133 +550,6 @@ export const ModuloEgresosOperativos: React.FC<ModuloEgresosOperativosProps> = (
                 className="w-full bg-rose-600 hover:bg-rose-700 text-white font-bold text-xs py-3 rounded-xl shadow-md shadow-rose-600/20"
               >
                 {loading ? 'Procesando débito contable...' : 'Registrar Egreso Operativo'}
-              </Button>
-            </form>
-          </CardContent>
-        </Card>
-      )}
-
-      {/* PESTAÑA 2: NUEVO INGRESO EXTRAORDINARIO */}
-      {tabActiva === 'ingreso' && (
-        <Card className="bg-white border-slate-200 shadow-sm rounded-3xl overflow-hidden">
-          <CardHeader className="bg-slate-50/70 border-b border-slate-100 py-4 px-6">
-            <CardTitle className="text-sm font-black text-slate-900 flex items-center justify-between">
-              <span className="flex items-center gap-2">
-                <ArrowUpRight className="w-4 h-4 text-emerald-600" />
-                Formulario de Entrada Extraordinaria de Fondos
-              </span>
-              <Badge className="bg-emerald-100 text-emerald-800 font-mono text-xs font-bold">
-                Crédito en Bóveda
-              </Badge>
-            </CardTitle>
-          </CardHeader>
-
-          <CardContent className="p-6">
-            <form onSubmit={handleRegistrarIngreso} className="space-y-5">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                {/* Cuenta de Destino */}
-                <div>
-                  <label className="block text-xs font-bold text-slate-700 mb-1.5">
-                    Cuenta Bancaria de Destino *
-                  </label>
-                  <select
-                    value={ingresoCuentaId}
-                    onChange={e => setIngresoCuentaId(e.target.value)}
-                    className="w-full text-xs py-2.5 px-3 rounded-xl bg-slate-50 border border-slate-200 font-bold text-slate-800 focus:outline-none focus:bg-white focus:border-emerald-500"
-                  >
-                    {cuentas.map(c => (
-                      <option key={c.id} value={c.id}>
-                        {c.nombre} ({c.moneda})
-                      </option>
-                    ))}
-                  </select>
-                </div>
-
-                {/* Categoría de Ingreso */}
-                <div>
-                  <label className="block text-xs font-bold text-slate-700 mb-1.5">
-                    Categoría del Ingreso *
-                  </label>
-                  <select
-                    value={ingresoCategoria}
-                    onChange={e => setIngresoCategoria(e.target.value)}
-                    className="w-full text-xs py-2.5 px-3 rounded-xl bg-slate-50 border border-slate-200 font-bold text-slate-800 focus:outline-none focus:bg-white focus:border-emerald-500"
-                  >
-                    {categoriasIngreso.map(cat => (
-                      <option key={cat} value={cat}>{cat}</option>
-                    ))}
-                  </select>
-                </div>
-              </div>
-
-              {/* Concepto Libre (Obligatorio) */}
-              <div>
-                <label className="block text-xs font-bold text-slate-700 mb-1.5 flex items-center justify-between">
-                  <span>Concepto Libre / Detalle de Entrada *</span>
-                  <span className="text-xs text-slate-500 font-normal">Justificación contable de la entrada</span>
-                </label>
-                <Input
-                  value={ingresoConceptoLibre}
-                  onChange={e => setIngresoConceptoLibre(e.target.value)}
-                  placeholder="Ej: Aporte extraordinario de socios para renovación de transductor de ecografía"
-                  className="text-xs bg-slate-50 border-slate-200 rounded-xl"
-                  required
-                />
-              </div>
-
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                {/* Monto */}
-                <div>
-                  <label className="block text-xs font-bold text-slate-700 mb-1.5">
-                    Monto a Acreditar *
-                  </label>
-                  <Input
-                    type="number"
-                    step="0.01"
-                    min="0.01"
-                    value={ingresoMonto}
-                    onChange={e => setIngresoMonto(e.target.value)}
-                    placeholder="0.00"
-                    className="font-mono font-bold text-xs bg-slate-50 border-slate-200 rounded-xl"
-                    required
-                  />
-                </div>
-
-                {/* Origen de Fondos */}
-                <div>
-                  <label className="block text-xs font-bold text-slate-700 mb-1.5">
-                    Origen / Depositante
-                  </label>
-                  <Input
-                    value={ingresoOrigen}
-                    onChange={e => setIngresoOrigen(e.target.value)}
-                    placeholder="Ej: Socio Principal / Inversor"
-                    className="text-xs bg-slate-50 border-slate-200 rounded-xl"
-                  />
-                </div>
-
-                {fechaOp.campo}
-
-                {/* Referencia */}
-                <div>
-                  <label className="block text-xs font-bold text-slate-700 mb-1.5">
-                    N° de Referencia Bancaria
-                  </label>
-                  <Input
-                    value={ingresoReferencia}
-                    onChange={e => setIngresoReferencia(e.target.value)}
-                    placeholder="Ej: 994821"
-                    className="text-xs bg-slate-50 border-slate-200 rounded-xl"
-                  />
-                </div>
-              </div>
-
-              <Button
-                type="submit"
-                disabled={loading}
-                className="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs py-3 rounded-xl shadow-md shadow-emerald-600/20"
-              >
-                {loading ? 'Acreditando fondos...' : 'Registrar Ingreso Extraordinario'}
               </Button>
             </form>
           </CardContent>

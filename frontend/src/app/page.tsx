@@ -4,7 +4,6 @@ import React, { useState, useEffect } from 'react';
 import { useAvisos } from '@/components/ui/avisos';
 import { Sidebar } from '@/components/Sidebar';
 import { TreasuryCards } from '@/components/TreasuryCards';
-import { ModalEgreso } from '@/components/ModalEgreso';
 import { ModalCambioDivisa } from '@/components/ModalCambioDivisa';
 import { BloqueoCierrePendiente } from '@/components/BloqueoCierrePendiente';
 import { CierreObligatorio } from '@/components/CierreObligatorio';
@@ -60,7 +59,6 @@ export default function Home() {
   const [loading, setLoading] = useState(true);
 
   // Modales
-  const [openEgreso, setOpenEgreso] = useState(false);
   const [openDivisas, setOpenDivisas] = useState(false);
   const [openTransferencia, setOpenTransferencia] = useState(false);
   const [recargaCambios, setRecargaCambios] = useState(0);
@@ -359,7 +357,7 @@ export default function Home() {
                     </Button>
                     <Button 
                       size="sm" 
-                      onClick={() => setOpenEgreso(true)}
+                      onClick={() => setActiveSection('egresos')}
                       className="rounded-xl bg-clinica-coral hover:bg-clinica-coral/90 text-white text-xs font-bold shadow-sm flex items-center gap-1 h-9"
                     >
                       <ArrowDownRight className="w-3.5 h-3.5 mr-1" />
@@ -596,12 +594,6 @@ export default function Home() {
       </div>
 
       {/* Modales Globales */}
-      <ModalEgreso
-        open={openEgreso}
-        onOpenChange={setOpenEgreso}
-        cuentas={cuentas}
-        onSuccess={loadInitialData}
-      />
 
       <ModalCambioDivisa
         open={openDivisas}
