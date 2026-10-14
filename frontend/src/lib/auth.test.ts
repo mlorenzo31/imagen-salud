@@ -70,6 +70,10 @@ describe('RBAC por ruta', () => {
     expect(isAllowed('asistente', '/api/tesoreria/honorarios/deudas/devolucion', 'POST')).toBe(false);
     expect(isAllowed('cajero', '/api/tesoreria/honorarios/deudas/devolucion', 'POST')).toBe(false);
     expect(isAllowed('admin', '/api/tesoreria/honorarios/deudas/devolucion', 'POST')).toBe(true);
+    expect(isAllowed('asistente', '/api/tesoreria/cambio-divisa/venta', 'POST')).toBe(false);
+    expect(isAllowed('asistente', '/api/tesoreria/transferencias', 'POST')).toBe(false);
+    expect(isAllowed('cajero', '/api/tesoreria/transferencias', 'POST')).toBe(false);
+    expect(isAllowed('admin', '/api/tesoreria/transferencias', 'POST')).toBe(true);
   });
   it('no se salta el prefijo con rutas parecidas', () => {
     expect(isAllowed('cajero', '/api/facturas-secretas', 'GET')).toBe(false);

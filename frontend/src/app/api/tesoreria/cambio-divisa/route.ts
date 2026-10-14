@@ -1,9 +1,13 @@
 import { NextResponse, type NextRequest } from 'next/server';
 import { z } from 'zod';
-import { ApiError, errorResponse, parseBody, sesionUsuario, withTransaction } from '@/lib/apiHelpers';
+import { ApiError, errorResponse, fechaHoraLocal, parseBody, sesionUsuario, withTransaction } from '@/lib/apiHelpers';
 import { centsToNumber, centsToStr, toCents } from '@/lib/money';
 import { exigirJornadaAlDia, marcarCierreModificado } from '@/lib/cierre';
 import { camposFechaOperacion, resolverFechaOperacion } from '@/lib/fechaOperacion';
+import pool from '@/lib/db';
+import { rangoValido } from '@/lib/resumenPeriodo';
+import { resumirOperaciones, type OperacionResumen } from '@/lib/operacionesCambiarias';
+import { asegurarOperacionesCambiarias } from '@/lib/operacionesCambiariasDb';
 
 const num = z.union([z.string(), z.number()]);
 const schema = z.object({
@@ -15,6 +19,36 @@ const schema = z.object({
   notas: z.string().max(500).nullish(),
   ...camposFechaOperacion,
 });
+
+/** Reporte de operaciones cambiarias (compras y ventas) del período Desde–Hasta, con totales y tasas promedio. */
+export async function GET(req: NextRequest) {
+  try {
+    const q = new URL(req.url).searchParams;
+    const desde = q.get('desde') || fechaHoraLocal().fecha;
+    const hasta = q.get('hasta') || desde;
+    const error = rangoValido(desde, hasta);
+    if (error) throw new ApiError(400, error);
+    await asegurarOperacionesCambiarias();
+    const r = await pool.query(
+      `SELECT o.id, o.tipo, to_char(o.fecha, 'YYYY-MM-DD') AS fecha, o.tasa_cambio_manual::text AS tasa, o.monto_usd_ingreso::text AS usd,
+              o.monto_bs_base::text AS bs, COALESCE(o.comision_bancaria_bs, 0)::text AS comision, o.referencia, o.notas, o.usuario,
+              CASE WHEN o.tipo = 'VENTA' THEN d.nombre ELSE c.nombre END AS cuenta_bs
+       FROM operaciones_cambiarias o
+       LEFT JOIN cuentas_bancarias c ON c.id = o.cuenta_origen_id
+       LEFT JOIN cuentas_bancarias d ON d.id = o.cuenta_destino_id
+       WHERE o.fecha BETWEEN $1 AND $2 ORDER BY o.fecha, o.id`,
+      [desde, hasta]
+    );
+    const operaciones = r.rows.map((o) => ({
+      id: o.id as number, tipo: (o.tipo === 'VENTA' ? 'VENTA' : 'COMPRA') as OperacionResumen['tipo'], fecha: o.fecha as string,
+      tasa: Number(o.tasa), usd: toCents(o.usd), bs: toCents(o.bs), comisionBs: toCents(o.comision),
+      cuentaBs: (o.cuenta_bs as string | null) ?? '', referencia: (o.referencia as string | null) ?? '', notas: (o.notas as string | null) ?? '', usuario: (o.usuario as string | null) ?? '',
+    }));
+    return NextResponse.json({ desde, hasta, operaciones, ...resumirOperaciones(operaciones) });
+  } catch (err) {
+    return errorResponse(err);
+  }
+}
 
 export async function POST(req: NextRequest) {
   try {
