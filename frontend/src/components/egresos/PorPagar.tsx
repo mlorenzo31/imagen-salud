@@ -41,7 +41,9 @@ export function PorPagar({ cuentas, recarga, onCambio }: { cuentas: CuentaBancar
   const abrir = async (f: FacturaCompraFila) => {
     setSel(f);
     setMonto('');
-    setTasa(f.tasa);
+    // La tasa del pago se prellena con la BCV de hoy (no la de la factura) y se puede modificar.
+    setTasa('');
+    void fetch('/api/bcv').then((r) => r.json()).then((d) => { if (d.tasa > 0) setTasa(String(d.tasa)); }).catch(() => {});
     try { setPagos(await pedir<PagoFila[]>(`/api/tesoreria/compras/pagos?factura_id=${f.id}`)); } catch { setPagos([]); }
   };
   const cuenta = cuentas.find((c) => c.id === cuentaId);

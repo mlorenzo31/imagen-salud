@@ -37,6 +37,8 @@ interface RegistroFinanciero {
   referencia: string;
   fecha: string;
   beneficiario?: string;
+  /** Clave única de la fila (los ids de tablas distintas pueden repetirse). */
+  clave?: string;
 }
 
 /** Fila cruda devuelta por /api/tesoreria/egresos-operativos e ingresos-extraordinarios. */
@@ -140,6 +142,29 @@ export const ModuloEgresosOperativos: React.FC<ModuloEgresosOperativosProps> = (
             referencia: item.referencia || 'S/R',
             fecha: item.created_at ? new Date(item.created_at).toLocaleString('es-VE') : new Date().toLocaleDateString('es-VE'),
             beneficiario: item.origen || 'N/A'
+          }))];
+        }
+      }
+
+      // Pagos de compras con factura (no reversados): también son egresos.
+      const resCompras = await fetch('/api/tesoreria/compras/pagos').catch(() => null);
+      if (resCompras && resCompras.ok) {
+        const data = await resCompras.json();
+        if (Array.isArray(data)) {
+          list = [...list, ...data.filter((p: { reversado: boolean }) => !p.reversado).map((p: { id: number; cuenta_id: number; cuenta: string; monto_cuenta: string; moneda_cuenta: string; referencia: string | null; fecha: string; numero_factura: string; razon_social: string }) => ({
+            id: p.id,
+            clave: `compra-${p.id}`,
+            tipo: 'EGRESO' as const,
+            cuenta_id: p.cuenta_id,
+            cuenta_nombre: p.cuenta,
+            categoria: 'Compra con factura',
+            concepto_libre: `Pago factura N° ${p.numero_factura}`,
+            monto: Number(p.monto_cuenta),
+            moneda: p.moneda_cuenta,
+            total_debitado: Number(p.monto_cuenta),
+            referencia: p.referencia || 'S/R',
+            fecha: p.fecha,
+            beneficiario: p.razon_social,
           }))];
         }
       }
@@ -651,7 +676,7 @@ export const ModuloEgresosOperativos: React.FC<ModuloEgresosOperativosProps> = (
                     </tr>
                   ) : (
                     historialFiltrado.map(item => (
-                      <tr key={item.id} className="hover:bg-slate-50/80">
+                      <tr key={item.clave ?? `${item.tipo}-${item.id}`} className="hover:bg-slate-50/80">
                         <td className="p-3 font-mono font-bold text-slate-700">
                           #{item.id} • {item.referencia}
                         </td>

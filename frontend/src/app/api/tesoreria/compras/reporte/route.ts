@@ -42,10 +42,13 @@ export async function GET(req: NextRequest) {
       pool.query(`SELECT to_char(m.fecha,'YYYY-MM-DD') f, m.comision::text monto, m.moneda, ${TASA_DIA('m.fecha')}::text tasa
                   FROM movimientos_tesoreria m WHERE m.fecha BETWEEN $1 AND $2 AND m.comision > 0
                     AND m.tipo IN ('CAMBIO_DIVISA_EGRESO','VENTA_DIVISA_INGRESO','TRANSFERENCIA_SALIDA')`, rango),
-      pool.query(`SELECT pr.razon_social, f.moneda, f.tasa::text tasa,
-                         (f.neto_a_pagar - COALESCE((SELECT SUM(monto_aplicado) FROM pagos_compra p WHERE p.factura_id = f.id AND NOT p.reversado), 0))::text pendiente
-                  FROM facturas_compra f JOIN proveedores pr ON pr.id = f.proveedor_id
-                  WHERE f.estado IN ('PENDIENTE','PARCIAL') AND f.fecha <= $1`, [hasta]),
+      // Comprometido al cierre del período: facturas hasta `hasta` menos lo pagado hasta esa fecha (no el estado de hoy).
+      pool.query(`SELECT * FROM (
+                    SELECT pr.razon_social, f.moneda, f.tasa::text tasa,
+                           f.neto_a_pagar - COALESCE((SELECT SUM(monto_aplicado) FROM pagos_compra p
+                                                      WHERE p.factura_id = f.id AND NOT p.reversado AND p.fecha <= $1), 0) AS pend
+                    FROM facturas_compra f JOIN proveedores pr ON pr.id = f.proveedor_id
+                    WHERE f.estado <> 'ANULADA' AND f.fecha <= $1) x WHERE pend > 0.01`, [hasta]),
       pool.query(`SELECT to_char(f.fecha,'YYYY-MM-DD') fecha, f.numero_factura, pr.razon_social, f.moneda, f.tasa::text tasa, l.descripcion, l.cantidad::text cantidad,
                          l.precio_unitario::text precio, l.alicuota, l.subtotal::text subtotal,
                          COALESCE(pc.nombre, l.descripcion) producto, COALESCE(pc.categoria, 'Sin categoría') categoria
@@ -68,7 +71,7 @@ export async function GET(req: NextRequest) {
     }
     for (const r of com.rows) movs.push({ fecha: r.f, tipo: 'COMISION', ...equivalentes(toCents(r.monto), r.moneda, Number(r.tasa)) });
 
-    const porPagar = porPagarQ.rows.map((r) => ({ proveedor: r.razon_social as string, ...equivalentes(toCents(r.pendiente), r.moneda, Number(r.tasa)) }));
+    const porPagar = porPagarQ.rows.map((r) => ({ proveedor: r.razon_social as string, ...equivalentes(toCents(r.pend), r.moneda, Number(r.tasa)) }));
     const lineas: LineaReporte[] = lineasQ.rows.map((r) => ({
       producto: r.producto, categoria: r.categoria, cantidad: Math.round(Number(r.cantidad) * 1000),
       ...equivalentes(toCents(r.subtotal), r.moneda, Number(r.tasa)),

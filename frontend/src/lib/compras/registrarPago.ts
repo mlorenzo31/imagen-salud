@@ -2,7 +2,7 @@ import type { PoolClient } from 'pg';
 import { ApiError } from '@/lib/apiHelpers';
 import { centsToStr, toCents } from '@/lib/money';
 import type { Moneda } from './calculos';
-import { estadoFactura, montoAplicado, validarPago } from './pagos';
+import { ajustarPagoCruzado, estadoFactura, montoAplicado, toleranciaCruzada, validarPago } from './pagos';
 
 export interface PagoCompra {
   facturaId: number; cuentaId: number; montoCuenta: number; tasa: number;
@@ -40,9 +40,11 @@ export async function registrarPagoCompra(client: PoolClient, p: PagoCompra): Pr
     throw new ApiError(400, (e as Error).message);
   }
   const saldoAnt = toCents(cuenta.saldo_actual);
-  const error = validarPago(aplicado, neto - pagado, saldoAnt, p.montoCuenta);
-  if (error) throw new ApiError(400, error);
-  aplicado = Math.min(aplicado, neto - pagado); // el céntimo de tolerancia no deja saldo negativo
+  const tolerancia = toleranciaCruzada(cuenta.moneda as Moneda, f.moneda as Moneda, p.tasa);
+  const error = validarPago(aplicado, neto - pagado, saldoAnt, p.montoCuenta, tolerancia);
+  if (error) throw new ApiError(neto - pagado <= 0 ? 409 : 400, error);
+  // A menos de un céntimo de la cuenta de lo pendiente, el pago salda exacto (sin residuos imposibles de pagar).
+  aplicado = ajustarPagoCruzado(aplicado, neto - pagado, tolerancia);
 
   const saldoPost = saldoAnt - p.montoCuenta;
   await client.query('UPDATE cuentas_bancarias SET saldo_actual = $1, actualizado_en = NOW() WHERE id = $2', [centsToStr(saldoPost), cuenta.id]);

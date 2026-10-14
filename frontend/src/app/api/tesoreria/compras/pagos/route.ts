@@ -1,7 +1,7 @@
 import { NextResponse, type NextRequest } from 'next/server';
 import { z } from 'zod';
 import pool from '@/lib/db';
-import { ApiError, errorResponse, parseBody, sesionUsuario, withTransaction } from '@/lib/apiHelpers';
+import { errorResponse, parseBody, sesionUsuario, withTransaction } from '@/lib/apiHelpers';
 import { toCents } from '@/lib/money';
 import { exigirJornadaAlDia, marcarCierreModificado } from '@/lib/cierre';
 import { camposFechaOperacion, resolverFechaOperacion } from '@/lib/fechaOperacion';
@@ -18,16 +18,18 @@ const schema = z.object({
   ...camposFechaOperacion,
 });
 
-/** Pagos de una factura (?factura_id=). */
+/** Pagos de compras. */
 export async function GET(req: NextRequest) {
   try {
     await asegurarCompras();
     const id = Number(new URL(req.url).searchParams.get('factura_id'));
-    if (!id) throw new ApiError(400, 'Indique la factura.');
+    // Con ?factura_id: los pagos de esa factura; sin él: los últimos 500 (historial de Egresos).
     const r = await pool.query(
-      `SELECT p.*, to_char(p.fecha, 'YYYY-MM-DD') AS fecha, c.nombre AS cuenta, c.moneda AS moneda_cuenta
-       FROM pagos_compra p JOIN cuentas_bancarias c ON c.id = p.cuenta_id WHERE p.factura_id = $1 ORDER BY p.id`,
-      [id]
+      `SELECT p.*, to_char(p.fecha, 'YYYY-MM-DD') AS fecha, c.nombre AS cuenta, c.moneda AS moneda_cuenta, f.numero_factura, pr.razon_social
+       FROM pagos_compra p JOIN cuentas_bancarias c ON c.id = p.cuenta_id JOIN facturas_compra f ON f.id = p.factura_id
+       JOIN proveedores pr ON pr.id = f.proveedor_id
+       ${id ? 'WHERE p.factura_id = $1 ORDER BY p.id' : 'ORDER BY p.id DESC LIMIT 500'}`,
+      id ? [id] : []
     );
     return NextResponse.json(r.rows);
   } catch (err) {
