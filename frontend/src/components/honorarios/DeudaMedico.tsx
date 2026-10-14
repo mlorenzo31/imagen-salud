@@ -28,7 +28,10 @@ export function DeudaMedico({ deuda, tasaBcv, soloLectura, onCambio }: { deuda: 
   const [enviando, setEnviando] = useState(false);
   const simbolo = FORMAS.find((f) => f.valor === forma)!.simbolo;
   const montoNum = Number(monto);
-  const equivalenteUsd = forma === 'EFECTIVO_USD' ? montoNum : tasaBcv > 0 ? montoNum / tasaBcv : 0;
+  // En Bs se devuelve a la tasa de cobro de cada factura: la vista previa usa la proporción $/Bs de la deuda (el servidor la calcula exacta).
+  const tasaCobro = deuda.saldoBs && deuda.saldoUsd > 0 ? deuda.saldoBs / deuda.saldoUsd : tasaBcv;
+  const equivalenteUsd = forma === 'EFECTIVO_USD' ? montoNum : tasaCobro > 0 ? montoNum / tasaCobro : 0;
+  const totalAdeudado = forma === 'EFECTIVO_USD' ? deuda.saldoUsd : deuda.saldoBs;
 
   const registrar = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -109,8 +112,14 @@ export function DeudaMedico({ deuda, tasaBcv, soloLectura, onCambio }: { deuda: 
             <div>
               <label className="text-xs font-semibold text-slate-600">Monto ({simbolo})</label>
               <Input type="number" min="0" step="0.01" inputMode="decimal" placeholder="0.00" value={monto} onChange={(e) => setMonto(e.target.value)} className="h-9 rounded-xl font-mono" />
+              {totalAdeudado !== null && (
+                <button type="button" onClick={() => setMonto(totalAdeudado.toFixed(2))} className="mt-1 text-xs font-bold text-clinica-primary underline">
+                  Devolver todo: {simbolo} {totalAdeudado.toLocaleString('es-VE', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                  {forma !== 'EFECTIVO_USD' && ' (a la tasa del día de cobro)'}
+                </button>
+              )}
               {forma !== 'EFECTIVO_USD' && montoNum > 0 && (
-                <p className="mt-1 text-slate-500">≈ ${equivalenteUsd.toFixed(2)} a la tasa BCV del día (el servidor confirma la conversión).</p>
+                <p className="mt-1 text-slate-500">≈ ${equivalenteUsd.toFixed(2)} de deuda saldada (a la tasa de cobro de cada factura).</p>
               )}
             </div>
             <div>
