@@ -12,7 +12,7 @@ export function asegurarDeudasHonorarios(): Promise<void> {
       // Consulta de catálogo, sin bloqueos: si la tabla ya existe con RLS (el último paso), no se ejecuta DDL.
       const ya = await pool.query(
         `SELECT (SELECT relrowsecurity FROM pg_class WHERE oid = to_regclass('deudas_honorarios')) AS rls,
-                EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'pagos_honorarios' AND column_name = 'descuento_deuda_usd') AS col`
+                EXISTS (SELECT 1 FROM information_schema.columns WHERE table_schema = current_schema() AND table_name = 'pagos_honorarios' AND column_name = 'descuento_deuda_usd') AS col`
       );
       if (ya.rows[0]?.rls === true && ya.rows[0]?.col === true) return;
       await pool.query(`

@@ -81,6 +81,50 @@ export async function registrarCambioDivisa(payload: CambioDivisaPayload) {
   return data;
 }
 
+export interface VentaDivisaPayload {
+  cuenta_destino_id: number;
+  monto_usd: number;
+  tasa_cambio_manual: number;
+  comision_bancaria_bs: number;
+  referencia?: string;
+  notas?: string;
+  fecha?: string;
+  motivo_retroactivo?: string;
+}
+
+export async function registrarVentaDivisa(payload: VentaDivisaPayload) {
+  const res = await fetchWithFallback('/tesoreria/cambio-divisa/venta', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(payload)
+  });
+  const data = await res.json();
+  if (!res.ok) throw new Error(data.error || 'Error al registrar la venta de divisas');
+  return data;
+}
+
+export interface TransferenciaPayload {
+  cuenta_origen_id: number;
+  cuenta_destino_id: number;
+  monto: number;
+  comision: number;
+  referencia?: string;
+  notas?: string;
+  fecha?: string;
+  motivo_retroactivo?: string;
+}
+
+export async function registrarTransferencia(payload: TransferenciaPayload) {
+  const res = await fetchWithFallback('/tesoreria/transferencias', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(payload)
+  });
+  const data = await res.json();
+  if (!res.ok) throw new Error(data.error || 'Error al registrar la transferencia');
+  return data;
+}
+
 export async function getTransaccionesBancarias(params?: { cuenta_id?: number; es_comision?: boolean }) {
   let query = '';
   if (params) {

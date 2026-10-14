@@ -40,6 +40,8 @@ import { exportarAExcel, exportarAPDF } from '@/lib/exportUtils';
 import { CuentaBancaria, TransaccionBancaria, HonorarioMedico, PacientePendiente, UserRole, ModoOperacion } from '@/types';
 import { hoyLocal } from '@/lib/date';
 import { diferir } from '@/lib/diferir';
+import { ModalTransferencia } from '@/components/divisas/ModalTransferencia';
+import { ReporteCambiario } from '@/components/divisas/ReporteCambiario';
 
 export default function Home() {
   const { avisar } = useAvisos();
@@ -60,6 +62,8 @@ export default function Home() {
   // Modales
   const [openEgreso, setOpenEgreso] = useState(false);
   const [openDivisas, setOpenDivisas] = useState(false);
+  const [openTransferencia, setOpenTransferencia] = useState(false);
+  const [recargaCambios, setRecargaCambios] = useState(0);
   const [openExcel, setOpenExcel] = useState(false);
   const [openBloqueo, setOpenBloqueo] = useState(false);
   const [pacientesPendientes, setPacientesPendientes] = useState<PacientePendiente[]>([]);
@@ -496,8 +500,15 @@ export default function Home() {
                   <span>Nueva Operación Cambiaria</span>
                 </Button>
               )}
+              {modoOperacion === 'operador' && (
+                <Button onClick={() => setOpenTransferencia(true)} variant="outline" className="rounded-xl text-xs font-bold">
+                  <ArrowLeftRight className="w-3.5 h-3.5 mr-1" />
+                  <span>Transferir entre cuentas</span>
+                </Button>
+              )}
             </div>
             <TreasuryCards cuentas={cuentas} />
+            <ReporteCambiario recarga={recargaCambios} />
           </div>
         )}
 
@@ -595,6 +606,13 @@ export default function Home() {
       <ModalCambioDivisa
         open={openDivisas}
         onOpenChange={setOpenDivisas}
+        cuentas={cuentas}
+        onSuccess={() => { void loadInitialData(); setRecargaCambios((n) => n + 1); }}
+      />
+
+      <ModalTransferencia
+        open={openTransferencia}
+        onOpenChange={setOpenTransferencia}
         cuentas={cuentas}
         onSuccess={loadInitialData}
       />
