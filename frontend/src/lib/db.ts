@@ -23,8 +23,8 @@ function buildConfig(): PoolConfig {
   return {
     connectionString,
     ssl,
-    max: 10,
-    idleTimeoutMillis: 30000,
+    max: 3, // el pooler de Supabase en modo sesión admite 15 clientes en total entre todas las instancias
+    idleTimeoutMillis: 10000,
     connectionTimeoutMillis: 5000,
   };
 }

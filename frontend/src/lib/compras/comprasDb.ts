@@ -13,13 +13,22 @@ const TABLAS = ['proveedores', 'productos_compra', 'facturas_compra', 'facturas_
 export function asegurarCompras(): Promise<void> {
   if (!listo) {
     listo = (async () => {
-      const ya = await pool.query(
-        `SELECT count(*)::int AS n FROM pg_class c JOIN pg_namespace s ON s.oid = c.relnamespace
-         WHERE s.nspname = current_schema() AND c.relname = ANY($1::text[]) AND c.relrowsecurity`,
-        [TABLAS]
-      );
-      if (ya.rows[0].n === TABLAS.length) return;
-      await pool.query(`
+      const completas = async (q: Pick<PoolClient, 'query'>) => {
+        const r = await q.query(
+          `SELECT count(*)::int AS n FROM pg_class c JOIN pg_namespace s ON s.oid = c.relnamespace
+           WHERE s.nspname = current_schema() AND c.relname = ANY($1::text[]) AND c.relrowsecurity`,
+          [TABLAS]
+        );
+        return r.rows[0].n === TABLAS.length;
+      };
+      if (await completas(pool)) return;
+      // Varias instancias pueden llegar a la vez: un candado serializa el DDL (evita "duplicate key ... pg_class").
+      const c = await pool.connect();
+      try {
+        await c.query('BEGIN');
+        await c.query("SELECT pg_advisory_xact_lock(hashtext('ddl:compras'))");
+        if (await completas(c)) { await c.query('COMMIT'); return; }
+      await c.query(`
         CREATE TABLE IF NOT EXISTS proveedores (
           id SERIAL PRIMARY KEY,
           rif VARCHAR(15) NOT NULL UNIQUE,
@@ -107,8 +116,15 @@ export function asegurarCompras(): Promise<void> {
         CREATE INDEX IF NOT EXISTS facturas_compra_fecha ON facturas_compra (fecha);
         CREATE INDEX IF NOT EXISTS pagos_compra_factura ON pagos_compra (factura_id);
       `);
-      await pool.query("INSERT INTO config_fiscal (clave, valor) VALUES ('fiscal', $1) ON CONFLICT (clave) DO NOTHING", [JSON.stringify(CONFIG_FISCAL_DEFECTO)]);
-      for (const t of TABLAS) await pool.query(`ALTER TABLE ${t} ENABLE ROW LEVEL SECURITY`); // sin acceso por la API pública de Supabase
+      await c.query("INSERT INTO config_fiscal (clave, valor) VALUES ('fiscal', $1) ON CONFLICT (clave) DO NOTHING", [JSON.stringify(CONFIG_FISCAL_DEFECTO)]);
+      for (const t of TABLAS) await c.query(`ALTER TABLE ${t} ENABLE ROW LEVEL SECURITY`); // sin acceso por la API pública de Supabase
+        await c.query('COMMIT');
+      } catch (err) {
+        await c.query('ROLLBACK').catch(() => {});
+        throw err;
+      } finally {
+        c.release();
+      }
     })().catch((err) => { listo = null; throw err; });
   }
   return listo;
