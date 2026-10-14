@@ -2,7 +2,7 @@
 
 import React, { useState } from 'react';import { UserRole, PacienteCatalogo, DoctorCatalogo, ServicioCatalogo } from '@/types';
 import { useAvisos } from '@/components/ui/avisos';
-import { Users, Stethoscope, Activity, FileSpreadsheet, BadgePercent } from 'lucide-react';import { normalizarCedulaRif, extraerDigitos, validarEstructuraCedulaRif } from '@/lib/cedulaRif';import { calcularEdadReal } from '@/lib/date';import { getErrorMessage } from '@/lib/utils';
+import { Users, Stethoscope, Activity, FileSpreadsheet, BadgePercent, Truck } from 'lucide-react';import { normalizarCedulaRif, extraerDigitos, validarEstructuraCedulaRif } from '@/lib/cedulaRif';import { calcularEdadReal } from '@/lib/date';import { getErrorMessage } from '@/lib/utils';
 import { ModalEstudio } from '@/components/admincatalogos/ModalEstudio';
 import { ModalEspecialista } from '@/components/admincatalogos/ModalEspecialista';
 import { ModalPaciente } from '@/components/admincatalogos/ModalPaciente';
@@ -12,6 +12,7 @@ import { TabEstudios } from '@/components/admincatalogos/TabEstudios';
 import { PanelPromociones } from '@/components/admincatalogos/PanelPromociones';
 import { TabEspecialistas } from '@/components/admincatalogos/TabEspecialistas';
 import { TabPacientes } from '@/components/admincatalogos/TabPacientes';
+import { ProveedoresCatalogo } from '@/components/egresos/ProveedoresCatalogo';
 
 interface ModuloAdminCatalogosProps {
   currentRole: UserRole;
@@ -30,7 +31,7 @@ interface PacienteApi {
 
 export const ModuloAdminCatalogos: React.FC<ModuloAdminCatalogosProps> = ({ currentRole }) => {
   const { avisar } = useAvisos();
-  const [tabActiva, setTabActiva] = useState<'pacientes' | 'doctores' | 'servicios' | 'promociones' | 'carga_masiva'>('pacientes');
+  const [tabActiva, setTabActiva] = useState<'pacientes' | 'doctores' | 'servicios' | 'promociones' | 'proveedores' | 'carga_masiva'>('pacientes');
   const [busqueda, setBusqueda] = useState('');
 
   // Estados de Catálogos
@@ -432,6 +433,20 @@ export const ModuloAdminCatalogos: React.FC<ModuloAdminCatalogosProps> = ({ curr
             </button>
           )}
 
+          {!isReadOnly && (
+            <button
+              onClick={() => { setTabActiva('proveedores'); setBusqueda(''); }}
+              className={`px-3.5 py-1.5 rounded-lg transition-all flex items-center gap-1.5 ${
+                tabActiva === 'proveedores'
+                  ? 'bg-white text-[#1D7A70] shadow-sm font-black'
+                  : 'text-slate-500 hover:text-slate-800'
+              }`}
+            >
+              <Truck className="w-3.5 h-3.5" />
+              <span>Proveedores</span>
+            </button>
+          )}
+
           <button
             onClick={() => { setTabActiva('carga_masiva'); setBusqueda(''); }}
             className={`px-3.5 py-1.5 rounded-lg transition-all flex items-center gap-1.5 ${
@@ -452,6 +467,9 @@ export const ModuloAdminCatalogos: React.FC<ModuloAdminCatalogosProps> = ({ curr
       )}
 
       {tabActiva === 'promociones' && !isReadOnly && <PanelPromociones />}
+
+      {/* Misma pantalla que Egresos → Proveedores y catálogo (mismos datos). */}
+      {tabActiva === 'proveedores' && !isReadOnly && <ProveedoresCatalogo onCambio={() => {}} />}
 
       {/* 2. PESTAÑA: ESPECIALISTAS MÉDICOS EN TARJETAS INTERACTIVAS */}
       {tabActiva === 'doctores' && (
