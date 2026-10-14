@@ -358,7 +358,7 @@ export default function Home() {
                     <Button 
                       size="sm" 
                       onClick={() => setActiveSection('egresos')}
-                      className="rounded-xl bg-clinica-coral hover:bg-clinica-coral/90 text-white text-xs font-bold shadow-sm flex items-center gap-1 h-9"
+                      className="rounded-xl bg-rose-600 hover:bg-rose-700 text-white text-xs font-bold shadow-sm flex items-center gap-1 h-9"
                     >
                       <ArrowDownRight className="w-3.5 h-3.5 mr-1" />
                       <span>Nuevo Egreso Rápido</span>

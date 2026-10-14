@@ -74,6 +74,10 @@ describe('RBAC por ruta', () => {
     expect(isAllowed('asistente', '/api/tesoreria/transferencias', 'POST')).toBe(false);
     expect(isAllowed('cajero', '/api/tesoreria/transferencias', 'POST')).toBe(false);
     expect(isAllowed('admin', '/api/tesoreria/transferencias', 'POST')).toBe(true);
+    expect(isAllowed('asistente', '/api/tesoreria/compras/config', 'PUT')).toBe(false);
+    expect(isAllowed('asistente', '/api/tesoreria/compras/config', 'GET')).toBe(true);
+    expect(isAllowed('cajero', '/api/tesoreria/compras/facturas', 'GET')).toBe(false);
+    expect(isAllowed('asistente', '/api/tesoreria/compras/pagos', 'POST')).toBe(false);
   });
   it('no se salta el prefijo con rutas parecidas', () => {
     expect(isAllowed('cajero', '/api/facturas-secretas', 'GET')).toBe(false);

@@ -8,7 +8,11 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
-import { ArrowDownRight, Smartphone, AlertCircle, CheckCircle2, FileSpreadsheet, FileText, Search, X, FileText as FileIcon } from 'lucide-react';
+import { ArrowDownRight, BarChart3, Building2, Clock, Receipt, Smartphone, AlertCircle, CheckCircle2, FileSpreadsheet, FileText, Search, X, FileText as FileIcon } from 'lucide-react';
+import { FormCompra } from './egresos/FormCompra';
+import { PorPagar } from './egresos/PorPagar';
+import { ProveedoresCatalogo } from './egresos/ProveedoresCatalogo';
+import { ReporteEgresos } from './egresos/ReporteEgresos';
 import { exportarAExcel, exportarAPDF } from '@/lib/exportUtils';
 import { CuentaBancaria } from '@/types';
 import { getErrorMessage } from '@/lib/utils';
@@ -33,6 +37,8 @@ interface RegistroFinanciero {
   referencia: string;
   fecha: string;
   beneficiario?: string;
+  /** Clave única de la fila (los ids de tablas distintas pueden repetirse). */
+  clave?: string;
 }
 
 /** Fila cruda devuelta por /api/tesoreria/egresos-operativos e ingresos-extraordinarios. */
@@ -63,7 +69,9 @@ export const ModuloEgresosOperativos: React.FC<ModuloEgresosOperativosProps> = (
 }) => {
   const { avisar } = useAvisos();
   const isAdmin = currentRole === 'admin';
-  const [tabActiva, setTabActiva] = useState<'egreso' | 'historial'>('egreso');
+  const [tabActiva, setTabActiva] = useState<'egreso' | 'compra' | 'porpagar' | 'proveedores' | 'reporte' | 'historial'>('egreso');
+  const [recargaCompras, setRecargaCompras] = useState(0);
+  const cambioCompras = () => { setRecargaCompras((n) => n + 1); if (onEgresoRegistrado) onEgresoRegistrado(); };
   const [loading, setLoading] = useState(false);
   const [mensajeExito, setMensajeExito] = useState<string | null>(null);
   const [mensajeError, setMensajeError] = useState<string | null>(null);
@@ -134,6 +142,29 @@ export const ModuloEgresosOperativos: React.FC<ModuloEgresosOperativosProps> = (
             referencia: item.referencia || 'S/R',
             fecha: item.created_at ? new Date(item.created_at).toLocaleString('es-VE') : new Date().toLocaleDateString('es-VE'),
             beneficiario: item.origen || 'N/A'
+          }))];
+        }
+      }
+
+      // Pagos de compras con factura (no reversados): también son egresos.
+      const resCompras = await fetch('/api/tesoreria/compras/pagos').catch(() => null);
+      if (resCompras && resCompras.ok) {
+        const data = await resCompras.json();
+        if (Array.isArray(data)) {
+          list = [...list, ...data.filter((p: { reversado: boolean }) => !p.reversado).map((p: { id: number; cuenta_id: number; cuenta: string; monto_cuenta: string; moneda_cuenta: string; referencia: string | null; fecha: string; numero_factura: string; razon_social: string }) => ({
+            id: p.id,
+            clave: `compra-${p.id}`,
+            tipo: 'EGRESO' as const,
+            cuenta_id: p.cuenta_id,
+            cuenta_nombre: p.cuenta,
+            categoria: 'Compra con factura',
+            concepto_libre: `Pago factura N° ${p.numero_factura}`,
+            monto: Number(p.monto_cuenta),
+            moneda: p.moneda_cuenta,
+            total_debitado: Number(p.monto_cuenta),
+            referencia: p.referencia || 'S/R',
+            fecha: p.fecha,
+            beneficiario: p.razon_social,
           }))];
         }
       }
@@ -342,7 +373,11 @@ export const ModuloEgresosOperativos: React.FC<ModuloEgresosOperativosProps> = (
       <div className="flex flex-wrap items-center justify-end gap-2">
         <div className="flex flex-wrap items-center gap-2">
           {[
-            { id: 'egreso', label: 'Nuevo Gasto Operativo', icon: ArrowDownRight, color: 'bg-rose-600' },
+            { id: 'egreso', label: 'Gasto menor', icon: ArrowDownRight, color: 'bg-rose-600' },
+            { id: 'compra', label: 'Compra con factura', icon: Receipt, color: 'bg-rose-600' },
+            { id: 'porpagar', label: 'Por pagar', icon: Clock, color: 'bg-rose-600' },
+            { id: 'proveedores', label: 'Proveedores y catálogo', icon: Building2, color: 'bg-rose-600' },
+            { id: 'reporte', label: 'Reporte', icon: BarChart3, color: 'bg-rose-600' },
             { id: 'historial', label: 'Historial y Auditoría', icon: FileIcon, color: 'bg-slate-900' }
           ].map(tab => {
             const Icon = tab.icon;
@@ -556,6 +591,11 @@ export const ModuloEgresosOperativos: React.FC<ModuloEgresosOperativosProps> = (
         </Card>
       )}
 
+      {tabActiva === 'compra' && <FormCompra cuentas={cuentas} onRegistrada={cambioCompras} />}
+      {tabActiva === 'porpagar' && <PorPagar cuentas={cuentas} recarga={recargaCompras} onCambio={cambioCompras} />}
+      {tabActiva === 'proveedores' && <ProveedoresCatalogo onCambio={cambioCompras} />}
+      {tabActiva === 'reporte' && <ReporteEgresos recarga={recargaCompras} />}
+
       {/* PESTAÑA 3: HISTORIAL Y AUDITORÍA DE MOVIMIENTOS */}
       {tabActiva === 'historial' && (
         <div className="space-y-4">
@@ -636,7 +676,7 @@ export const ModuloEgresosOperativos: React.FC<ModuloEgresosOperativosProps> = (
                     </tr>
                   ) : (
                     historialFiltrado.map(item => (
-                      <tr key={item.id} className="hover:bg-slate-50/80">
+                      <tr key={item.clave ?? `${item.tipo}-${item.id}`} className="hover:bg-slate-50/80">
                         <td className="p-3 font-mono font-bold text-slate-700">
                           #{item.id} • {item.referencia}
                         </td>
