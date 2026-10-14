@@ -1,7 +1,7 @@
 import type { PoolClient } from 'pg';
 import pool from '@/lib/db';
 import { centsToNumber, centsToStr } from '@/lib/money';
-import { claveMedico, exigirSaldoValido, saldoDeuda, type TipoMovDeuda } from '@/lib/deudasHonorarios';
+import { cargosPendientes, claveMedico, exigirSaldoValido, saldoDeuda, saldoEnBs, type MovConTasa, type TipoMovDeuda } from '@/lib/deudasHonorarios';
 
 let listo: Promise<void> | null = null;
 
@@ -69,28 +69,46 @@ export async function registrarMovDeuda(client: PoolClient, m: MovDeuda): Promis
 
 export interface MovDeudaFila {
   id: number; tipo: TipoMovDeuda; monto_usd: string; fecha: string; descripcion: string | null; usuario: string | null;
-  factura_id: number | null; pago_honorario_id: number | null;
+  factura_id: number | null; pago_honorario_id: number | null; tasa: string | null;
 }
-export interface DeudaMedico { medico: string; saldoUsd: number; movimientos: MovDeudaFila[] }
+/** `saldoBs`: lo que debe devolver en Bs, cada cargo a la tasa de cobro de su factura (null si algún cargo no la tiene). */
+export interface DeudaMedico { medico: string; saldoUsd: number; saldoBs: number | null; movimientos: MovDeudaFila[] }
+
+/** Movimientos del médico en orden cronológico, con la tasa de cobro de la factura de cada cargo. */
+export async function movimientosConTasa(client: PoolClient, medico: string): Promise<MovConTasa[]> {
+  const r = await client.query(
+    `SELECT d.id, d.tipo, d.monto_usd::text AS monto_usd, f.tasa_bcv::text AS tasa
+     FROM deudas_honorarios d LEFT JOIN facturas_caja f ON f.id = d.factura_id
+     WHERE upper(trim(d.medico)) = upper(trim($1)) ORDER BY d.creado_en, d.id`,
+    [medico]
+  );
+  return r.rows;
+}
 
 /** Deudas agrupadas por médico (solo los que tienen movimientos), con el nombre del movimiento más reciente. */
 export async function deudasPorMedico(medico?: string): Promise<DeudaMedico[]> {
   await asegurarDeudasHonorarios();
   const r = await pool.query(
-    `SELECT id, medico, tipo, monto_usd::text AS monto_usd, to_char(fecha, 'YYYY-MM-DD') AS fecha, descripcion, usuario, factura_id, pago_honorario_id
-     FROM deudas_honorarios ${medico ? 'WHERE upper(trim(medico)) = upper(trim($1))' : ''}
-     ORDER BY creado_en DESC, id DESC`,
+    `SELECT d.id, d.medico, d.tipo, d.monto_usd::text AS monto_usd, to_char(d.fecha, 'YYYY-MM-DD') AS fecha, d.descripcion, d.usuario,
+            d.factura_id, d.pago_honorario_id, f.tasa_bcv::text AS tasa
+     FROM deudas_honorarios d LEFT JOIN facturas_caja f ON f.id = d.factura_id
+     ${medico ? 'WHERE upper(trim(d.medico)) = upper(trim($1))' : ''}
+     ORDER BY d.creado_en DESC, d.id DESC`,
     medico ? [medico] : []
   );
   const grupos = new Map<string, DeudaMedico>();
   for (const f of r.rows) {
     const k = claveMedico(f.medico);
-    if (!grupos.has(k)) grupos.set(k, { medico: f.medico, saldoUsd: 0, movimientos: [] });
+    if (!grupos.has(k)) grupos.set(k, { medico: f.medico, saldoUsd: 0, saldoBs: null, movimientos: [] });
     grupos.get(k)!.movimientos.push({
       id: f.id, tipo: f.tipo, monto_usd: f.monto_usd, fecha: f.fecha, descripcion: f.descripcion, usuario: f.usuario,
-      factura_id: f.factura_id, pago_honorario_id: f.pago_honorario_id,
+      factura_id: f.factura_id, pago_honorario_id: f.pago_honorario_id, tasa: f.tasa,
     });
   }
-  for (const g of grupos.values()) g.saldoUsd = centsToNumber(saldoDeuda(g.movimientos));
+  for (const g of grupos.values()) {
+    g.saldoUsd = centsToNumber(saldoDeuda(g.movimientos));
+    const pendientes = cargosPendientes([...g.movimientos].reverse()); // en orden cronológico
+    g.saldoBs = pendientes.some((c) => c.tasa === null) ? null : centsToNumber(saldoEnBs(pendientes, 0));
+  }
   return [...grupos.values()];
 }

@@ -474,7 +474,8 @@ export const TablaHonorarios: React.FC<TablaHonorariosProps> = ({
                         <td className="p-3 text-center">
                           <Button
                             size="sm"
-                            disabled={isReadOnly}
+                            disabled={isReadOnly || !(Number(doc.total_usd) > 0)}
+                            title={Number(doc.total_usd) > 0 ? undefined : 'No tiene honorarios pendientes por liquidar'}
                             onClick={() => handleOpenLiquidar(doc)}
                             className="bg-clinica-primary hover:bg-clinica-primary-dark text-white text-xs font-bold rounded-xl h-8 px-3 shadow-sm flex items-center gap-1.5 mx-auto"
                           >

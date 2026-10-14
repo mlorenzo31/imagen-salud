@@ -5,8 +5,8 @@ import { camposFechaOperacion, resolverFechaOperacion } from '@/lib/fechaOperaci
 import { ApiError, parseBody, sesionUsuario, withTransaction, errorResponse } from '@/lib/apiHelpers';
 import { centsToNumber, centsToStr, toCents } from '@/lib/money';
 import { obtenerTasaBcv } from '@/lib/tasaBcv';
-import { usdDeBs, validarDevolucion } from '@/lib/deudasHonorarios';
-import { asegurarDeudasHonorarios, bloquearYSaldo, registrarMovDeuda } from '@/lib/deudasHonorariosDb';
+import { cargosPendientes, devolucionEnBs, validarDevolucion } from '@/lib/deudasHonorarios';
+import { asegurarDeudasHonorarios, bloquearYSaldo, movimientosConTasa, registrarMovDeuda } from '@/lib/deudasHonorariosDb';
 
 const FORMAS = {
   EFECTIVO_USD: { etiqueta: 'Efectivo Divisas', moneda: 'USD' as const },
@@ -31,18 +31,20 @@ export async function POST(request: NextRequest) {
     const { fecha, hora, nota, diaCerrado, motivo } = await resolverFechaOperacion(b, request.headers.get('x-session-role') === 'admin');
     const forma = FORMAS[b.forma];
     const montoCents = toCents(b.monto);
-    let montoUsd = montoCents;
-    let tasaTxt = '';
-    if (forma.moneda === 'BS') {
-      const tasa = await obtenerTasaBcv();
-      if (!tasa) throw new ApiError(503, 'No hay tasa BCV disponible para convertir la devolución.');
-      montoUsd = usdDeBs(montoCents, tasa.tasa);
-      tasaTxt = ` a tasa ${tasa.tasa}`;
-    }
+    // La tasa del día solo hace falta de respaldo, para un cargo sin factura (no debería ocurrir).
+    const tasaHoy = forma.moneda === 'BS' ? (await obtenerTasaBcv())?.tasa ?? null : null;
+    const tasaTxt = forma.moneda === 'BS' ? ' a la tasa de cobro de cada factura' : '';
 
     await asegurarDeudasHonorarios();
     const out = await withTransaction(async (client) => {
       const deuda = await bloquearYSaldo(client, b.medico);
+      let montoUsd = montoCents;
+      if (forma.moneda === 'BS') {
+        // Lo cobrado en Bs se devuelve en Bs a la tasa del día en que se cobró la factura, cargo por cargo del más viejo al más nuevo.
+        const pendientes = cargosPendientes(await movimientosConTasa(client, b.medico));
+        if (pendientes.some((c) => c.tasa === null) && !tasaHoy) throw new ApiError(503, 'No hay tasa BCV disponible para convertir la devolución.');
+        montoUsd = devolucionEnBs(montoCents, pendientes, tasaHoy ?? 0);
+      }
       validarDevolucion(montoUsd, deuda);
 
       const cuenta = await client.query('SELECT id, saldo_actual FROM cuentas_bancarias WHERE codigo = $1 FOR UPDATE', [b.forma]);
@@ -63,12 +65,12 @@ export async function POST(request: NextRequest) {
         medico: b.medico, tipo: 'ABONO_DEVOLUCION', cents: montoUsd, movimientoId: mov.rows[0].id, fecha, usuario, descripcion,
       });
       if (diaCerrado) await marcarCierreModificado(client, fecha, motivo, usuario);
-      return { restante: deuda - montoUsd };
+      return { restante: deuda - montoUsd, montoUsd };
     });
 
     return NextResponse.json({
       mensaje: `Devolución de ${b.medico} registrada.`,
-      montoUsd: centsToNumber(montoUsd),
+      montoUsd: centsToNumber(out.montoUsd),
       saldoRestanteUsd: centsToNumber(out.restante),
     });
   } catch (err) {
