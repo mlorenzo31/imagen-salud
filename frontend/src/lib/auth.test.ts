@@ -50,6 +50,9 @@ describe('RBAC por ruta', () => {
     expect(isAllowed('asistente', '/api/admin/fiscal', 'GET')).toBe(false);
     expect(isAllowed('cajero', '/api/admin/fiscal', 'PUT')).toBe(false);
     expect(isAllowed('admin', '/api/admin/fiscal', 'PUT')).toBe(true);
+    // Documentos fiscales pendientes: admin y asistente; el cajero no.
+    expect(isAllowed('cajero', '/api/fiscal/pendientes', 'GET')).toBe(false);
+    expect(isAllowed('asistente', '/api/fiscal/pendientes', 'POST')).toBe(true);
     expect(isAllowed('cajero', '/api/cierres/resumen-servicios', 'GET')).toBe(false);
     expect(isAllowed('asistente', '/api/cierres/resumen-servicios', 'GET')).toBe(true);
     expect(isAllowed('admin', '/api/cierres/resumen-servicios', 'GET')).toBe(true);

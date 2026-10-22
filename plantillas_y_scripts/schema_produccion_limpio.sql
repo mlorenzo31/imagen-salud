@@ -558,7 +558,7 @@ CREATE TABLE IF NOT EXISTS documentos_fiscales (
   factura_caja_id INTEGER REFERENCES facturas_caja(id),
   doc_referencia_id INTEGER REFERENCES documentos_fiscales(id),
   medio VARCHAR(12) NOT NULL DEFAULT 'DIGITAL' CHECK (medio IN ('DIGITAL', 'CONTINGENCIA')),
-  estado VARCHAR(10) NOT NULL DEFAULT 'PENDIENTE' CHECK (estado IN ('PENDIENTE', 'EMITIDO', 'ERROR')),
+  estado VARCHAR(10) NOT NULL DEFAULT 'PENDIENTE' CONSTRAINT documentos_fiscales_estado_check CHECK (estado IN ('PENDIENTE', 'ENVIANDO', 'EMITIDO', 'ERROR')),
   fecha_emision DATE NOT NULL,
   hora_emision VARCHAR(8) NOT NULL,
   receptor_nombre VARCHAR(200) NOT NULL,
@@ -577,6 +577,10 @@ CREATE TABLE IF NOT EXISTS documentos_fiscales (
   pdf_url TEXT,
   qr TEXT,
   respuesta_proveedor JSONB,
+  intentos INTEGER NOT NULL DEFAULT 0,
+  ultimo_error TEXT,
+  proximo_intento TIMESTAMPTZ NOT NULL DEFAULT now(),
+  emitido_en TIMESTAMPTZ,
   usuario VARCHAR(100),
   creado_en TIMESTAMPTZ NOT NULL DEFAULT now(),
   UNIQUE (tipo, numero),
@@ -584,3 +588,4 @@ CREATE TABLE IF NOT EXISTS documentos_fiscales (
 );
 CREATE INDEX IF NOT EXISTS documentos_fiscales_factura ON documentos_fiscales (factura_caja_id);
 CREATE INDEX IF NOT EXISTS documentos_fiscales_fecha ON documentos_fiscales (fecha_emision);
+CREATE INDEX IF NOT EXISTS documentos_fiscales_cola ON documentos_fiscales (proximo_intento) WHERE estado IN ('PENDIENTE', 'ENVIANDO');

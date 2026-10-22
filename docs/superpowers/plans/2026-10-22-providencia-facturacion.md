@@ -39,37 +39,37 @@ Cada tarea de código sigue TDD (`npm test`, `npm run typecheck`, `npm run lint`
 
 ### Fase 1 · Modelo de datos fiscal — nov 2026
 Independiente del proveedor; se puede empezar ya.
-- [ ] Configuración del emisor en `config_fiscal` (ya existe, clave/valor JSONB): razón social, RIF, domicilio fiscal, `condicion_iva`, `percibe_igtf`, datos de la imprenta digital, texto de la leyenda del art. 19. Pantalla de administración (solo admin).
-- [ ] Tabla `documentos_fiscales`: `tipo` (FACTURA | NOTA_CREDITO | NOTA_DEBITO), `factura_caja_id`, `numero` (consecutivo único), `numero_control` (2+8), `fecha_asignacion_control`, `fecha_emision`, `hora_emision`, `medio` (DIGITAL | CONTINGENCIA), `estado`, `doc_referencia_id` (para notas), totales en centavos (exento, base y IVA por alícuota, IGTF, total Bs y USD), `tasa_cambio`, `payload` JSONB, `pdf_url`, `qr`, respuesta del proveedor. Restricciones UNIQUE en número y número de control.
-- [ ] Ítems con **código de operación** (art. 9.2): agregar `codigo` al catálogo de estudios (`lib/catalogos.ts`, admin de catálogos) y copiarlo al servicio facturado.
-- [ ] Receptor (art. 8.6): nombre y cédula/pasaporte ya existen; agregar opción **"Facturar a"** (razón social + RIF) cuando paga una empresa o aseguradora.
-- [ ] Actualizar `plantillas_y_scripts/schema_produccion_limpio.sql`.
+- [x] Configuración del emisor en `config_fiscal` (ya existe, clave/valor JSONB): razón social, RIF, domicilio fiscal, `condicion_iva`, `percibe_igtf`, datos de la imprenta digital, texto de la leyenda del art. 19. Pantalla de administración (solo admin).
+- [x] Tabla `documentos_fiscales`: `tipo` (FACTURA | NOTA_CREDITO | NOTA_DEBITO), `factura_caja_id`, `numero` (consecutivo único), `numero_control` (2+8), `fecha_asignacion_control`, `fecha_emision`, `hora_emision`, `medio` (DIGITAL | CONTINGENCIA), `estado`, `doc_referencia_id` (para notas), totales en centavos (exento, base y IVA por alícuota, IGTF, total Bs y USD), `tasa_cambio`, `payload` JSONB, `pdf_url`, `qr`, respuesta del proveedor. Restricciones UNIQUE en número y número de control.
+- [x] Ítems con **código de operación** (art. 9.2): agregar `codigo` al catálogo de estudios (`lib/catalogos.ts`, admin de catálogos) y copiarlo al servicio facturado.
+- [x] Receptor (art. 8.6): nombre y cédula/pasaporte ya existen; agregar opción **"Facturar a"** (razón social + RIF) cuando paga una empresa o aseguradora.
+- [x] Actualizar `plantillas_y_scripts/schema_produccion_limpio.sql`.
 
 ### Fase 2 · Construcción del documento (`lib/fiscal/`) — nov–dic 2026
 Funciones puras, con pruebas unitarias.
-- [ ] `formato.ts`: `fechaFiscal()` → DDMMAAAA; `horaFiscal()` → HH.MM.SS a.m./p.m.; `numeroControl(id, sec)` → `00-00000001`; `marcarExento(desc)` → `desc (E)`.
-- [ ] `factura.ts`: `construirFactura(facturaCaja, config, tasa)` → documento con todos los requisitos del art. 8:
+- [x] `formato.ts`: `fechaFiscal()` → DDMMAAAA; `horaFiscal()` → HH.MM.SS a.m./p.m.; `numeroControl(id, sec)` → `00-00000001`; `marcarExento(desc)` → `desc (E)`.
+- [x] `factura.ts`: `construirFactura(facturaCaja, config, tasa)` → documento con todos los requisitos del art. 8:
   - total exento / base e IVA por alícuota;
   - descuentos (8.8);
   - IGTF si aplica;
   - equivalencia en Bs y en divisa con el tipo de cambio (8.12);
   - leyenda del art. 19 y frase de contribuyente formal (condicional).
-- [ ] `notas.ts`: `construirNotaCredito/Debito(original, motivo, montos)` con referencia a la fecha, el número, el N° de control y el monto de la factura original (arts. 12-13).
-- [ ] Casos de prueba: factura 100 % exenta, mixta exenta/gravada, pago mixto Bs + USD con IGTF, descuento, receptor con RIF y sin RIF, nota de crédito total y parcial.
+- [x] `notas.ts`: `construirNotaCredito/Debito(original, motivo, montos)` con referencia a la fecha, el número, el N° de control y el monto de la factura original (arts. 12-13).
+- [x] Casos de prueba: factura 100 % exenta, mixta exenta/gravada, pago mixto Bs + USD con IGTF, descuento, receptor con RIF y sin RIF, nota de crédito total y parcial.
 
 ### Fase 3 · Integración con la imprenta digital — ene 2027
-- [ ] Interfaz de servidor `ProveedorFiscal` con `emitir(doc)`, `consultar(id)` y `descargarPdf(id)`.
+- [x] Interfaz de servidor `ProveedorFiscal` con `emitir(doc)`, `consultar(id)` y `descargarPdf(id)`.
   - Implementaciones: **adaptador de la imprenta elegida** y **adaptador simulado** (para pruebas y demo).
   - Credenciales en variables de entorno del servidor (`.env.example`); nada en el navegador.
-- [ ] Retirar `lib/imprentaDigital.ts`: se elimina el interruptor en `localStorage` y los datos fijos.
-- [ ] Flujo de emisión dentro de `POST /api/facturas`:
+- [x] Retirar `lib/imprentaDigital.ts`: se elimina el interruptor en `localStorage` y los datos fijos.
+- [x] Flujo de emisión dentro de `POST /api/facturas`:
   1. Se guarda la factura y una fila en la **cola fiscal**, en la misma transacción.
   2. Se envía a la imprenta con una clave de idempotencia (el id del documento).
   3. Se guarda el N° de control, el PDF y el QR.
   4. Se hacen reintentos con backoff.
   5. Si la imprenta no responde → se pasa a contingencia (Fase 5).
-- [ ] La impresión o el envío al paciente (WhatsApp/correo) usan el **PDF de la imprenta**.
-- [ ] Bitácora (`lib/bitacora.ts`) de cada emisión y de cada error.
+- [ ] La impresión o el envío al paciente (WhatsApp/correo) usan el **PDF de la imprenta** — *pendiente del adaptador de la imprenta elegida (el simulado no genera PDF).*
+- [x] Bitácora (`lib/bitacora.ts`) de cada emisión y de cada error.
 
 ### Fase 3B · Facturación diferida y tablero de control fiscal — ene–feb 2027
 Regla: **todo cobro termina con su factura fiscal**. Diferir solo cambia el *momento* de emitirla, nunca si se emite.

@@ -16,6 +16,7 @@ import {
   validarFichaPaciente,
   FichaErrores
 } from '@/lib/pacienteValidation';
+import { avisoFiscal } from '@/lib/fiscal/aviso';
 import { FacturarA, FACTURAR_A_VACIO, type FacturarAForm } from '@/components/facturacion/FacturarA';
 import { FormasDePago } from '@/components/facturacion/FormasDePago';
 import { SeleccionEstudios } from '@/components/facturacion/SeleccionEstudios';
@@ -47,7 +48,6 @@ interface CarritoItem {
   };
 }
 
-const FEATURE_IMPRENTA_DIGITAL = process.env.NEXT_PUBLIC_FEATURE_IMPRENTA_DIGITAL === 'true';
 
 export const ModuloFacturacion: React.FC<ModuloFacturacionProps> = ({ onFacturaEmitida, rol }) => {
   // Estado para gestión multi-estudio y prioridad inicial
@@ -570,6 +570,8 @@ export const ModuloFacturacion: React.FC<ModuloFacturacionProps> = ({ onFacturaE
 
       const dataFactura = await res.json();
       setFacturaEmitida(dataFactura);
+      const aviso = avisoFiscal(dataFactura.fiscal);
+      if (aviso) avisar({ tipo: aviso.tipo, titulo: 'Factura fiscal', mensaje: aviso.mensaje });
       const estPrincipal = carrito.find(c => c.id === (estudioPrincipalId || carrito[0]?.id));
       setAlertaExito({
         visible: true,

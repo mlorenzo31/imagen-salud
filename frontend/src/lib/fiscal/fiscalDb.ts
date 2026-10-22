@@ -17,11 +17,14 @@ export function asegurarFiscal(): Promise<void> {
     listo = (async () => {
       const completas = async (q: Pick<PoolClient, 'query'>) => {
         const r = await q.query(
-          `SELECT count(*)::int AS n FROM pg_class c JOIN pg_namespace s ON s.oid = c.relnamespace
-           WHERE s.nspname = current_schema() AND c.relname = ANY($1::text[]) AND c.relrowsecurity`,
+          `SELECT (SELECT count(*)::int FROM pg_class c JOIN pg_namespace s ON s.oid = c.relnamespace
+                   WHERE s.nspname = current_schema() AND c.relname = ANY($1::text[]) AND c.relrowsecurity) AS n,
+                  EXISTS (SELECT 1 FROM information_schema.columns WHERE table_schema = current_schema()
+                          AND table_name = 'documentos_fiscales' AND column_name = 'proximo_intento') AS cola`,
           [TABLAS]
         );
-        return r.rows[0].n === TABLAS.length;
+        // `cola`: columnas de la Fase 3 (envío a la imprenta con reintentos) ya creadas.
+        return r.rows[0].n === TABLAS.length && r.rows[0].cola;
       };
       if (await completas(pool)) return;
       const c = await pool.connect();
@@ -49,7 +52,7 @@ export function asegurarFiscal(): Promise<void> {
             factura_caja_id INTEGER REFERENCES facturas_caja(id),
             doc_referencia_id INTEGER REFERENCES documentos_fiscales(id),
             medio VARCHAR(12) NOT NULL DEFAULT 'DIGITAL' CHECK (medio IN ('DIGITAL', 'CONTINGENCIA')),
-            estado VARCHAR(10) NOT NULL DEFAULT 'PENDIENTE' CHECK (estado IN ('PENDIENTE', 'EMITIDO', 'ERROR')),
+            estado VARCHAR(10) NOT NULL DEFAULT 'PENDIENTE',
             fecha_emision DATE NOT NULL,
             hora_emision VARCHAR(8) NOT NULL,
             receptor_nombre VARCHAR(200) NOT NULL,
@@ -75,6 +78,15 @@ export function asegurarFiscal(): Promise<void> {
           );
           CREATE INDEX IF NOT EXISTS documentos_fiscales_factura ON documentos_fiscales (factura_caja_id);
           CREATE INDEX IF NOT EXISTS documentos_fiscales_fecha ON documentos_fiscales (fecha_emision);
+          -- Fase 3: cola de envío a la imprenta digital (idempotente sobre tablas ya creadas).
+          ALTER TABLE documentos_fiscales ADD COLUMN IF NOT EXISTS intentos INTEGER NOT NULL DEFAULT 0;
+          ALTER TABLE documentos_fiscales ADD COLUMN IF NOT EXISTS ultimo_error TEXT;
+          ALTER TABLE documentos_fiscales ADD COLUMN IF NOT EXISTS proximo_intento TIMESTAMPTZ NOT NULL DEFAULT now();
+          ALTER TABLE documentos_fiscales ADD COLUMN IF NOT EXISTS emitido_en TIMESTAMPTZ;
+          ALTER TABLE documentos_fiscales DROP CONSTRAINT IF EXISTS documentos_fiscales_estado_check;
+          ALTER TABLE documentos_fiscales ADD CONSTRAINT documentos_fiscales_estado_check
+            CHECK (estado IN ('PENDIENTE', 'ENVIANDO', 'EMITIDO', 'ERROR'));
+          CREATE INDEX IF NOT EXISTS documentos_fiscales_cola ON documentos_fiscales (proximo_intento) WHERE estado IN ('PENDIENTE', 'ENVIANDO');
           ALTER TABLE facturas_caja ADD COLUMN IF NOT EXISTS receptor_razon_social VARCHAR(200);
           ALTER TABLE facturas_caja ADD COLUMN IF NOT EXISTS receptor_rif VARCHAR(15);
           ALTER TABLE facturas_caja ADD COLUMN IF NOT EXISTS receptor_domicilio TEXT;
@@ -155,7 +167,7 @@ export function filaDocumento(doc: DocumentoFiscal, m: Meta) {
   };
 }
 
-/** Guarda el documento en estado PENDIENTE (lo pasa a EMITIDO la integración con la imprenta, Fase 3). */
+/** Guarda el documento en estado PENDIENTE; `emision.ts` lo envía a la imprenta y lo pasa a EMITIDO. */
 export async function guardarDocumento(client: Pick<PoolClient, 'query'>, doc: DocumentoFiscal, m: Meta): Promise<number> {
   const f = filaDocumento(doc, m);
   const cols = Object.keys(f);

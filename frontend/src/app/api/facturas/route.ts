@@ -3,6 +3,7 @@ import type { PoolClient } from 'pg';
 import { clasificarServicio } from '@/lib/sala';
 import pool from '@/lib/db';
 import { ApiError, errorResponse, fechaHoraLocal, sesionUsuario, withTransaction } from '@/lib/apiHelpers';
+import { getErrorMessage } from '@/lib/utils';
 import { centsToStr, toCents } from '@/lib/money';
 import { obtenerTasaBcv } from '@/lib/tasaBcv';
 import { exigirJornadaAlDia, ultimaFechaCerrada } from '@/lib/cierre';
@@ -18,7 +19,10 @@ import { exigirPinSesion } from '@/lib/pin';
 import { decidirTasa } from '@/lib/tasaFactura';
 import { actorSesion, registrarBitacora } from '@/lib/bitacora';
 import { receptorAlternoSchema, type ReceptorAlterno } from '@/lib/fiscal/configEmisor';
-import { asegurarFiscal } from '@/lib/fiscal/fiscalDb';
+import { asegurarFiscal, leerConfigEmisor } from '@/lib/fiscal/fiscalDb';
+import { emitirDocumento, registrarFacturaFiscal } from '@/lib/fiscal/emision';
+import { obtenerProveedor, type ProveedorFiscal } from '@/lib/fiscal/proveedor';
+import type { ConfigEmisor } from '@/lib/fiscal/factura';
 
 export async function GET(req: NextRequest) {
   try {
@@ -317,6 +321,23 @@ export async function POST(req: NextRequest) {
 
     await asegurarMedioTransito(pool);
     await asegurarFiscal();
+    // Emisión fiscal: activa si hay proveedor (FISCAL_PROVEEDOR) y el emisor está configurado. Un error de
+    // configuración no impide cobrar: se informa en la respuesta y en la bitácora.
+    let proveedor: ProveedorFiscal | null = null;
+    let emisor: ConfigEmisor | null = null;
+    let avisoFiscal: string | null = null;
+    try {
+      proveedor = obtenerProveedor();
+      if (proveedor) {
+        emisor = await leerConfigEmisor();
+        if (!emisor.razonSocial || !emisor.rif || !emisor.domicilioFiscal) { avisoFiscal = 'Falta configurar los datos fiscales del emisor (Catálogos > Datos fiscales).'; proveedor = null; }
+      }
+    } catch (err) {
+      avisoFiscal = getErrorMessage(err);
+      proveedor = null;
+    }
+    // Se asigna dentro de la transacción (closure): el cast evita que TS lo estreche a null.
+    let docFiscal = null as { id: number; numero: string } | null;
     const factura = await withTransaction(async (client) => {
       let turnoNum = parseInt(str(data.turnoNum ?? data.turno_num), 10);
       if (!Number.isFinite(turnoNum) || turnoNum <= 0) {
@@ -434,12 +455,50 @@ export async function POST(req: NextRequest) {
           detalle: { factura_id: f.id, lista: centsToStr(totalLista), descuento: centsToStr(totalDescuento), neto: centsToStr(totalPrecio), modo: descuentoModo, origen: descuentoOrigen, motivo: descuentoMotivo, autorizado_por: autorizadoPor },
         });
       }
+      if (proveedor && emisor) {
+        // SAVEPOINT: si el documento fiscal no se puede armar, el cobro igual se registra y queda el aviso.
+        await client.query('SAVEPOINT fiscal');
+        try {
+          const r = await registrarFacturaFiscal(client, {
+            fecha, hora, tasa: String(tasaNum), pagoDivisasUsd: divisas, emisor, facturarA,
+            paciente: { nombre: f.nombre_paciente, cedula: f.cedula_paciente, direccion: str(data.direccion || data.direccion_paciente).trim().toUpperCase() },
+            servicios: servicios.map((s) => ({ codigo: s.codigo, estudio: s.estudio, area: s.area, precioLista: s.precioLista, descuento: s.descuento })),
+          }, { facturaCajaId: f.id, usuario });
+          await client.query('RELEASE SAVEPOINT fiscal');
+          docFiscal = { id: r.id, numero: r.documento.numero };
+        } catch (err) {
+          await client.query('ROLLBACK TO SAVEPOINT fiscal');
+          avisoFiscal = `No se pudo generar la factura fiscal: ${getErrorMessage(err)}`;
+        }
+      }
+      if (avisoFiscal) {
+        await registrarBitacora(client, {
+          tipo: 'FISCAL', fechaAfectada: fecha, ...actorSesion(req),
+          descripcion: `Cobro ${f.id} (${f.nombre_paciente}) sin factura fiscal: ${avisoFiscal}`,
+          detalle: { factura_id: f.id },
+        });
+      }
       return f;
     });
+
+    // Fuera de la transacción: la llamada a la imprenta no retiene bloqueos. Si falla, queda PENDIENTE para reintento.
+    let fiscal: Record<string, unknown> = proveedor ? { estado: 'NO_EMITIDA', error: avisoFiscal } : { estado: 'DESACTIVADA', aviso: avisoFiscal };
+    if (proveedor && docFiscal) {
+      const r = await emitirDocumento(pool, proveedor, docFiscal.id, fechaHoraLocal().fecha);
+      fiscal = { ...r, numero: docFiscal.numero, documentoId: docFiscal.id };
+      if (r.estado === 'ERROR') {
+        await registrarBitacora(pool, {
+          tipo: 'FISCAL', fechaAfectada: fecha, ...actorSesion(req),
+          descripcion: `La imprenta rechazó la factura fiscal ${docFiscal.numero} del cobro ${factura.id}: ${r.error}`,
+          detalle: { factura_id: factura.id, documento_id: docFiscal.id },
+        });
+      }
+    }
 
     return NextResponse.json({
       mensaje: 'Factura registrada y fondos acreditados en tesorería exitosamente.',
       factura: factura,
+      fiscal,
     });
   } catch (err) {
     return errorResponse(err);
