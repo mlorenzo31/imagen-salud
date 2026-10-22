@@ -17,6 +17,8 @@ import { exigirAutorizacionDescuento } from '@/lib/autorizacionDescuento';
 import { exigirPinSesion } from '@/lib/pin';
 import { decidirTasa } from '@/lib/tasaFactura';
 import { actorSesion, registrarBitacora } from '@/lib/bitacora';
+import { receptorAlternoSchema, type ReceptorAlterno } from '@/lib/fiscal/configEmisor';
+import { asegurarFiscal } from '@/lib/fiscal/fiscalDb';
 
 export async function GET(req: NextRequest) {
   try {
@@ -97,6 +99,8 @@ interface Servicio {
   promoId: number | null;
   modoDescuento: ModoReparto | null;
   orden: number;
+  /** Código de operación del catálogo (art. 9.2 de la providencia de facturación). */
+  codigo: string | null;
   raw: Raw; // campos adicionales del cliente (se conservan en el JSON de la factura)
 }
 
@@ -168,6 +172,7 @@ function normalizarServicios(data: Raw, catalogo: EstudioFila[]): Servicio[] {
       promoId: null,
       modoDescuento: null,
       orden: idx + 1,
+      codigo: cat?.codigo ?? null,
       raw: s,
     };
   });
@@ -302,7 +307,16 @@ export async function POST(req: NextRequest) {
     const fechaNac = str(data.fecha_nacimiento || data.fecha_nacimiento_paciente) || null;
     const sexo = esSexo(data.sexo) ? data.sexo : null;
 
+    // "Facturar a": empresa o aseguradora que recibe la factura en lugar del paciente (opcional).
+    let facturarA: ReceptorAlterno | null = null;
+    if (data.facturar_a) {
+      const r = receptorAlternoSchema.safeParse(data.facturar_a);
+      if (!r.success) throw new ApiError(400, r.error.issues[0]?.message ?? 'Datos de "Facturar a" inválidos.');
+      facturarA = r.data;
+    }
+
     await asegurarMedioTransito(pool);
+    await asegurarFiscal();
     const factura = await withTransaction(async (client) => {
       let turnoNum = parseInt(str(data.turnoNum ?? data.turno_num), 10);
       if (!Number.isFinite(turnoNum) || turnoNum <= 0) {
@@ -313,7 +327,7 @@ export async function POST(req: NextRequest) {
       }
 
       const serviciosJson = servicios.map((s) => ({
-        ...s.raw, estudio: s.estudio, medico: s.medico, area: s.area, sala: s.sala, estado: s.estado, orden: s.orden,
+        ...s.raw, estudio: s.estudio, medico: s.medico, area: s.area, sala: s.sala, estado: s.estado, orden: s.orden, codigo: s.codigo,
         precioUSD: Number(centsToStr(s.precio)), precioLista: Number(centsToStr(s.precioLista)), descuento: Number(centsToStr(s.descuento)), honorariosMedico: Number(centsToStr(s.honorarios)), gananciaClinica: Number(centsToStr(s.ganancia)),
       }));
 
@@ -323,8 +337,9 @@ export async function POST(req: NextRequest) {
           pago_punto, pago_movil, pago_efectivo_bs, pago_divisas, estado,
           servicios, total_honorarios, total_ganancia, turno_num, etapa_actual,
           telefono_paciente, estudio_principal_id, prioridad, grupo_clinico, fecha_nacimiento_paciente,
-          precio_lista_usd, descuento_usd, descuento_modo, descuento_origen, descuento_motivo, descuento_promo_id, descuento_autorizado_por)
-         VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18,$19,$20,$21,$22,$23,$24,$25,$26,$27,$28,$29,$30)
+          precio_lista_usd, descuento_usd, descuento_modo, descuento_origen, descuento_motivo, descuento_promo_id, descuento_autorizado_por,
+          receptor_razon_social, receptor_rif, receptor_domicilio)
+         VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18,$19,$20,$21,$22,$23,$24,$25,$26,$27,$28,$29,$30,$31,$32,$33)
          RETURNING *`,
         [
           fecha, hora, cedula, nombre, estudioResumen, medicoResumen, centsToStr(totalPrecio), tasaNum,
@@ -334,6 +349,7 @@ export async function POST(req: NextRequest) {
           str(data.telefono_paciente || data.telefono) || null, data.estudio_principal_id || null,
           str(data.prioridad) || 'NORMAL', str(data.grupo_clinico) || clasificarServicio(servicios[0]?.estudio ?? '', servicios[0]?.area).grupo, fechaNac,
           centsToStr(totalLista), centsToStr(totalDescuento), descuentoModo, descuentoOrigen, descuentoMotivo, promosUsadas[0] ?? null, autorizadoPor,
+          facturarA?.razonSocial ?? null, facturarA?.rif ?? null, facturarA?.domicilio || null,
         ]
       );
       const f = resFactura.rows[0];

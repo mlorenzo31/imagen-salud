@@ -125,6 +125,10 @@ CREATE TABLE IF NOT EXISTS facturas_caja (
   descuento_motivo TEXT,
   descuento_promo_id INTEGER,
   descuento_autorizado_por VARCHAR(100),
+  -- "Facturar a": empresa o aseguradora receptora de la factura fiscal (art. 8.6, Providencia G.O. 21/10/2026)
+  receptor_razon_social VARCHAR(200),
+  receptor_rif VARCHAR(15),
+  receptor_domicilio TEXT,
   PRIMARY KEY (id)
 );
 
@@ -539,3 +543,44 @@ CREATE TABLE IF NOT EXISTS retenciones_compra (
 CREATE INDEX IF NOT EXISTS facturas_compra_fecha ON facturas_compra (fecha);
 CREATE INDEX IF NOT EXISTS pagos_compra_factura ON pagos_compra (factura_id);
       
+
+-- ===== Documentos fiscales (Providencia SENIAT de facturación, G.O. 21/10/2026) — lib/fiscal/fiscalDb.ts =====
+CREATE TABLE IF NOT EXISTS secuencias_fiscales (
+  tipo VARCHAR(14) PRIMARY KEY,
+  ultimo BIGINT NOT NULL CHECK (ultimo BETWEEN 1 AND 99999999)
+);
+CREATE TABLE IF NOT EXISTS documentos_fiscales (
+  id SERIAL PRIMARY KEY,
+  tipo VARCHAR(14) NOT NULL CHECK (tipo IN ('FACTURA', 'NOTA_CREDITO', 'NOTA_DEBITO')),
+  numero VARCHAR(8) NOT NULL,
+  numero_control VARCHAR(11) UNIQUE,
+  fecha_asignacion_control DATE,
+  factura_caja_id INTEGER REFERENCES facturas_caja(id),
+  doc_referencia_id INTEGER REFERENCES documentos_fiscales(id),
+  medio VARCHAR(12) NOT NULL DEFAULT 'DIGITAL' CHECK (medio IN ('DIGITAL', 'CONTINGENCIA')),
+  estado VARCHAR(10) NOT NULL DEFAULT 'PENDIENTE' CHECK (estado IN ('PENDIENTE', 'EMITIDO', 'ERROR')),
+  fecha_emision DATE NOT NULL,
+  hora_emision VARCHAR(8) NOT NULL,
+  receptor_nombre VARCHAR(200) NOT NULL,
+  receptor_documento VARCHAR(20) NOT NULL,
+  total_exento_usd NUMERIC(14,2) NOT NULL,
+  total_iva_usd NUMERIC(14,2) NOT NULL,
+  total_igtf_usd NUMERIC(14,2) NOT NULL,
+  total_usd NUMERIC(14,2) NOT NULL,
+  total_exento_bs NUMERIC(16,2) NOT NULL,
+  total_iva_bs NUMERIC(16,2) NOT NULL,
+  total_igtf_bs NUMERIC(16,2) NOT NULL,
+  total_bs NUMERIC(16,2) NOT NULL,
+  tipo_cambio NUMERIC(14,4) NOT NULL CHECK (tipo_cambio > 0),
+  motivo TEXT,
+  payload JSONB NOT NULL,
+  pdf_url TEXT,
+  qr TEXT,
+  respuesta_proveedor JSONB,
+  usuario VARCHAR(100),
+  creado_en TIMESTAMPTZ NOT NULL DEFAULT now(),
+  UNIQUE (tipo, numero),
+  CHECK ((tipo = 'FACTURA') = (doc_referencia_id IS NULL))
+);
+CREATE INDEX IF NOT EXISTS documentos_fiscales_factura ON documentos_fiscales (factura_caja_id);
+CREATE INDEX IF NOT EXISTS documentos_fiscales_fecha ON documentos_fiscales (fecha_emision);

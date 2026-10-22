@@ -16,6 +16,7 @@ import {
   validarFichaPaciente,
   FichaErrores
 } from '@/lib/pacienteValidation';
+import { FacturarA, FACTURAR_A_VACIO, type FacturarAForm } from '@/components/facturacion/FacturarA';
 import { FormasDePago } from '@/components/facturacion/FormasDePago';
 import { SeleccionEstudios } from '@/components/facturacion/SeleccionEstudios';
 import { diferir } from '@/lib/diferir';
@@ -159,6 +160,7 @@ export const ModuloFacturacion: React.FC<ModuloFacturacionProps> = ({ onFacturaE
   const [pagoEfectivoBs, setPagoEfectivoBs] = useState<string>('');
   const [pagoPuntoBs, setPagoPuntoBs] = useState<string>('');
   const [pagoMovilBs, setPagoMovilBs] = useState<string>('');
+  const [facturarA, setFacturarA] = useState<FacturarAForm>(FACTURAR_A_VACIO);
 
   // Estados de Proceso
   const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
@@ -556,7 +558,8 @@ export const ModuloFacturacion: React.FC<ModuloFacturacionProps> = ({ onFacturaE
           tasa_manual: tasaManualEditada && tasaPin ? { pin: tasaPin } : undefined,
           descuento: descuento ? { tipo: descuento.tipo, valor: descuento.valor, modo: descuento.modo, motivo: descuento.motivo, pin: descuento.pin, autorizador: descuento.autorizador } : undefined,
           total_honorarios: totalHonorarios,
-          total_ganancia: totalGanancia
+          total_ganancia: totalGanancia,
+          facturar_a: facturarA.activo ? { razonSocial: facturarA.razonSocial, rif: facturarA.rif, domicilio: facturarA.domicilio || undefined } : undefined
         })
       });
 
@@ -592,6 +595,7 @@ export const ModuloFacturacion: React.FC<ModuloFacturacionProps> = ({ onFacturaE
       setPagoEfectivoBs('');
       setPagoPuntoBs('');
       setPagoMovilBs('');
+      setFacturarA(FACTURAR_A_VACIO);
 
       setEmitida(true);
       setTimeout(() => setEmitida(false), 1800);
@@ -1132,6 +1136,8 @@ export const ModuloFacturacion: React.FC<ModuloFacturacionProps> = ({ onFacturaE
               />
 
               {/* Formas de Pago Simultáneas con Doble Moneda */}
+              <FacturarA valor={facturarA} onChange={setFacturarA} />
+
               <FormasDePago handleAutocompletar={handleAutocompletar} pagoDivisas={pagoDivisas} setPagoDivisas={setPagoDivisas} numDivisas={numDivisas} tasaBcv={tasaBcv} pagoEfectivoBs={pagoEfectivoBs} setPagoEfectivoBs={setPagoEfectivoBs} numEfectivoBs={numEfectivoBs} pagoPuntoBs={pagoPuntoBs} setPagoPuntoBs={setPagoPuntoBs} numPuntoBs={numPuntoBs} pagoMovilBs={pagoMovilBs} setPagoMovilBs={setPagoMovilBs} numPagoMovilBs={numPagoMovilBs} />
 
               {/* Indicador de Cuadre al Centavo Multimoneda */}

@@ -29,6 +29,16 @@ export const ModalEstudio: React.FC<ModalEstudioProps> = ({ modalServicio, formS
             className="h-8 text-xs rounded-xl uppercase placeholder:normal-case font-bold"
           />
         </div>
+        <div>
+          <label className="text-xs font-bold text-slate-600 block mb-1">Código de operación (factura fiscal)</label>
+          <Input
+            value={formServicio.codigo || ''}
+            onChange={e => setFormServicio({ ...formServicio, codigo: e.target.value.toUpperCase() })}
+            placeholder="Ej. ECO-AM-03"
+            maxLength={40}
+            className="h-8 text-xs rounded-xl uppercase placeholder:normal-case font-mono"
+          />
+        </div>
         <div className="grid grid-cols-2 gap-2">
           <div>
             <label className="text-xs font-bold text-slate-600 block mb-1">Área médica</label>

@@ -46,6 +46,10 @@ describe('RBAC por ruta', () => {
     expect(isAllowed('cajero', '/api/admin/promociones', 'POST')).toBe(false);
     expect(isAllowed('asistente', '/api/admin/promociones', 'POST')).toBe(false);
     expect(isAllowed('admin', '/api/admin/promociones', 'POST')).toBe(true);
+    // Datos fiscales del emisor: solo el administrador los ve y los cambia.
+    expect(isAllowed('asistente', '/api/admin/fiscal', 'GET')).toBe(false);
+    expect(isAllowed('cajero', '/api/admin/fiscal', 'PUT')).toBe(false);
+    expect(isAllowed('admin', '/api/admin/fiscal', 'PUT')).toBe(true);
     expect(isAllowed('cajero', '/api/cierres/resumen-servicios', 'GET')).toBe(false);
     expect(isAllowed('asistente', '/api/cierres/resumen-servicios', 'GET')).toBe(true);
     expect(isAllowed('admin', '/api/cierres/resumen-servicios', 'GET')).toBe(true);
