@@ -18,6 +18,7 @@ import {
 } from '@/lib/pacienteValidation';
 import { avisoFiscal } from '@/lib/fiscal/aviso';
 import { FacturarA, FACTURAR_A_VACIO, type FacturarAForm } from '@/components/facturacion/FacturarA';
+import { DiferirFactura, DIFERIR_VACIO, type DiferirForm } from '@/components/facturacion/DiferirFactura';
 import { FormasDePago } from '@/components/facturacion/FormasDePago';
 import { SeleccionEstudios } from '@/components/facturacion/SeleccionEstudios';
 import { diferir } from '@/lib/diferir';
@@ -161,6 +162,7 @@ export const ModuloFacturacion: React.FC<ModuloFacturacionProps> = ({ onFacturaE
   const [pagoPuntoBs, setPagoPuntoBs] = useState<string>('');
   const [pagoMovilBs, setPagoMovilBs] = useState<string>('');
   const [facturarA, setFacturarA] = useState<FacturarAForm>(FACTURAR_A_VACIO);
+  const [diferirFactura, setDiferirFactura] = useState<DiferirForm>(DIFERIR_VACIO);
 
   // Estados de Proceso
   const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
@@ -559,7 +561,8 @@ export const ModuloFacturacion: React.FC<ModuloFacturacionProps> = ({ onFacturaE
           descuento: descuento ? { tipo: descuento.tipo, valor: descuento.valor, modo: descuento.modo, motivo: descuento.motivo, pin: descuento.pin, autorizador: descuento.autorizador } : undefined,
           total_honorarios: totalHonorarios,
           total_ganancia: totalGanancia,
-          facturar_a: facturarA.activo ? { razonSocial: facturarA.razonSocial, rif: facturarA.rif, domicilio: facturarA.domicilio || undefined } : undefined
+          facturar_a: facturarA.activo ? { razonSocial: facturarA.razonSocial, rif: facturarA.rif, domicilio: facturarA.domicilio || undefined } : undefined,
+          diferir: diferirFactura.activo ? { motivo: diferirFactura.motivo, pin: diferirFactura.pin } : undefined
         })
       });
 
@@ -598,6 +601,7 @@ export const ModuloFacturacion: React.FC<ModuloFacturacionProps> = ({ onFacturaE
       setPagoPuntoBs('');
       setPagoMovilBs('');
       setFacturarA(FACTURAR_A_VACIO);
+      setDiferirFactura(DIFERIR_VACIO);
 
       setEmitida(true);
       setTimeout(() => setEmitida(false), 1800);
@@ -1139,6 +1143,7 @@ export const ModuloFacturacion: React.FC<ModuloFacturacionProps> = ({ onFacturaE
 
               {/* Formas de Pago Simultáneas con Doble Moneda */}
               <FacturarA valor={facturarA} onChange={setFacturarA} />
+              <DiferirFactura valor={diferirFactura} onChange={setDiferirFactura} />
 
               <FormasDePago handleAutocompletar={handleAutocompletar} pagoDivisas={pagoDivisas} setPagoDivisas={setPagoDivisas} numDivisas={numDivisas} tasaBcv={tasaBcv} pagoEfectivoBs={pagoEfectivoBs} setPagoEfectivoBs={setPagoEfectivoBs} numEfectivoBs={numEfectivoBs} pagoPuntoBs={pagoPuntoBs} setPagoPuntoBs={setPagoPuntoBs} numPuntoBs={numPuntoBs} pagoMovilBs={pagoMovilBs} setPagoMovilBs={setPagoMovilBs} numPagoMovilBs={numPagoMovilBs} />
 

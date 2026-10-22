@@ -24,6 +24,7 @@ export const configEmisorSchema = z.object({
     providencia: texto(60),
     fechaProvidencia: z.string().regex(ISO, 'Fecha AAAA-MM-DD.'),
   }).nullable(),
+  inicioFacturacion: z.string().regex(ISO, 'Fecha AAAA-MM-DD.').nullable().default(null),
 }) satisfies z.ZodType<ConfigEmisor, unknown>;
 
 /** Lo guardado en BD completado con los valores por defecto (para versiones anteriores de la configuración). */

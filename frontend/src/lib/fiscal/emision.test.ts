@@ -2,7 +2,7 @@ import { describe, expect, it, vi } from 'vitest';
 
 vi.mock('@/lib/db', () => ({ default: { query: vi.fn(), connect: vi.fn() } }));
 
-import { emitirDocumento, entradaDesdeCobro, esperaReintento } from './emision';
+import { emitirDocumento, entradaDesdeCobro, entradaParaCobros, esperaReintento } from './emision';
 import { CONFIG_EMISOR_DEFECTO, construirFactura } from './factura';
 import { ErrorRechazo, type ProveedorFiscal } from './proveedor';
 
@@ -111,5 +111,36 @@ describe('emitirDocumento', () => {
     expect(await emitirDocumento(db as never, p, 7, '2026-10-22')).toEqual({ estado: 'OMITIDO' });
     expect(p.emitir).not.toHaveBeenCalled();
     expect(db.calls).toHaveLength(1);
+  });
+});
+
+describe('entradaParaCobros (facturar cobros diferidos)', () => {
+  const cobroA = { id: 11, paciente: { nombre: 'ANA PÉREZ', cedula: 'V111', direccion: 'CARACAS' }, facturarA: null, pagoDivisasUsd: 2000,
+    servicios: [{ codigo: 'ECO-AM-03', estudio: 'Mamario', area: 'ECOGRAFIA_AM', precioLista: 2000, descuento: 0 }] };
+  const cobroB = { id: 12, paciente: { nombre: 'LUIS RÍOS', cedula: 'V222', direccion: '' }, facturarA: null, pagoDivisasUsd: 0,
+    servicios: [{ codigo: 'RX-02', estudio: 'Tórax PA', area: 'RADIOLOGIA', precioLista: 2500, descuento: 500 }] };
+  const comun = { numero: '00000020', fecha: '2026-10-31', hora: '16:00:00', tasa: '215.10', emisor: EMISOR };
+
+  it('un solo cobro: factura al paciente (o a su "Facturar a")', () => {
+    const e = entradaParaCobros({ ...comun, cobros: [cobroA], receptor: null });
+    expect(e.receptor).toEqual({ nombre: 'ANA PÉREZ', documento: 'V111', domicilio: 'CARACAS' });
+    expect(e.lineas[0].descripcion).toBe('Mamario');
+    expect(e.tasa).toBe('215.10');
+  });
+
+  it('consolidada: un receptor (aseguradora) y una línea por servicio con el paciente', () => {
+    const receptor = { razonSocial: 'SEGUROS DEMO, C.A.', rif: 'J123456789', domicilio: 'CARACAS' };
+    const e = entradaParaCobros({ ...comun, cobros: [cobroA, cobroB], receptor });
+    expect(e.receptor).toEqual({ nombre: 'SEGUROS DEMO, C.A.', documento: 'J123456789', domicilio: 'CARACAS' });
+    expect(e.lineas.map((l) => l.descripcion)).toEqual(['Mamario — ANA PÉREZ (V111)', 'Tórax PA — LUIS RÍOS (V222)']);
+    expect(e.pagoDivisasUsd).toBe(2000);
+    expect(construirFactura(e).totales.total.usd).toBe(4000);
+  });
+
+  it('consolidar varios cobros exige el receptor', () => {
+    expect(() => entradaParaCobros({ ...comun, cobros: [cobroA, cobroB], receptor: null })).toThrow(/receptor/i);
+  });
+  it('exige al menos un cobro', () => {
+    expect(() => entradaParaCobros({ ...comun, cobros: [], receptor: null })).toThrow();
   });
 });

@@ -6,7 +6,7 @@ import type { ConfigEmisor, DocumentoFiscal, TipoDocumento } from './factura';
 
 let listo: Promise<void> | null = null;
 
-const TABLAS = ['secuencias_fiscales', 'documentos_fiscales'];
+const TABLAS = ['secuencias_fiscales', 'documentos_fiscales', 'documentos_fiscales_cobros', 'facturacion_diferida'];
 
 /**
  * Crea (idempotente) las tablas de documentos fiscales y las columnas "Facturar a" de facturas_caja.
@@ -87,6 +87,24 @@ export function asegurarFiscal(): Promise<void> {
           ALTER TABLE documentos_fiscales ADD CONSTRAINT documentos_fiscales_estado_check
             CHECK (estado IN ('PENDIENTE', 'ENVIANDO', 'EMITIDO', 'ERROR'));
           CREATE INDEX IF NOT EXISTS documentos_fiscales_cola ON documentos_fiscales (proximo_intento) WHERE estado IN ('PENDIENTE', 'ENVIANDO');
+          -- Fase 3B: qué cobros cubre cada factura (una factura por cobro; la consolidada cubre varios) y diferimientos.
+          CREATE TABLE IF NOT EXISTS documentos_fiscales_cobros (
+            documento_id INTEGER NOT NULL REFERENCES documentos_fiscales(id),
+            factura_caja_id INTEGER NOT NULL UNIQUE REFERENCES facturas_caja(id),
+            PRIMARY KEY (documento_id, factura_caja_id)
+          );
+          INSERT INTO documentos_fiscales_cobros (documento_id, factura_caja_id)
+            SELECT id, factura_caja_id FROM documentos_fiscales WHERE tipo = 'FACTURA' AND factura_caja_id IS NOT NULL
+            ON CONFLICT DO NOTHING;
+          CREATE TABLE IF NOT EXISTS facturacion_diferida (
+            factura_caja_id INTEGER PRIMARY KEY REFERENCES facturas_caja(id),
+            motivo VARCHAR(20) NOT NULL CHECK (motivo IN ('ANTICIPO', 'ASEGURADORA', 'DATOS_EMPRESA')),
+            facturar_antes_de DATE NOT NULL,
+            autorizado_por VARCHAR(100) NOT NULL,
+            creado_en TIMESTAMPTZ NOT NULL DEFAULT now(),
+            resuelto_en TIMESTAMPTZ,
+            documento_id INTEGER REFERENCES documentos_fiscales(id)
+          );
           ALTER TABLE facturas_caja ADD COLUMN IF NOT EXISTS receptor_razon_social VARCHAR(200);
           ALTER TABLE facturas_caja ADD COLUMN IF NOT EXISTS receptor_rif VARCHAR(15);
           ALTER TABLE facturas_caja ADD COLUMN IF NOT EXISTS receptor_domicilio TEXT;

@@ -87,6 +87,11 @@ export const PanelDatosFiscales: React.FC = () => {
           <label className={etiqueta}>Leyenda de la providencia (art. 19)</label>
           <Input value={form.leyendaProvidencia} onChange={(e) => set('leyendaProvidencia', e.target.value)} />
         </div>
+        <div>
+          <label className={etiqueta}>Inicio de la facturación fiscal</label>
+          <Input type="date" value={form.inicioFacturacion ?? ''} onChange={(e) => set('inicioFacturacion', e.target.value || null)} />
+          <p className="mt-1 text-xs text-slate-500">Desde esta fecha el Control Fiscal exige factura para cada cobro.</p>
+        </div>
       </div>
 
       <label className="flex items-center gap-2 text-sm font-bold text-slate-700">

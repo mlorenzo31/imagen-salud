@@ -2,7 +2,7 @@
 
 import React, { useState } from 'react';
 import Image from 'next/image';
-import { ShoppingCart, Receipt, Tv, CreditCard, FileCheck2, Wallet, TrendingUp, ArrowDownRight, ArrowLeftRight, Stethoscope, ShieldAlert, LayoutDashboard, BarChart3, Settings, FileSpreadsheet, LogOut, Eye, CheckCircle2, History, Megaphone, ScrollText, Users, KeyRound } from 'lucide-react';
+import { ShoppingCart, Receipt, Tv, CreditCard, FileCheck2, Wallet, TrendingUp, ArrowDownRight, ArrowLeftRight, Stethoscope, ShieldAlert, LayoutDashboard, BarChart3, Settings, FileSpreadsheet, LogOut, Eye, CheckCircle2, History, Megaphone, ScrollText, Users, KeyRound, Landmark } from 'lucide-react';
 import { UserRole, ModoOperacion } from '@/types';
 import { CambiarClaveDialog } from '@/components/CambiarClaveDialog';
 
@@ -50,6 +50,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
       items: [
         { id: 'conciliacion-pos', label: 'Conciliaciones', icon: CreditCard, allowed: ['admin', 'asistente'] },
         { id: 'retenciones', label: 'Retenciones SENIAT', icon: FileCheck2, allowed: ['admin', 'asistente'] },
+        { id: 'control-fiscal', label: 'Control Fiscal', icon: Landmark, allowed: ['admin', 'asistente'] },
       ]
     },
     {

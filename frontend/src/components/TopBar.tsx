@@ -12,6 +12,7 @@ const TITULOS: Record<string, { titulo: string; detalle: string }> = {
   'historial-pacientes': { titulo: 'Historial de pacientes', detalle: 'Atenciones y movimientos por paciente' },
   'conciliacion-pos': { titulo: 'Conciliaciones', detalle: 'Punto de venta y pagos recibidos' },
   retenciones: { titulo: 'Retenciones SENIAT', detalle: 'Retenciones de IVA e ISLR' },
+  'control-fiscal': { titulo: 'Control fiscal', detalle: 'Cobrado frente a facturado, diferidos y pendientes' },
   tesoreria: { titulo: 'Tesorería', detalle: 'Saldos y movimientos de cuentas' },
   'ingresos-extra': { titulo: 'Ingresos extraordinarios', detalle: 'Ingresos fuera de la facturación clínica' },
   egresos: { titulo: 'Egresos operativos', detalle: 'Gastos y comisiones bancarias' },

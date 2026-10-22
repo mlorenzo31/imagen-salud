@@ -2,6 +2,9 @@ import { describe, expect, it } from 'vitest';
 import { avisoFiscal } from './aviso';
 
 describe('avisoFiscal (mensaje para la caja tras cobrar)', () => {
+  it('diferida: recuerda la fecha límite', () => {
+    expect(avisoFiscal({ estado: 'DIFERIDA', facturarAntesDe: '2026-10-31' })).toEqual({ tipo: 'alerta', mensaje: 'Factura fiscal diferida: debe emitirse antes del 2026-10-31 (Control Fiscal).' });
+  });
   it('emitida', () => {
     expect(avisoFiscal({ estado: 'EMITIDO', numero: '00000012', numeroControl: '00-00000040' }))
       .toEqual({ tipo: 'exito', mensaje: 'Factura fiscal N° 00000012 emitida · N° de control 00-00000040.' });

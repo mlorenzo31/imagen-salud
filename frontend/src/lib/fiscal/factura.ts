@@ -29,6 +29,8 @@ export interface ConfigEmisor {
   /** Leyenda del art. 19 ("se emite conforme a la Providencia…"). */
   leyendaProvidencia: string;
   imprenta: DatosImprenta | null;
+  /** Desde esta fecha (AAAA-MM-DD) todo cobro debe tener factura fiscal; null = aún no se factura. */
+  inicioFacturacion: string | null;
 }
 
 export const CONFIG_EMISOR_DEFECTO: ConfigEmisor = {
@@ -40,6 +42,7 @@ export const CONFIG_EMISOR_DEFECTO: ConfigEmisor = {
   igtfPct: 3,
   leyendaProvidencia: 'Documento emitido conforme a la Providencia Administrativa del SENIAT publicada en Gaceta Oficial del 21/10/2026.',
   imprenta: null,
+  inicioFacturacion: null,
 };
 
 export const FRASE_FORMAL = 'Contribuyentes Formales del IVA';

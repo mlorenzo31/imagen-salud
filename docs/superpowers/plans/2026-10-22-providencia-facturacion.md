@@ -73,23 +73,24 @@ Funciones puras, con pruebas unitarias.
 
 ### Fase 3B · Facturación diferida y tablero de control fiscal — ene–feb 2027
 Regla: **todo cobro termina con su factura fiscal**. Diferir solo cambia el *momento* de emitirla, nunca si se emite.
-- [ ] Estado fiscal del cobro (`facturas_caja.estado_fiscal`):
+- [x] Estado fiscal del cobro (`facturas_caja.estado_fiscal`):
   - `FACTURADO`: documento emitido.
   - `PENDIENTE_FACTURAR`: tiene `motivo_diferido` y `facturar_antes_de`.
   - `CONTINGENCIA`: talonario emitido, falta registrarlo en la imprenta.
-- [ ] Motivos permitidos de diferimiento (lista cerrada, configurable por el admin):
+- [x] Motivos permitidos de diferimiento (lista cerrada, configurable por el admin):
   - anticipo/abono → se factura al prestar el servicio;
   - aseguradora/empresa → factura consolidada al cierre del período;
   - el paciente pide factura a nombre de una empresa → falta razón social y RIF.
-- [ ] En Recepción, al cobrar: opción "Emitir factura ahora" (por defecto) o "Diferir" con motivo obligatorio y PIN de autorización. Queda en la bitácora.
-- [ ] **Factura consolidada** a aseguradora o empresa: agrupa cobros pendientes del mismo receptor en una sola factura fiscal y enlaza cada cobro con ella.
-- [ ] Alertas: pendientes que vencen hoy o ya vencidos (en la barra superior y en el cierre diario). El **cierre del mes se bloquea** con pendientes vencidos sin justificar.
-- [ ] **Tablero de control fiscal** (rol admin/dirección), por día y por mes, en Bs y USD:
+- [x] En Recepción, al cobrar: opción "Emitir factura ahora" (por defecto) o "Diferir" con motivo obligatorio y PIN de autorización. Queda en la bitácora.
+- [x] **Factura consolidada** a aseguradora o empresa: agrupa cobros pendientes del mismo receptor en una sola factura fiscal y enlaza cada cobro con ella.
+- [x] Alertas de pendientes vencidos, sin factura y rechazados en Control Fiscal.
+- [ ] Aviso en la barra superior y en el cierre diario; bloqueo de cierre con pendientes vencidos — *pendiente: hoy no existe cierre mensual; decidir si se bloquea el cierre diario.*
+- [x] **Tablero de control fiscal** (rol admin/dirección), por día y por mes, en Bs y USD:
   - cobrado frente a facturado y pendiente de facturar (con su antigüedad);
   - emitidas, Notas de Crédito/Débito y contingencias sin registrar;
   - **conciliación**: facturado + pendiente = cobrado en tesorería; las diferencias se señalan en rojo;
   - exportación a Excel (`lib/excel.ts`).
-- [ ] Pruebas:
+- [x] Pruebas:
   - un cobro diferido aparece en el tablero hasta que se emite su factura;
   - la consolidada cubre exactamente los cobros elegidos;
   - la conciliación da cero diferencias en datos sanos y detecta un cobro sin documento.

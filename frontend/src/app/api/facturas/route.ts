@@ -21,6 +21,7 @@ import { actorSesion, registrarBitacora } from '@/lib/bitacora';
 import { receptorAlternoSchema, type ReceptorAlterno } from '@/lib/fiscal/configEmisor';
 import { asegurarFiscal, leerConfigEmisor } from '@/lib/fiscal/fiscalDb';
 import { emitirDocumento, registrarFacturaFiscal } from '@/lib/fiscal/emision';
+import { MOTIVOS_DIFERIDO, diferirSchema, fechaLimite, type MotivoDiferido } from '@/lib/fiscal/diferido';
 import { obtenerProveedor, type ProveedorFiscal } from '@/lib/fiscal/proveedor';
 import type { ConfigEmisor } from '@/lib/fiscal/factura';
 
@@ -319,6 +320,16 @@ export async function POST(req: NextRequest) {
       facturarA = r.data;
     }
 
+    // Facturación diferida (motivo de una lista cerrada + clave del usuario): el cobro se registra y la factura
+    // fiscal se emite después, con fecha límite (Control Fiscal la vigila).
+    let diferir: { motivo: MotivoDiferido } | null = null;
+    if (data.diferir) {
+      const d = diferirSchema.safeParse(data.diferir);
+      if (!d.success) throw new ApiError(400, d.error.issues[0]?.message ?? 'Datos de facturación diferida inválidos.');
+      await exigirPinSesion(req, d.data.pin);
+      diferir = { motivo: d.data.motivo };
+    }
+
     await asegurarMedioTransito(pool);
     await asegurarFiscal();
     // Emisión fiscal: activa si hay proveedor (FISCAL_PROVEEDOR) y el emisor está configurado. Un error de
@@ -455,7 +466,18 @@ export async function POST(req: NextRequest) {
           detalle: { factura_id: f.id, lista: centsToStr(totalLista), descuento: centsToStr(totalDescuento), neto: centsToStr(totalPrecio), modo: descuentoModo, origen: descuentoOrigen, motivo: descuentoMotivo, autorizado_por: autorizadoPor },
         });
       }
-      if (proveedor && emisor) {
+      if (diferir) {
+        const limite = fechaLimite(diferir.motivo, fecha);
+        await client.query(
+          'INSERT INTO facturacion_diferida (factura_caja_id, motivo, facturar_antes_de, autorizado_por) VALUES ($1, $2, $3, $4)',
+          [f.id, diferir.motivo, limite, usuario]
+        );
+        await registrarBitacora(client, {
+          tipo: 'FISCAL', fechaAfectada: fecha, ...actorSesion(req),
+          descripcion: `Facturación diferida del cobro ${f.id} (${f.nombre_paciente}): ${MOTIVOS_DIFERIDO[diferir.motivo].etiqueta}. Facturar antes del ${limite}.`,
+          detalle: { factura_id: f.id, motivo: diferir.motivo, facturar_antes_de: limite },
+        });
+      } else if (proveedor && emisor) {
         // SAVEPOINT: si el documento fiscal no se puede armar, el cobro igual se registra y queda el aviso.
         await client.query('SAVEPOINT fiscal');
         try {
@@ -482,7 +504,9 @@ export async function POST(req: NextRequest) {
     });
 
     // Fuera de la transacción: la llamada a la imprenta no retiene bloqueos. Si falla, queda PENDIENTE para reintento.
-    let fiscal: Record<string, unknown> = proveedor ? { estado: 'NO_EMITIDA', error: avisoFiscal } : { estado: 'DESACTIVADA', aviso: avisoFiscal };
+    let fiscal: Record<string, unknown> = diferir
+      ? { estado: 'DIFERIDA', motivo: diferir.motivo, facturarAntesDe: fechaLimite(diferir.motivo, fecha) }
+      : proveedor ? { estado: 'NO_EMITIDA', error: avisoFiscal } : { estado: 'DESACTIVADA', aviso: avisoFiscal };
     if (proveedor && docFiscal) {
       const r = await emitirDocumento(pool, proveedor, docFiscal.id, fechaHoraLocal().fecha);
       fiscal = { ...r, numero: docFiscal.numero, documentoId: docFiscal.id };

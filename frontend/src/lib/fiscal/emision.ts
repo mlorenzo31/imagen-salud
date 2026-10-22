@@ -44,19 +44,60 @@ export function entradaDesdeCobro(c: Cobro): EntradaFactura {
   const receptor = c.facturarA
     ? { nombre: c.facturarA.razonSocial, documento: c.facturarA.rif, domicilio: c.facturarA.domicilio }
     : { nombre: c.paciente.nombre, documento: c.paciente.cedula, domicilio: c.paciente.direccion };
-  const lineas: LineaEntrada[] = c.servicios.map((s) => ({
-    codigo: s.codigo?.trim() || s.area,
-    descripcion: s.estudio,
-    cantidad: 1,
-    precioUnitarioUsd: s.precioLista,
-    descuentoUsd: s.descuento,
-    alicuota: 0,
-  }));
   return {
     numero: c.numero, numeroControl: null, fechaAsignacionControl: null, fecha: c.fecha, hora: c.hora,
     receptor: receptor.domicilio ? receptor : { nombre: receptor.nombre, documento: receptor.documento },
-    lineas, tasa: c.tasa, pagoDivisasUsd: c.pagoDivisasUsd, emisor: c.emisor,
+    lineas: c.servicios.map((s) => lineaDeServicio(s, s.estudio)), tasa: c.tasa, pagoDivisasUsd: c.pagoDivisasUsd, emisor: c.emisor,
   };
+}
+
+/** Servicio médico → línea de factura (exento, alícuota 0); sin código de operación en el catálogo se usa el área. */
+function lineaDeServicio(s: ServicioCobrado, descripcion: string): LineaEntrada {
+  return { codigo: s.codigo?.trim() || s.area, descripcion, cantidad: 1, precioUnitarioUsd: s.precioLista, descuentoUsd: s.descuento, alicuota: 0 };
+}
+
+export interface CobroDiferido {
+  id: number;
+  paciente: Cobro['paciente'];
+  facturarA: ReceptorAlterno | null;
+  pagoDivisasUsd: number;
+  servicios: ServicioCobrado[];
+}
+
+/**
+ * Factura de cobros diferidos. Un cobro: igual que al cobrar (paciente o su "Facturar a").
+ * Varios: factura consolidada a un receptor (aseguradora o empresa) con una línea por servicio y paciente.
+ */
+export function entradaParaCobros(p: {
+  numero: string; fecha: string; hora: string; tasa: string | number; emisor: ConfigEmisor;
+  cobros: CobroDiferido[]; receptor: ReceptorAlterno | null;
+}): EntradaFactura {
+  if (p.cobros.length === 0) throw new Error('Seleccione al menos un cobro.');
+  const pagoDivisasUsd = p.cobros.reduce((a, c) => a + c.pagoDivisasUsd, 0);
+  if (p.cobros.length === 1) {
+    const c = p.cobros[0];
+    return entradaDesdeCobro({ numero: p.numero, fecha: p.fecha, hora: p.hora, tasa: p.tasa, emisor: p.emisor, pagoDivisasUsd,
+      paciente: c.paciente, facturarA: p.receptor ?? c.facturarA, servicios: c.servicios });
+  }
+  if (!p.receptor) throw new Error('La factura consolidada necesita el receptor (razón social y RIF).');
+  const base = entradaDesdeCobro({ numero: p.numero, fecha: p.fecha, hora: p.hora, tasa: p.tasa, emisor: p.emisor, pagoDivisasUsd,
+    paciente: { nombre: '', cedula: '', direccion: '' }, facturarA: p.receptor, servicios: [] });
+  const lineas = p.cobros.flatMap((c) => c.servicios.map((s) => lineaDeServicio(s, `${s.estudio} — ${c.paciente.nombre} (${c.paciente.cedula})`)));
+  return { ...base, lineas };
+}
+
+/**
+ * Arma y guarda la factura PENDIENTE, la enlaza a sus cobros (UNIQUE: un cobro no puede quedar en dos facturas)
+ * y cierra los diferimientos que cubre. Dentro de una transacción.
+ */
+export async function guardarFactura(client: Db, entrada: EntradaFactura, meta: { cobros: number[]; usuario: string }): Promise<{ id: number; documento: DocumentoFiscal }> {
+  const documento = construirFactura(entrada);
+  const id = await guardarDocumento(client, documento, {
+    facturaCajaId: meta.cobros.length === 1 ? meta.cobros[0] : null, usuario: meta.usuario, fecha: entrada.fecha, hora: entrada.hora,
+  });
+  for (const c of meta.cobros) await client.query('INSERT INTO documentos_fiscales_cobros (documento_id, factura_caja_id) VALUES ($1, $2)', [id, c]);
+  await client.query('UPDATE facturacion_diferida SET resuelto_en = now(), documento_id = $1 WHERE factura_caja_id = ANY($2) AND resuelto_en IS NULL', [id, meta.cobros]);
+  return { id, documento };
 }
 
 /** Numera, arma y guarda la factura fiscal como PENDIENTE dentro de la transacción del cobro. */
@@ -64,9 +105,7 @@ export async function registrarFacturaFiscal(
   client: Db, cobro: Omit<Cobro, 'numero'>, meta: { facturaCajaId: number; usuario: string },
 ): Promise<{ id: number; documento: DocumentoFiscal }> {
   const numero = await siguienteNumero(client, 'FACTURA');
-  const documento = construirFactura(entradaDesdeCobro({ ...cobro, numero }));
-  const id = await guardarDocumento(client, documento, { facturaCajaId: meta.facturaCajaId, usuario: meta.usuario, fecha: cobro.fecha, hora: cobro.hora });
-  return { id, documento };
+  return guardarFactura(client, entradaDesdeCobro({ ...cobro, numero }), { cobros: [meta.facturaCajaId], usuario: meta.usuario });
 }
 
 /** Segundos de espera antes del reintento N (30 s, 1 min, 2 min, … hasta 30 min). */

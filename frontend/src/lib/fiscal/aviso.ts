@@ -1,6 +1,7 @@
 /** Resultado fiscal que devuelve POST /api/facturas (campo `fiscal`). */
 export interface ResultadoFiscalCobro {
-  estado: 'EMITIDO' | 'PENDIENTE' | 'ERROR' | 'OMITIDO' | 'NO_EMITIDA' | 'DESACTIVADA';
+  estado: 'EMITIDO' | 'PENDIENTE' | 'ERROR' | 'OMITIDO' | 'NO_EMITIDA' | 'DESACTIVADA' | 'DIFERIDA';
+  facturarAntesDe?: string;
   numero?: string;
   numeroControl?: string;
   pdfUrl?: string | null;
@@ -23,6 +24,8 @@ export function avisoFiscal(f: ResultadoFiscalCobro | undefined): AvisoCaja | nu
       return { tipo: 'error', mensaje: `La imprenta rechazó la factura fiscal N° ${f.numero}: ${f.error}` };
     case 'NO_EMITIDA':
       return { tipo: 'error', mensaje: f.error ?? 'No se generó la factura fiscal.' };
+    case 'DIFERIDA':
+      return { tipo: 'alerta', mensaje: `Factura fiscal diferida: debe emitirse antes del ${f.facturarAntesDe} (Control Fiscal).` };
     case 'DESACTIVADA':
       return f.aviso ? { tipo: 'error', mensaje: `Facturación fiscal: ${f.aviso}` } : null;
   }

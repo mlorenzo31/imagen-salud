@@ -27,6 +27,7 @@ import { ModuloEgresosOperativos } from '@/components/ModuloEgresosOperativos';
 import { ModuloIngresosExtraordinarios } from '@/components/ModuloIngresosExtraordinarios';
 import { ModuloConciliacionPOS } from '@/components/ModuloConciliacionPOS';
 import { ModuloRetencionesSeniat } from '@/components/ModuloRetencionesSeniat';
+import { ModuloControlFiscal } from '@/components/ModuloControlFiscal';
 import { ModuloHistorialPacientes } from '@/components/ModuloHistorialPacientes';
 import { ModuloCampanas } from '@/components/ModuloCampanas';
 import { LoginScreen } from '@/components/LoginScreen';
@@ -327,6 +328,13 @@ export default function Home() {
               modoOperacion={modoOperacion}
               tasaBcv={tasaBcv}
             />
+          </div>
+        )}
+
+        {/* CONTROL FISCAL: cobrado frente a facturado (Providencia SENIAT de facturación) */}
+        {activeSection === 'control-fiscal' && (role === 'admin' || role === 'asistente') && (
+          <div className="animate-in fade-in-50 duration-300">
+            <ModuloControlFiscal />
           </div>
         )}
 
