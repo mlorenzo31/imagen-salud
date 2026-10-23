@@ -11,7 +11,7 @@ export async function pedir<T = unknown>(url: string, init?: { method?: string; 
 }
 
 export interface Proveedor {
-  id: number; rif: string; razon_social: string; direccion: string | null; telefono: string | null;
+  id: number; rif: string; razon_social: string; direccion: string | null; telefono: string | null; correo: string | null;
   tipo_persona: 'NATURAL' | 'JURIDICA'; contribuyente_especial: boolean; activo: boolean;
 }
 export interface ProductoCompra { id: number; nombre: string; categoria: string; alicuota_defecto: number; proveedor_id: number | null; activo: boolean }

@@ -11,7 +11,7 @@ const TITULOS: Record<string, { titulo: string; detalle: string }> = {
   kanban: { titulo: 'Sala de espera', detalle: 'Turnos en espera, en atención y finalizados' },
   'historial-pacientes': { titulo: 'Historial de pacientes', detalle: 'Atenciones y movimientos por paciente' },
   'conciliacion-pos': { titulo: 'Conciliaciones', detalle: 'Punto de venta y pagos recibidos' },
-  retenciones: { titulo: 'Retenciones SENIAT', detalle: 'Retenciones de IVA e ISLR' },
+  retenciones: { titulo: 'Retenciones SENIAT', detalle: 'Retenciones de IVA e ISLR recibidas de clientes' },
   'control-fiscal': { titulo: 'Control fiscal', detalle: 'Cobrado frente a facturado, diferidos y pendientes' },
   tesoreria: { titulo: 'Tesorería', detalle: 'Saldos y movimientos de cuentas' },
   'ingresos-extra': { titulo: 'Ingresos extraordinarios', detalle: 'Ingresos fuera de la facturación clínica' },

@@ -464,6 +464,7 @@ CREATE TABLE IF NOT EXISTS proveedores (
   telefono VARCHAR(30),
   tipo_persona VARCHAR(10) NOT NULL DEFAULT 'JURIDICA' CHECK (tipo_persona IN ('NATURAL', 'JURIDICA')),
   contribuyente_especial BOOLEAN NOT NULL DEFAULT false,
+  correo VARCHAR(150),
   activo BOOLEAN NOT NULL DEFAULT true,
   creado_en TIMESTAMPTZ NOT NULL DEFAULT now()
 );
@@ -535,11 +536,19 @@ CREATE TABLE IF NOT EXISTS retenciones_compra (
   factura_id INTEGER NOT NULL REFERENCES facturas_compra(id),
   numero VARCHAR(20) NOT NULL UNIQUE,
   periodo VARCHAR(6) NOT NULL,
+  periodo_imposicion VARCHAR(7),
   iva_retenido NUMERIC(14,2) NOT NULL DEFAULT 0,
   islr_retenido NUMERIC(14,2) NOT NULL DEFAULT 0,
   fecha DATE NOT NULL,
+  fecha_entrega DATE,
   creado_en TIMESTAMPTZ NOT NULL DEFAULT now()
 );
+-- Art. 18: secuencial continuo de los comprobantes de retención (AAAAMM + 8 dígitos; se reinicia al superar 99.999.999)
+CREATE TABLE IF NOT EXISTS secuencia_retencion (
+  id BOOLEAN PRIMARY KEY DEFAULT true CHECK (id),
+  ultimo BIGINT NOT NULL CHECK (ultimo BETWEEN 0 AND 99999999)
+);
+INSERT INTO secuencia_retencion (id, ultimo) VALUES (true, 0) ON CONFLICT (id) DO NOTHING;
 CREATE INDEX IF NOT EXISTS facturas_compra_fecha ON facturas_compra (fecha);
 CREATE INDEX IF NOT EXISTS pagos_compra_factura ON pagos_compra (factura_id);
       
@@ -622,6 +631,25 @@ CREATE TABLE IF NOT EXISTS documentos_fiscales (
   CHECK ((tipo = 'FACTURA') = (doc_referencia_id IS NULL))
 );
 CREATE UNIQUE INDEX IF NOT EXISTS documentos_fiscales_tipo_serie_numero ON documentos_fiscales (tipo, serie, numero);
+-- Fase 6: retenciones que los clientes agentes de retención le practican a la clínica, contra su factura
+CREATE TABLE IF NOT EXISTS retenciones_recibidas (
+  id SERIAL PRIMARY KEY,
+  documento_id INTEGER NOT NULL REFERENCES documentos_fiscales(id),
+  agente_rif VARCHAR(15) NOT NULL,
+  agente_razon_social VARCHAR(200) NOT NULL,
+  numero_comprobante VARCHAR(14) NOT NULL,
+  fecha_comprobante DATE NOT NULL,
+  periodo VARCHAR(7) NOT NULL,
+  iva_retenido NUMERIC(16,2) NOT NULL DEFAULT 0,
+  islr_retenido NUMERIC(16,2) NOT NULL DEFAULT 0,
+  observacion TEXT,
+  usuario VARCHAR(100),
+  creado_en TIMESTAMPTZ NOT NULL DEFAULT now(),
+  anulada_en TIMESTAMPTZ,
+  motivo_anulacion TEXT,
+  UNIQUE (agente_rif, numero_comprobante)
+);
+CREATE INDEX IF NOT EXISTS retenciones_recibidas_documento ON retenciones_recibidas (documento_id);
 CREATE INDEX IF NOT EXISTS documentos_fiscales_factura ON documentos_fiscales (factura_caja_id);
 CREATE INDEX IF NOT EXISTS documentos_fiscales_fecha ON documentos_fiscales (fecha_emision);
 CREATE INDEX IF NOT EXISTS documentos_fiscales_cola ON documentos_fiscales (proximo_intento) WHERE estado IN ('PENDIENTE', 'ENVIANDO');

@@ -110,16 +110,12 @@ Regla: **todo cobro termina con su factura fiscal**. Diferir solo cambia el *mom
 - [ ] Decidir (Manu): la NC de una factura de talonario sale hoy por la imprenta digital, ya remitida la factura. ¿El art. 12 ("mismo medio") obliga a emitirla en talonario?
 
 ### Fase 6 · Comprobantes de retención (art. 18) — mar 2027
-- [ ] Numeración **AAAAMM + secuencial de 8 dígitos continuo**: contador único con bloqueo (reemplaza `count(*)` en `app/api/tesoreria/compras/facturas/route.ts`). Solo se reinicia al superar 99.999.999. Migración de los comprobantes ya emitidos.
-- [ ] Campos del art. 18:
-  - correo electrónico del proveedor;
-  - N° de control y N° de la factura;
-  - período de imposición;
-  - monto total, base, impuesto causado y retenido;
-  - fecha de emisión y entrega;
-  - datos de la imprenta digital, cuando aplique.
-- [ ] Comprobante en PDF.
-- [ ] `ModuloRetencionesSeniat`: **persistir en servidor** o fusionarlo con las retenciones de compras (decidir al llegar aquí).
+- [x] Numeración **AAAAMM (de emisión) + secuencial de 8 dígitos continuo**: contador único con bloqueo (`secuencia_retencion`, reemplaza el `count(*)` por mes). Solo se reinicia al superar 99.999.999. Los comprobantes ya emitidos **no se renumeran** (ya fueron entregados): el contador arranca después del mayor secuencial existente.
+- [x] Campos del art. 18: correo del proveedor, N° de control (obligatorio si hay retención) y N° de factura, período de imposición, total/base/impuesto causado/retenido en Bs (las facturas en $ se convierten con su tasa), fecha de emisión y de **entrega** (se registra en Egresos).
+- [x] Comprobante en PDF (Egresos → Comprobantes de retención); el de una compra anulada sale marcado "ANULADO" (art. 21).
+- [x] `ModuloRetencionesSeniat`: era de retenciones **recibidas** de clientes y no guardaba nada. Ahora persiste en servidor el comprobante del agente (su N° del art. 18) contra la factura fiscal de la clínica: valida receptor, IVA (los servicios exentos no admiten IVA retenido) y base acumulada; anulación con motivo.
+- [ ] Decidir (Manu): IVA e ISLR van hoy en **un solo comprobante** por factura. ¿Separar en dos (numeraciones distintas por impuesto)?
+- [ ] "Datos de la imprenta digital, cuando aplique" (art. 18.9): el comprobante lo genera la clínica, no la imprenta; se agrega si se emite por imprenta.
 
 ### Fase 7 · Libros y reportes — mar 2027
 - [ ] **Libro de ventas** con: tipo de documento, N° de factura y de control, notas con su referencia, exentas (E), base/IVA por alícuota, IGTF y marca de contingencia. Exportación con `lib/excel.ts`.

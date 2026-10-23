@@ -9,6 +9,8 @@ export const proveedorSchema = z.object({
   razon_social: z.string().trim().min(1).max(200),
   direccion: z.string().trim().max(500).nullish(),
   telefono: z.string().trim().max(30).nullish(),
+  // Art. 18.4: el comprobante de retención lleva el correo del proveedor.
+  correo: z.union([z.literal(''), z.string().trim().toLowerCase().email('Correo inválido.').max(150)]).nullish(),
   tipo_persona: z.enum(['NATURAL', 'JURIDICA']),
   contribuyente_especial: z.boolean().optional(),
   activo: z.boolean().optional(),

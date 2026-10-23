@@ -72,30 +72,6 @@ export interface IngresoExtraordinario {
   creado_en?: string;
 }
 
-export interface RetencionSENIAT {
-  id: number;
-  nro_comprobante: string;
-  periodo_fiscal: string;
-  fecha_emision: string;
-  paciente_cliente: string;
-  cedula_rif: string;
-  factura_asociada_id?: number | string;
-  base_imponible_usd: number;
-  base_imponible_bs: number;
-  tasa_bcv: number;
-  iva_total_bs: number;
-  porcentaje_iva_retenido: 75 | 100;
-  monto_iva_retenido_bs: number;
-  porcentaje_islr_retenido: number;
-  monto_islr_retenido_bs: number;
-  total_retenido_bs: number;
-  total_retenido_usd: number;
-  estado: 'APLICADA' | 'ANULADA';
-  usuario: string;
-  observaciones?: string;
-  creado_en?: string;
-}
-
 export interface ConciliacionPOS {
   id: number;
   fecha_operacion: string;

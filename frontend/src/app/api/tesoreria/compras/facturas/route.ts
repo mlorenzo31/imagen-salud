@@ -9,6 +9,7 @@ import { calcularTotales, type ConfigFiscal, type TotalesFactura } from '@/lib/c
 import { asegurarCompras, leerConfigFiscal } from '@/lib/compras/comprasDb';
 import { duplicadoA409 } from '@/lib/compras/validaciones';
 import { registrarPagoCompra } from '@/lib/compras/registrarPago';
+import { emitirComprobante } from '@/lib/compras/retencionesDb';
 
 const num = z.union([z.string(), z.number()]);
 const schema = z.object({
@@ -110,18 +111,11 @@ export async function POST(req: NextRequest) {
         );
       }
 
-      // Comprobante de retención (solo si hubo retención): AAAAMM + correlativo de 8 dígitos del período.
+      // Comprobante de retención (art. 18), solo si hubo retención: AAAAMM de emisión + secuencial continuo.
       let comprobante: string | null = null;
       if (t.ivaRetenido + t.islrRetenido > 0) {
-        const periodo = b.fecha_factura.slice(0, 7).replace('-', '');
-        await client.query('SELECT pg_advisory_xact_lock(hashtext($1))', [`retencion:${periodo}`]);
-        const n = await client.query('SELECT count(*)::int AS n FROM retenciones_compra WHERE periodo = $1', [periodo]);
-        comprobante = `${periodo}${String(n.rows[0].n + 1).padStart(8, '0')}`;
-        await client.query(
-          'INSERT INTO retenciones_compra (factura_id, numero, periodo, iva_retenido, islr_retenido, fecha) VALUES ($1,$2,$3,$4,$5,$6)',
-          [facturaId, comprobante, periodo, centsToStr(t.ivaRetenido), centsToStr(t.islrRetenido), b.fecha_factura]
-        );
-        await client.query('UPDATE facturas_compra SET comprobante_retencion = $1 WHERE id = $2', [comprobante, facturaId]);
+        if (!b.numero_control?.trim()) throw new ApiError(400, 'Indique el N° de control de la factura: el comprobante de retención lo exige (art. 18.5).');
+        comprobante = await emitirComprobante(client, { facturaId, fechaEmision: fecha, ivaRetenido: t.ivaRetenido, islrRetenido: t.islrRetenido });
       }
 
       let estado = 'PENDIENTE';

@@ -8,11 +8,12 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
-import { ArrowDownRight, BarChart3, Building2, Clock, Receipt, Smartphone, AlertCircle, CheckCircle2, FileSpreadsheet, FileText, Search, X, FileText as FileIcon } from 'lucide-react';
+import { ArrowDownRight, BarChart3, Building2, Clock, FileCheck2, Receipt, Smartphone, AlertCircle, CheckCircle2, FileSpreadsheet, FileText, Search, X, FileText as FileIcon } from 'lucide-react';
 import { FormCompra } from './egresos/FormCompra';
 import { PorPagar } from './egresos/PorPagar';
 import { ProveedoresCatalogo } from './egresos/ProveedoresCatalogo';
 import { ReporteEgresos } from './egresos/ReporteEgresos';
+import { ComprobantesRetencion } from './egresos/ComprobantesRetencion';
 import { exportarAExcel, exportarAPDF } from '@/lib/exportUtils';
 import { CuentaBancaria } from '@/types';
 import { getErrorMessage } from '@/lib/utils';
@@ -69,7 +70,7 @@ export const ModuloEgresosOperativos: React.FC<ModuloEgresosOperativosProps> = (
 }) => {
   const { avisar } = useAvisos();
   const isAdmin = currentRole === 'admin';
-  const [tabActiva, setTabActiva] = useState<'egreso' | 'compra' | 'porpagar' | 'proveedores' | 'reporte' | 'historial'>('egreso');
+  const [tabActiva, setTabActiva] = useState<'egreso' | 'compra' | 'porpagar' | 'retenciones' | 'proveedores' | 'reporte' | 'historial'>('egreso');
   const [recargaCompras, setRecargaCompras] = useState(0);
   const cambioCompras = () => { setRecargaCompras((n) => n + 1); if (onEgresoRegistrado) onEgresoRegistrado(); };
   const [loading, setLoading] = useState(false);
@@ -376,6 +377,7 @@ export const ModuloEgresosOperativos: React.FC<ModuloEgresosOperativosProps> = (
             { id: 'egreso', label: 'Gasto menor', icon: ArrowDownRight, color: 'bg-rose-600' },
             { id: 'compra', label: 'Compra con factura', icon: Receipt, color: 'bg-rose-600' },
             { id: 'porpagar', label: 'Por pagar', icon: Clock, color: 'bg-rose-600' },
+            { id: 'retenciones', label: 'Comprobantes de retención', icon: FileCheck2, color: 'bg-rose-600' },
             { id: 'proveedores', label: 'Proveedores y catálogo', icon: Building2, color: 'bg-rose-600' },
             { id: 'reporte', label: 'Reporte', icon: BarChart3, color: 'bg-rose-600' },
             { id: 'historial', label: 'Historial y Auditoría', icon: FileIcon, color: 'bg-slate-900' }
@@ -593,6 +595,7 @@ export const ModuloEgresosOperativos: React.FC<ModuloEgresosOperativosProps> = (
 
       {tabActiva === 'compra' && <FormCompra cuentas={cuentas} onRegistrada={cambioCompras} />}
       {tabActiva === 'porpagar' && <PorPagar cuentas={cuentas} recarga={recargaCompras} onCambio={cambioCompras} />}
+      {tabActiva === 'retenciones' && <ComprobantesRetencion recarga={recargaCompras} />}
       {tabActiva === 'proveedores' && <ProveedoresCatalogo onCambio={cambioCompras} />}
       {tabActiva === 'reporte' && <ReporteEgresos recarga={recargaCompras} />}
 

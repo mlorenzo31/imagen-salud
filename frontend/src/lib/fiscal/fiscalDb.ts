@@ -6,7 +6,7 @@ import type { ConfigEmisor, DocumentoFiscal, TipoDocumento } from './factura';
 
 let listo: Promise<void> | null = null;
 
-const TABLAS = ['secuencias_fiscales', 'documentos_fiscales', 'documentos_fiscales_cobros', 'facturacion_diferida', 'talonarios_contingencia', 'contingencias'];
+const TABLAS = ['secuencias_fiscales', 'documentos_fiscales', 'documentos_fiscales_cobros', 'facturacion_diferida', 'talonarios_contingencia', 'contingencias', 'retenciones_recibidas'];
 
 /**
  * Crea (idempotente) las tablas de documentos fiscales y las columnas "Facturar a" de facturas_caja.
@@ -149,6 +149,25 @@ export function asegurarFiscal(): Promise<void> {
           -- Art. 20: la numeración del talonario lleva serie, así no choca con la digital.
           ALTER TABLE documentos_fiscales DROP CONSTRAINT IF EXISTS documentos_fiscales_tipo_numero_key;
           CREATE UNIQUE INDEX IF NOT EXISTS documentos_fiscales_tipo_serie_numero ON documentos_fiscales (tipo, serie, numero);
+          -- Fase 6: retenciones que los clientes agentes de retención le practican a la clínica, contra su factura.
+          CREATE TABLE IF NOT EXISTS retenciones_recibidas (
+            id SERIAL PRIMARY KEY,
+            documento_id INTEGER NOT NULL REFERENCES documentos_fiscales(id),
+            agente_rif VARCHAR(15) NOT NULL,
+            agente_razon_social VARCHAR(200) NOT NULL,
+            numero_comprobante VARCHAR(14) NOT NULL,
+            fecha_comprobante DATE NOT NULL,
+            periodo VARCHAR(7) NOT NULL,
+            iva_retenido NUMERIC(16,2) NOT NULL DEFAULT 0,
+            islr_retenido NUMERIC(16,2) NOT NULL DEFAULT 0,
+            observacion TEXT,
+            usuario VARCHAR(100),
+            creado_en TIMESTAMPTZ NOT NULL DEFAULT now(),
+            anulada_en TIMESTAMPTZ,
+            motivo_anulacion TEXT,
+            UNIQUE (agente_rif, numero_comprobante)
+          );
+          CREATE INDEX IF NOT EXISTS retenciones_recibidas_documento ON retenciones_recibidas (documento_id);
         `);
         for (const t of [...TABLAS, 'config_fiscal']) await c.query(`ALTER TABLE ${t} ENABLE ROW LEVEL SECURITY`); // sin acceso por la API pública
         await c.query('COMMIT');

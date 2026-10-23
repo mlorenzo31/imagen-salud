@@ -326,7 +326,6 @@ export default function Home() {
             <ModuloRetencionesSeniat
               currentRole={role}
               modoOperacion={modoOperacion}
-              tasaBcv={tasaBcv}
             />
           </div>
         )}
