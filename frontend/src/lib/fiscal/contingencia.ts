@@ -118,3 +118,10 @@ export interface RespuestaContingencia {
   } | null;
   talonarios: Array<{ serie: string; controlDesde: string; controlHasta: string; usados: number }>;
 }
+
+/** Reporte de contingencias: si la remisión cumplió el plazo del art. 7 (fechas AAAA-MM-DD locales). */
+export function cumplimientoEnvio(fechaFin: string | null, fechaEnvio: string | null): 'ACTIVA' | 'SIN_ENVIAR' | 'A_TIEMPO' | 'TARDE' {
+  if (fechaFin === null) return 'ACTIVA';
+  if (fechaEnvio === null) return 'SIN_ENVIAR';
+  return fechaEnvio <= plazoEnvio(fechaFin) ? 'A_TIEMPO' : 'TARDE';
+}

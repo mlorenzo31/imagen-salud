@@ -13,6 +13,7 @@ import { ETIQUETA_ESTADO, type FilaTablero, type RespuestaTablero } from '@/lib/
 import { TarjetasResumen } from '@/components/controlfiscal/TarjetasResumen';
 import { TablaCobrosFiscales } from '@/components/controlfiscal/TablaCobrosFiscales';
 import { PanelContingencia } from '@/components/controlfiscal/PanelContingencia';
+import { LibrosFiscales } from '@/components/controlfiscal/LibrosFiscales';
 
 /** Control fiscal: qué se cobró, qué se facturó, qué está diferido y qué falta por facturar. */
 export const ModuloControlFiscal: React.FC<{ esAdmin: boolean }> = ({ esAdmin }) => {
@@ -25,6 +26,7 @@ export const ModuloControlFiscal: React.FC<{ esAdmin: boolean }> = ({ esAdmin })
   const [soloPendientes, setSoloPendientes] = useState(true);
   const [receptor, setReceptor] = useState({ razonSocial: '', rif: '' });
   const [ocupado, setOcupado] = useState(false);
+  const [vista, setVista] = useState<'control' | 'libros'>('control');
   const [nota, setNota] = useState<{ fila: FilaTablero; tipo: 'NOTA_CREDITO' | 'NOTA_DEBITO'; monto: string; motivo: string; pin: string } | null>(null);
 
   const cargar = useCallback(async () => {
@@ -132,8 +134,17 @@ export const ModuloControlFiscal: React.FC<{ esAdmin: boolean }> = ({ esAdmin })
   };
 
   const r = datos?.resumen;
+  const pestanas = (
+    <div className="flex gap-2">
+      {([['control', 'Cobrado frente a facturado'], ['libros', 'Libros y reportes']] as const).map(([id, t]) => (
+        <button key={id} onClick={() => setVista(id)} className={`rounded-xl px-3 py-1.5 text-xs font-bold ${vista === id ? 'bg-slate-900 text-white' : 'border border-slate-300 text-slate-700 hover:bg-slate-50'}`}>{t}</button>
+      ))}
+    </div>
+  );
+  if (vista === 'libros') return <div className="space-y-4">{pestanas}<LibrosFiscales /></div>;
   return (
     <div className="space-y-4">
+      {pestanas}
       <div className="flex flex-wrap items-end gap-3">
         <div><label className="mb-1 block text-xs font-bold text-slate-600">Desde</label><Input type="date" value={desde} onChange={(e) => setDesde(e.target.value)} className="h-9" /></div>
         <div><label className="mb-1 block text-xs font-bold text-slate-600">Hasta</label><Input type="date" value={hasta} onChange={(e) => setHasta(e.target.value)} className="h-9" /></div>

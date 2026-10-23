@@ -118,9 +118,10 @@ Regla: **todo cobro termina con su factura fiscal**. Diferir solo cambia el *mom
 - [ ] "Datos de la imprenta digital, cuando aplique" (art. 18.9): el comprobante lo genera la clínica, no la imprenta; se agrega si se emite por imprenta.
 
 ### Fase 7 · Libros y reportes — mar 2027
-- [ ] **Libro de ventas** con: tipo de documento, N° de factura y de control, notas con su referencia, exentas (E), base/IVA por alícuota, IGTF y marca de contingencia. Exportación con `lib/excel.ts`.
-- [ ] Reporte de documentos anulados conservados (art. 21) y de contingencias.
-- [ ] Ajustar el libro de compras para mostrar el N° de comprobante de retención nuevo.
+- [x] **Libro de ventas** del mes (Control Fiscal → Libros y reportes), en Bs: tipo de documento y transacción (01-REG / 02-COMP), serie, N° de factura y de control, factura afectada de las notas, exentas, base/IVA por alícuota, IGTF, IVA retenido por clientes con su comprobante y marca de contingencia. Las NC restan. Exportación con `lib/excel.ts`. Los documentos aún sin N° de control quedan fuera, con aviso.
+- [x] Reporte de anulaciones por nota de crédito (original conservado, art. 21; total o parcial) y de contingencias con su cumplimiento del plazo del art. 7.
+- [x] Libro de compras: ya mostraba el N° de comprobante de retención; con la Fase 6 sale con el formato nuevo.
+- [ ] Formato del libro según el Manual Técnico / la normativa de libros (columnas exactas y archivo TXT para la declaración), cuando se publique.
 
 ### Fase 8 · Pruebas integrales y salida — mar–abr 2027
 - [ ] Pruebas en el sandbox de la imprenta: factura, NC, ND, contingencia y reenvío.

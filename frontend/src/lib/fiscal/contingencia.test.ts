@@ -99,3 +99,14 @@ describe('rangosSeSolapan', () => {
     expect(rangosSeSolapan(t, { ...t, controlDesde: '01-00000101', controlHasta: '01-00000150' })).toBe(false);
   });
 });
+
+describe('cumplimientoEnvio (art. 7)', () => {
+  it('a tiempo si se remitió a más tardar al día siguiente de cesar', async () => {
+    const { cumplimientoEnvio } = await import('./contingencia');
+    expect(cumplimientoEnvio('2027-02-10', '2027-02-10')).toBe('A_TIEMPO');
+    expect(cumplimientoEnvio('2027-02-10', '2027-02-11')).toBe('A_TIEMPO');
+    expect(cumplimientoEnvio('2027-02-10', '2027-02-12')).toBe('TARDE');
+    expect(cumplimientoEnvio('2027-02-10', null)).toBe('SIN_ENVIAR');
+    expect(cumplimientoEnvio(null, null)).toBe('ACTIVA');
+  });
+});
