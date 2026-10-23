@@ -5,6 +5,8 @@ import { mulRate, toCents } from '@/lib/money';
 import { ESTADOS_ANULADOS } from '@/lib/estados';
 import { asegurarFiscal, leerConfigEmisor } from '@/lib/fiscal/fiscalDb';
 import { clasificar, diferenciasDocumentos, resumen, type FilaCobro } from '@/lib/fiscal/tablero';
+import { contingenciaVigente } from '@/lib/fiscal/contingenciaDb';
+import { plazoEnvio } from '@/lib/fiscal/contingencia';
 
 const ISO = /^\d{4}-\d{2}-\d{2}$/;
 
@@ -22,8 +24,11 @@ export async function GET(req: NextRequest) {
     if (!ISO.test(desdeIn) || !ISO.test(hasta) || desdeIn > hasta) throw new ApiError(400, 'Rango de fechas inválido.');
     await asegurarFiscal();
     const { inicioFacturacion } = await leerConfigEmisor();
+    const c = await contingenciaVigente(pool, hoy);
+    const contingencia = c && { ...c, plazoEnvio: c.fechaFin ? plazoEnvio(c.fechaFin) : null };
     if (!inicioFacturacion) {
-      return NextResponse.json({ inicioFacturacion: null, desde: desdeIn, hasta, filas: [], resumen: resumen([], hoy), diferencias: [] });
+      const vacio = { n: 0, usd: 0, bs: 0 };
+      return NextResponse.json({ inicioFacturacion: null, desde: desdeIn, hasta, filas: [], resumen: resumen([], hoy), diferencias: [], notas: { credito: vacio, debito: vacio }, anuladosSinNota: [], contingencia });
     }
     const desde = desdeIn < inicioFacturacion ? inicioFacturacion : desdeIn;
 
@@ -61,7 +66,32 @@ export async function GET(req: NextRequest) {
     );
     const diferencias = diferenciasDocumentos(docs.rows.map((d) => ({ docId: d.id, numero: d.numero, ventaUsd: toCents(d.venta), cobrosUsd: toCents(d.cobros) })));
 
-    return NextResponse.json({ inicioFacturacion, desde, hasta, filas, resumen: resumen(filas, hoy), diferencias });
+    // Notas de crédito/débito emitidas en el período, y cobros anulados cuya factura quedó sin nota de crédito.
+    const notas = await pool.query(
+      `SELECT tipo, count(*)::int AS n, COALESCE(SUM(total_usd), 0) AS usd, COALESCE(SUM(total_bs), 0) AS bs
+       FROM documentos_fiscales WHERE tipo <> 'FACTURA' AND estado <> 'ERROR' AND fecha_emision BETWEEN $1 AND $2 GROUP BY tipo`,
+      [desde, hasta]
+    );
+    const anuladosSinNota = await pool.query(
+      `SELECT f.id, f.fecha::text AS fecha, f.nombre_paciente AS paciente, d.numero
+       FROM facturas_caja f
+       JOIN documentos_fiscales_cobros l ON l.factura_caja_id = f.id
+       JOIN documentos_fiscales d ON d.id = l.documento_id AND d.estado <> 'ERROR'
+       WHERE f.fecha BETWEEN $1 AND $2 AND f.estado = ANY($3::text[])
+         AND NOT EXISTS (SELECT 1 FROM documentos_fiscales n WHERE n.doc_referencia_id = d.id AND n.factura_caja_id = f.id
+                         AND n.tipo = 'NOTA_CREDITO' AND n.estado <> 'ERROR')
+       ORDER BY f.id`,
+      [desde, hasta, ESTADOS_ANULADOS]
+    );
+    const vacio = { n: 0, usd: 0, bs: 0 };
+    const porTipo = Object.fromEntries(notas.rows.map((x) => [x.tipo, { n: x.n, usd: toCents(x.usd), bs: toCents(x.bs) }]));
+
+    return NextResponse.json({
+      inicioFacturacion, desde, hasta, filas, resumen: resumen(filas, hoy), diferencias,
+      notas: { credito: porTipo.NOTA_CREDITO ?? vacio, debito: porTipo.NOTA_DEBITO ?? vacio },
+      anuladosSinNota: anuladosSinNota.rows,
+      contingencia,
+    });
   } catch (err) {
     return errorResponse(err);
   }

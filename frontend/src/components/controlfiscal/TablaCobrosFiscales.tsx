@@ -10,10 +10,12 @@ interface Props {
   seleccion: Set<number>;
   onToggle: (id: number) => void;
   soloPendientes: boolean;
+  /** Si se indica, las facturas emitidas muestran el botón para emitir una nota (solo admin). */
+  onNota?: (f: FilaTablero) => void;
 }
 
 /** Cobros del período con su estado fiscal; los que aún no tienen factura se pueden seleccionar para emitirla. */
-export const TablaCobrosFiscales: React.FC<Props> = ({ filas, seleccion, onToggle, soloPendientes }) => {
+export const TablaCobrosFiscales: React.FC<Props> = ({ filas, seleccion, onToggle, soloPendientes, onNota }) => {
   const visibles = soloPendientes ? filas.filter((f) => f.estado !== 'EMITIDA') : filas;
   if (visibles.length === 0) return <p className="rounded-2xl border border-slate-200 bg-white p-6 text-center text-sm text-slate-500">No hay cobros para mostrar.</p>;
   return (
@@ -23,7 +25,7 @@ export const TablaCobrosFiscales: React.FC<Props> = ({ filas, seleccion, onToggl
           <tr>
             <th className="p-2"></th><th className="p-2">Fecha</th><th className="p-2">Cobro</th><th className="p-2">Paciente</th>
             <th className="p-2">Facturar a</th><th className="p-2 text-right">USD</th><th className="p-2 text-right">Bs</th>
-            <th className="p-2">Estado</th><th className="p-2">Factura / N° control</th><th className="p-2">Motivo · límite</th>
+            <th className="p-2">Estado</th><th className="p-2">Factura / N° control</th><th className="p-2">Motivo · límite</th><th className="p-2"></th>
           </tr>
         </thead>
         <tbody>
@@ -39,6 +41,9 @@ export const TablaCobrosFiscales: React.FC<Props> = ({ filas, seleccion, onToggl
               <td className="p-2"><span className={`rounded-full border px-2 py-0.5 font-bold ${COLOR_ESTADO[f.estado]}`}>{ETIQUETA_ESTADO[f.estado]}</span></td>
               <td className="p-2 font-mono">{f.docNumero ? `${f.docNumero}${f.docControl ? ` · ${f.docControl}` : ''}` : '—'}</td>
               <td className="p-2">{f.motivoDiferido ? `${MOTIVOS_DIFERIDO[f.motivoDiferido as MotivoDiferido]?.etiqueta.split(':')[0] ?? f.motivoDiferido} · ${f.facturarAntesDe}` : '—'}</td>
+              <td className="p-2">{onNota && f.estado === 'EMITIDA' && f.docId !== null && (
+                <button onClick={() => onNota(f)} className="rounded-lg border border-slate-300 px-2 py-0.5 font-bold text-slate-700 hover:bg-slate-50">Nota</button>
+              )}</td>
             </tr>
           ))}
         </tbody>

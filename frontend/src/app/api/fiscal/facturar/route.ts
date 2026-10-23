@@ -2,13 +2,13 @@ import { NextResponse, type NextRequest } from 'next/server';
 import { z } from 'zod';
 import pool from '@/lib/db';
 import { ApiError, errorResponse, fechaHoraLocal, parseBody, sesionUsuario, withTransaction } from '@/lib/apiHelpers';
-import { toCents } from '@/lib/money';
 import { esAnulada } from '@/lib/estados';
 import { obtenerTasaBcv } from '@/lib/tasaBcv';
 import { actorSesion, registrarBitacora } from '@/lib/bitacora';
 import { receptorAlternoSchema } from '@/lib/fiscal/configEmisor';
 import { asegurarFiscal, leerConfigEmisor, siguienteNumero } from '@/lib/fiscal/fiscalDb';
-import { emitirDocumento, entradaParaCobros, guardarFactura, type CobroDiferido } from '@/lib/fiscal/emision';
+import { emitirDocumento, entradaParaCobros, guardarFactura } from '@/lib/fiscal/emision';
+import { cargarCobros } from '@/lib/fiscal/cobros';
 import { obtenerProveedor } from '@/lib/fiscal/proveedor';
 
 const schema = z.object({
@@ -34,31 +34,12 @@ export async function POST(req: NextRequest) {
     const ids = [...new Set(b.cobros)];
 
     const { id, documento } = await withTransaction(async (client) => {
-      const r = await client.query(
-        `SELECT f.id, f.estado, f.nombre_paciente, f.cedula_paciente, f.servicios, f.pago_divisas,
-                f.receptor_razon_social, f.receptor_rif, f.receptor_domicilio, p.direccion,
-                EXISTS (SELECT 1 FROM documentos_fiscales_cobros l WHERE l.factura_caja_id = f.id) AS facturado
-         FROM facturas_caja f LEFT JOIN pacientes p ON p.cedula = f.cedula_paciente
-         WHERE f.id = ANY($1) ORDER BY f.id FOR UPDATE OF f`,
-        [ids]
-      );
-      if (r.rows.length !== ids.length) throw new ApiError(404, 'Alguno de los cobros no existe.');
-      const cobros: CobroDiferido[] = r.rows.map((f) => {
-        if (esAnulada(f.estado)) throw new ApiError(409, `El cobro ${f.id} está anulado.`);
-        if (f.facturado) throw new ApiError(409, `El cobro ${f.id} ya tiene factura fiscal.`);
-        const servicios = (Array.isArray(f.servicios) ? f.servicios : []) as Array<Record<string, unknown>>;
-        return {
-          id: f.id,
-          paciente: { nombre: f.nombre_paciente, cedula: f.cedula_paciente, direccion: f.direccion ?? '' },
-          facturarA: f.receptor_rif ? { razonSocial: f.receptor_razon_social, rif: f.receptor_rif, domicilio: f.receptor_domicilio ?? undefined } : null,
-          pagoDivisasUsd: toCents(f.pago_divisas),
-          servicios: servicios.map((s) => {
-            const precio = toCents(s.precioUSD);
-            const lista = s.precioLista !== undefined ? toCents(s.precioLista) : precio;
-            return { codigo: typeof s.codigo === 'string' ? s.codigo : null, estudio: String(s.estudio ?? ''), area: String(s.area ?? 'GENERAL'), precioLista: lista, descuento: lista - precio };
-          }),
-        };
-      });
+      const cobros = await cargarCobros(client, ids);
+      if (cobros.length !== ids.length) throw new ApiError(404, 'Alguno de los cobros no existe.');
+      for (const c of cobros) {
+        if (esAnulada(c.estado)) throw new ApiError(409, `El cobro ${c.id} está anulado.`);
+        if (c.facturado) throw new ApiError(409, `El cobro ${c.id} ya tiene factura fiscal.`);
+      }
       const numero = await siguienteNumero(client, 'FACTURA');
       let entrada;
       try {

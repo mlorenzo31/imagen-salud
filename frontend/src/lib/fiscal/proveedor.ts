@@ -23,9 +23,19 @@ export interface RespuestaEmision {
   crudo?: unknown;
 }
 
+/** Art. 7: documentos emitidos en físico durante una contingencia, con su relación en PDF. */
+export interface SolicitudContingencia {
+  /** Id de la contingencia: clave de idempotencia ante reintentos. */
+  contingenciaId: number;
+  documentos: DocumentoFiscal[];
+  pdf: Uint8Array;
+  hoy: string;
+}
+
 export interface ProveedorFiscal {
   nombre: string;
   emitir(s: SolicitudEmision): Promise<RespuestaEmision>;
+  registrarContingencia(s: SolicitudContingencia): Promise<{ crudo?: unknown }>;
 }
 
 /** La imprenta rechazó el documento (datos inválidos): reintentar no sirve, hay que corregirlo. */
@@ -50,6 +60,9 @@ export const proveedorSimulado: ProveedorFiscal = {
   nombre: 'simulado',
   async emitir({ id, hoy }) {
     return { numeroControl: numeroControl(0, id), fechaAsignacion: hoy, pdfUrl: null, qr: null, crudo: { simulado: true } };
+  },
+  async registrarContingencia({ documentos, pdf }) {
+    return { crudo: { simulado: true, documentos: documentos.length, bytesPdf: pdf.length } };
   },
 };
 

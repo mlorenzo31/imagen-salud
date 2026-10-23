@@ -6,7 +6,7 @@ const ISO = /^\d{4}-\d{2}-\d{2}$/;
 const texto = (max: number) => z.string().trim().min(1).max(max);
 
 /** RIF con letra y 9 dígitos (8 + dígito verificador), normalizado sin guiones. */
-const rif = (letras: string, msg: string) =>
+export const rif = (letras: string, msg: string) =>
   z.string().transform((v) => normalizarCedulaRif(v)).refine((v) => new RegExp(`^[${letras}]\\d{9}$`).test(v), msg);
 
 /** Configuración del emisor (clínica) para la facturación fiscal. Se guarda en config_fiscal con clave 'emisor'. */

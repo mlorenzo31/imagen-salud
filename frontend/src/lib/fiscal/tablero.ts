@@ -3,8 +3,8 @@
  * Regla: todo cobro no anulado debe terminar con su factura fiscal; lo que no la tiene se señala.
  */
 
-export type EstadoCobroFiscal = 'EMITIDA' | 'EN_PROCESO' | 'RECHAZADA' | 'DIFERIDA' | 'DIFERIDA_VENCIDA' | 'SIN_FACTURA';
-export const ESTADOS_COBRO: EstadoCobroFiscal[] = ['EMITIDA', 'EN_PROCESO', 'RECHAZADA', 'DIFERIDA', 'DIFERIDA_VENCIDA', 'SIN_FACTURA'];
+export type EstadoCobroFiscal = 'EMITIDA' | 'CONTINGENCIA' | 'EN_PROCESO' | 'RECHAZADA' | 'DIFERIDA' | 'DIFERIDA_VENCIDA' | 'SIN_FACTURA';
+export const ESTADOS_COBRO: EstadoCobroFiscal[] = ['EMITIDA', 'CONTINGENCIA', 'EN_PROCESO', 'RECHAZADA', 'DIFERIDA', 'DIFERIDA_VENCIDA', 'SIN_FACTURA'];
 
 export interface FilaCobro {
   id: number;
@@ -25,6 +25,8 @@ export function clasificar(f: FilaCobro, hoy: string): EstadoCobroFiscal {
   if (f.docId !== null) {
     if (f.docEstado === 'EMITIDO') return 'EMITIDA';
     if (f.docEstado === 'ERROR') return 'RECHAZADA';
+    // Emitida en talonario: válida, pero falta remitirla a la imprenta digital (art. 7).
+    if (f.docEstado === 'CONTINGENCIA') return 'CONTINGENCIA';
     return 'EN_PROCESO';
   }
   if (f.motivoDiferido) return f.facturarAntesDe !== null && f.facturarAntesDe < hoy ? 'DIFERIDA_VENCIDA' : 'DIFERIDA';
@@ -69,10 +71,29 @@ export interface RespuestaTablero {
   filas: FilaTablero[];
   resumen: Resumen;
   diferencias: Array<DocVsCobros & { diferenciaUsd: number }>;
+  notas: { credito: { n: number; usd: number; bs: number }; debito: { n: number; usd: number; bs: number } };
+  /** Cobros anulados cuya factura no tiene nota de crédito (art. 12). */
+  anuladosSinNota: Array<{ id: number; fecha: string; paciente: string; numero: string }>;
+  /** Contingencia aún no remitida a la imprenta digital (art. 7), o null. */
+  contingencia: ContingenciaTablero | null;
+}
+
+export interface ContingenciaTablero {
+  id: number;
+  motivo: string;
+  fechaInicio: string;
+  horaInicio: string;
+  fechaFin: string | null;
+  horaFin: string | null;
+  documentos: number;
+  estado: 'ACTIVA' | 'POR_ENVIAR' | 'VENCE_HOY' | 'VENCIDA' | 'ENVIADA';
+  plazoEnvio: string | null;
+  ultimoError: string | null;
 }
 
 export const ETIQUETA_ESTADO: Record<EstadoCobroFiscal, string> = {
   EMITIDA: 'Facturada',
+  CONTINGENCIA: 'Talonario sin remitir',
   EN_PROCESO: 'En proceso',
   RECHAZADA: 'Rechazada',
   DIFERIDA: 'Diferida',

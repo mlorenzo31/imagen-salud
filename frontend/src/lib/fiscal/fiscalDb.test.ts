@@ -45,4 +45,16 @@ describe('filaDocumento', () => {
     });
     expect(JSON.parse(f.payload)).toEqual(doc);
   });
+
+  it('documento digital: sin serie ni contingencia, estado por defecto', () => {
+    const f = filaDocumento(doc, { facturaCajaId: 7, usuario: 'admin', fecha: '2026-10-15', hora: '14:04:07' });
+    expect(f).toMatchObject({ medio: 'DIGITAL', serie: '', estado: 'PENDIENTE', talonario_id: null, contingencia_id: null });
+  });
+
+  it('documento de contingencia: serie, talonario, contingencia y estado CONTINGENCIA', () => {
+    const f = filaDocumento({ ...doc, serie: 'C' }, {
+      facturaCajaId: 7, usuario: 'admin', fecha: '2026-10-15', hora: '14:04:07', medio: 'CONTINGENCIA', talonarioId: 3, contingenciaId: 9,
+    });
+    expect(f).toMatchObject({ medio: 'CONTINGENCIA', serie: 'C', estado: 'CONTINGENCIA', talonario_id: 3, contingencia_id: 9 });
+  });
 });

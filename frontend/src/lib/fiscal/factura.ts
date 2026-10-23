@@ -107,6 +107,10 @@ export interface DocumentoFiscal {
   imprenta: DatosImprenta | null;
   referencia?: { numero: string; numeroControl: string | null; fechaEmision: string; total: Par };
   motivo?: string;
+  /** Art. 20: serie del talonario de contingencia (la numeración digital no lleva serie). */
+  serie?: string;
+  /** Art. 11: datos del formato de contingencia. */
+  contingencia?: { rangoControl: string; fechaElaboracion: string };
 }
 
 interface Comun {

@@ -11,6 +11,7 @@ import { ModalCargaMasivaExcel } from '@/components/ModalCargaMasivaExcel';
 import { TabEstudios } from '@/components/admincatalogos/TabEstudios';
 import { PanelPromociones } from '@/components/admincatalogos/PanelPromociones';
 import { PanelDatosFiscales } from '@/components/admincatalogos/PanelDatosFiscales';
+import { PanelTalonarios } from '@/components/admincatalogos/PanelTalonarios';
 import { TabEspecialistas } from '@/components/admincatalogos/TabEspecialistas';
 import { TabPacientes } from '@/components/admincatalogos/TabPacientes';
 import { ProveedoresCatalogo } from '@/components/egresos/ProveedoresCatalogo';
@@ -482,7 +483,7 @@ export const ModuloAdminCatalogos: React.FC<ModuloAdminCatalogosProps> = ({ curr
       )}
 
       {tabActiva === 'promociones' && !isReadOnly && <PanelPromociones />}
-      {tabActiva === 'fiscal' && !isReadOnly && <PanelDatosFiscales />}
+      {tabActiva === 'fiscal' && !isReadOnly && <div className="space-y-4"><PanelDatosFiscales /><PanelTalonarios /></div>}
 
       {/* Misma pantalla que Egresos → Proveedores y catálogo (mismos datos). */}
       {tabActiva === 'proveedores' && !isReadOnly && <ProveedoresCatalogo onCambio={() => {}} />}

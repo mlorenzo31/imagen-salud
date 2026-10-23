@@ -6,7 +6,7 @@ import type { ConfigEmisor, DocumentoFiscal, TipoDocumento } from './factura';
 
 let listo: Promise<void> | null = null;
 
-const TABLAS = ['secuencias_fiscales', 'documentos_fiscales', 'documentos_fiscales_cobros', 'facturacion_diferida'];
+const TABLAS = ['secuencias_fiscales', 'documentos_fiscales', 'documentos_fiscales_cobros', 'facturacion_diferida', 'talonarios_contingencia', 'contingencias'];
 
 /**
  * Crea (idempotente) las tablas de documentos fiscales y las columnas "Facturar a" de facturas_caja.
@@ -20,11 +20,11 @@ export function asegurarFiscal(): Promise<void> {
           `SELECT (SELECT count(*)::int FROM pg_class c JOIN pg_namespace s ON s.oid = c.relnamespace
                    WHERE s.nspname = current_schema() AND c.relname = ANY($1::text[]) AND c.relrowsecurity) AS n,
                   EXISTS (SELECT 1 FROM information_schema.columns WHERE table_schema = current_schema()
-                          AND table_name = 'documentos_fiscales' AND column_name = 'proximo_intento') AS cola`,
+                          AND table_name = 'documentos_fiscales' AND column_name = 'contingencia_id') AS al_dia`,
           [TABLAS]
         );
-        // `cola`: columnas de la Fase 3 (envío a la imprenta con reintentos) ya creadas.
-        return r.rows[0].n === TABLAS.length && r.rows[0].cola;
+        // `al_dia`: la última columna agregada (Fase 5, contingencia) ya existe; si falta, se corre todo el DDL.
+        return r.rows[0].n === TABLAS.length && r.rows[0].al_dia;
       };
       if (await completas(pool)) return;
       const c = await pool.connect();
@@ -84,8 +84,9 @@ export function asegurarFiscal(): Promise<void> {
           ALTER TABLE documentos_fiscales ADD COLUMN IF NOT EXISTS proximo_intento TIMESTAMPTZ NOT NULL DEFAULT now();
           ALTER TABLE documentos_fiscales ADD COLUMN IF NOT EXISTS emitido_en TIMESTAMPTZ;
           ALTER TABLE documentos_fiscales DROP CONSTRAINT IF EXISTS documentos_fiscales_estado_check;
+          ALTER TABLE documentos_fiscales ALTER COLUMN estado TYPE VARCHAR(12);
           ALTER TABLE documentos_fiscales ADD CONSTRAINT documentos_fiscales_estado_check
-            CHECK (estado IN ('PENDIENTE', 'ENVIANDO', 'EMITIDO', 'ERROR'));
+            CHECK (estado IN ('PENDIENTE', 'ENVIANDO', 'EMITIDO', 'ERROR', 'CONTINGENCIA'));
           CREATE INDEX IF NOT EXISTS documentos_fiscales_cola ON documentos_fiscales (proximo_intento) WHERE estado IN ('PENDIENTE', 'ENVIANDO');
           -- Fase 3B: qué cobros cubre cada factura (una factura por cobro; la consolidada cubre varios) y diferimientos.
           CREATE TABLE IF NOT EXISTS documentos_fiscales_cobros (
@@ -108,6 +109,46 @@ export function asegurarFiscal(): Promise<void> {
           ALTER TABLE facturas_caja ADD COLUMN IF NOT EXISTS receptor_razon_social VARCHAR(200);
           ALTER TABLE facturas_caja ADD COLUMN IF NOT EXISTS receptor_rif VARCHAR(15);
           ALTER TABLE facturas_caja ADD COLUMN IF NOT EXISTS receptor_domicilio TEXT;
+          -- Fase 5: contingencia (arts. 6, 7, 11, 20 y 27). Talonarios autorizados y períodos de contingencia.
+          CREATE TABLE IF NOT EXISTS talonarios_contingencia (
+            id SERIAL PRIMARY KEY,
+            serie VARCHAR(6) NOT NULL UNIQUE,
+            imprenta_razon_social VARCHAR(200) NOT NULL,
+            imprenta_rif VARCHAR(15) NOT NULL,
+            imprenta_providencia VARCHAR(60) NOT NULL,
+            imprenta_fecha_providencia DATE NOT NULL,
+            fecha_elaboracion DATE NOT NULL,
+            control_desde VARCHAR(11) NOT NULL,
+            control_hasta VARCHAR(11) NOT NULL,
+            factura_desde INTEGER NOT NULL,
+            factura_hasta INTEGER NOT NULL,
+            activo BOOLEAN NOT NULL DEFAULT true,
+            usuario VARCHAR(100),
+            creado_en TIMESTAMPTZ NOT NULL DEFAULT now()
+          );
+          CREATE TABLE IF NOT EXISTS contingencias (
+            id SERIAL PRIMARY KEY,
+            motivo VARCHAR(15) NOT NULL CHECK (motivo IN ('ENERGIA', 'INTERNET', 'AVERIA', 'MANTENIMIENTO')),
+            observacion TEXT,
+            fecha_inicio DATE NOT NULL,
+            hora_inicio VARCHAR(8) NOT NULL,
+            fecha_fin DATE,
+            hora_fin VARCHAR(8),
+            abierta_por VARCHAR(100) NOT NULL,
+            cerrada_por VARCHAR(100),
+            enviada_en TIMESTAMPTZ,
+            respuesta_proveedor JSONB,
+            ultimo_error TEXT,
+            creado_en TIMESTAMPTZ NOT NULL DEFAULT now()
+          );
+          -- Una sola contingencia sin remitir a la vez: los documentos físicos se asocian a ella.
+          CREATE UNIQUE INDEX IF NOT EXISTS contingencias_sin_enviar ON contingencias ((true)) WHERE enviada_en IS NULL;
+          ALTER TABLE documentos_fiscales ADD COLUMN IF NOT EXISTS serie VARCHAR(6) NOT NULL DEFAULT '';
+          ALTER TABLE documentos_fiscales ADD COLUMN IF NOT EXISTS talonario_id INTEGER REFERENCES talonarios_contingencia(id);
+          ALTER TABLE documentos_fiscales ADD COLUMN IF NOT EXISTS contingencia_id INTEGER REFERENCES contingencias(id);
+          -- Art. 20: la numeración del talonario lleva serie, así no choca con la digital.
+          ALTER TABLE documentos_fiscales DROP CONSTRAINT IF EXISTS documentos_fiscales_tipo_numero_key;
+          CREATE UNIQUE INDEX IF NOT EXISTS documentos_fiscales_tipo_serie_numero ON documentos_fiscales (tipo, serie, numero);
         `);
         for (const t of [...TABLAS, 'config_fiscal']) await c.query(`ALTER TABLE ${t} ENABLE ROW LEVEL SECURITY`); // sin acceso por la API pública
         await c.query('COMMIT');
@@ -154,7 +195,10 @@ export async function siguienteNumero(client: Pick<PoolClient, 'query'>, tipo: T
   return formatearNumero(Number(r.rows[0].ultimo));
 }
 
-interface Meta { facturaCajaId: number | null; usuario: string; fecha: string; hora: string; docReferenciaId?: number | null; medio?: 'DIGITAL' | 'CONTINGENCIA' }
+interface Meta {
+  facturaCajaId: number | null; usuario: string; fecha: string; hora: string; docReferenciaId?: number | null;
+  medio?: 'DIGITAL' | 'CONTINGENCIA'; talonarioId?: number | null; contingenciaId?: number | null;
+}
 
 /** Fila de documentos_fiscales: totales consultables + el documento completo en `payload`. */
 export function filaDocumento(doc: DocumentoFiscal, m: Meta) {
@@ -166,6 +210,11 @@ export function filaDocumento(doc: DocumentoFiscal, m: Meta) {
     factura_caja_id: m.facturaCajaId,
     doc_referencia_id: m.docReferenciaId ?? null,
     medio: m.medio ?? 'DIGITAL',
+    // Contingencia (Fase 5): emitida en talonario; queda en CONTINGENCIA hasta remitirla a la imprenta digital (art. 7).
+    serie: doc.serie ?? '',
+    estado: m.medio === 'CONTINGENCIA' ? 'CONTINGENCIA' : 'PENDIENTE',
+    talonario_id: m.talonarioId ?? null,
+    contingencia_id: m.contingenciaId ?? null,
     fecha_emision: m.fecha,
     hora_emision: m.hora,
     receptor_nombre: doc.receptor.nombre,
@@ -185,7 +234,7 @@ export function filaDocumento(doc: DocumentoFiscal, m: Meta) {
   };
 }
 
-/** Guarda el documento en estado PENDIENTE; `emision.ts` lo envía a la imprenta y lo pasa a EMITIDO. */
+/** Guarda el documento (PENDIENTE, o CONTINGENCIA si es de talonario); `emision.ts` envía los PENDIENTE a la imprenta y lo pasa a EMITIDO. */
 export async function guardarDocumento(client: Pick<PoolClient, 'query'>, doc: DocumentoFiscal, m: Meta): Promise<number> {
   const f = filaDocumento(doc, m);
   const cols = Object.keys(f);

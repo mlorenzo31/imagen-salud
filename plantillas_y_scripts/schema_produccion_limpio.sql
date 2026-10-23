@@ -549,6 +549,39 @@ CREATE TABLE IF NOT EXISTS secuencias_fiscales (
   tipo VARCHAR(14) PRIMARY KEY,
   ultimo BIGINT NOT NULL CHECK (ultimo BETWEEN 1 AND 99999999)
 );
+-- Fase 5: contingencia (arts. 6, 7, 11, 20 y 27): talonarios autorizados y períodos de contingencia
+CREATE TABLE IF NOT EXISTS talonarios_contingencia (
+  id SERIAL PRIMARY KEY,
+  serie VARCHAR(6) NOT NULL UNIQUE,
+  imprenta_razon_social VARCHAR(200) NOT NULL,
+  imprenta_rif VARCHAR(15) NOT NULL,
+  imprenta_providencia VARCHAR(60) NOT NULL,
+  imprenta_fecha_providencia DATE NOT NULL,
+  fecha_elaboracion DATE NOT NULL,
+  control_desde VARCHAR(11) NOT NULL,
+  control_hasta VARCHAR(11) NOT NULL,
+  factura_desde INTEGER NOT NULL,
+  factura_hasta INTEGER NOT NULL,
+  activo BOOLEAN NOT NULL DEFAULT true,
+  usuario VARCHAR(100),
+  creado_en TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+CREATE TABLE IF NOT EXISTS contingencias (
+  id SERIAL PRIMARY KEY,
+  motivo VARCHAR(15) NOT NULL CHECK (motivo IN ('ENERGIA', 'INTERNET', 'AVERIA', 'MANTENIMIENTO')),
+  observacion TEXT,
+  fecha_inicio DATE NOT NULL,
+  hora_inicio VARCHAR(8) NOT NULL,
+  fecha_fin DATE,
+  hora_fin VARCHAR(8),
+  abierta_por VARCHAR(100) NOT NULL,
+  cerrada_por VARCHAR(100),
+  enviada_en TIMESTAMPTZ,
+  respuesta_proveedor JSONB,
+  ultimo_error TEXT,
+  creado_en TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+CREATE UNIQUE INDEX IF NOT EXISTS contingencias_sin_enviar ON contingencias ((true)) WHERE enviada_en IS NULL;
 CREATE TABLE IF NOT EXISTS documentos_fiscales (
   id SERIAL PRIMARY KEY,
   tipo VARCHAR(14) NOT NULL CHECK (tipo IN ('FACTURA', 'NOTA_CREDITO', 'NOTA_DEBITO')),
@@ -558,7 +591,10 @@ CREATE TABLE IF NOT EXISTS documentos_fiscales (
   factura_caja_id INTEGER REFERENCES facturas_caja(id),
   doc_referencia_id INTEGER REFERENCES documentos_fiscales(id),
   medio VARCHAR(12) NOT NULL DEFAULT 'DIGITAL' CHECK (medio IN ('DIGITAL', 'CONTINGENCIA')),
-  estado VARCHAR(10) NOT NULL DEFAULT 'PENDIENTE' CONSTRAINT documentos_fiscales_estado_check CHECK (estado IN ('PENDIENTE', 'ENVIANDO', 'EMITIDO', 'ERROR')),
+  estado VARCHAR(12) NOT NULL DEFAULT 'PENDIENTE' CONSTRAINT documentos_fiscales_estado_check CHECK (estado IN ('PENDIENTE', 'ENVIANDO', 'EMITIDO', 'ERROR', 'CONTINGENCIA')),
+  serie VARCHAR(6) NOT NULL DEFAULT '',
+  talonario_id INTEGER REFERENCES talonarios_contingencia(id),
+  contingencia_id INTEGER REFERENCES contingencias(id),
   fecha_emision DATE NOT NULL,
   hora_emision VARCHAR(8) NOT NULL,
   receptor_nombre VARCHAR(200) NOT NULL,
@@ -583,9 +619,9 @@ CREATE TABLE IF NOT EXISTS documentos_fiscales (
   emitido_en TIMESTAMPTZ,
   usuario VARCHAR(100),
   creado_en TIMESTAMPTZ NOT NULL DEFAULT now(),
-  UNIQUE (tipo, numero),
   CHECK ((tipo = 'FACTURA') = (doc_referencia_id IS NULL))
 );
+CREATE UNIQUE INDEX IF NOT EXISTS documentos_fiscales_tipo_serie_numero ON documentos_fiscales (tipo, serie, numero);
 CREATE INDEX IF NOT EXISTS documentos_fiscales_factura ON documentos_fiscales (factura_caja_id);
 CREATE INDEX IF NOT EXISTS documentos_fiscales_fecha ON documentos_fiscales (fecha_emision);
 CREATE INDEX IF NOT EXISTS documentos_fiscales_cola ON documentos_fiscales (proximo_intento) WHERE estado IN ('PENDIENTE', 'ENVIANDO');

@@ -59,7 +59,7 @@ describe('emitirDocumento', () => {
     servicios: [{ codigo: 'A', estudio: 'Estudio', area: 'X', precioLista: 2000, descuento: 0 }],
   }));
 
-  /** BD falsa: la 1.ª consulta "toma" el documento; las siguientes se registran. */
+  /** BD falsa: la consulta que "toma" el documento devuelve fila si `tomado`; las demás se registran. */
   const bd = (tomado: boolean) => {
     const calls: Array<{ sql: string; params: unknown[] }> = [];
     return {
@@ -71,7 +71,7 @@ describe('emitirDocumento', () => {
       }),
     };
   };
-  const prov = (emitir: ProveedorFiscal['emitir']): ProveedorFiscal => ({ nombre: 'prueba', emitir: vi.fn(emitir) });
+  const prov = (emitir: ProveedorFiscal['emitir']): ProveedorFiscal => ({ nombre: 'prueba', emitir: vi.fn(emitir), registrarContingencia: vi.fn(async () => ({})) });
 
   it('éxito: guarda N° de control, fecha, PDF y lo marca EMITIDO', async () => {
     const db = bd(true);
@@ -79,7 +79,7 @@ describe('emitirDocumento', () => {
     const r = await emitirDocumento(db as never, p, 7, '2026-10-22');
     expect(r).toEqual({ estado: 'EMITIDO', numeroControl: '00-00000077', pdfUrl: 'https://imprenta/77.pdf' });
     expect(p.emitir).toHaveBeenCalledWith({ id: 7, documento, hoy: '2026-10-22' });
-    const fin = db.calls[1];
+    const fin = db.calls[2];
     expect(fin.sql).toMatch(/estado = 'EMITIDO'/);
     expect(fin.params).toEqual(expect.arrayContaining([7, '00-00000077', '2026-10-22', 'https://imprenta/77.pdf', 'qr77', '22/10/2026']));
   });
@@ -88,15 +88,15 @@ describe('emitirDocumento', () => {
     const db = bd(true);
     const r = await emitirDocumento(db as never, prov(async () => { throw new Error('timeout'); }), 7, '2026-10-22');
     expect(r).toEqual({ estado: 'PENDIENTE', error: 'timeout' });
-    expect(db.calls[1].sql).toMatch(/estado = 'PENDIENTE'/);
-    expect(db.calls[1].params).toEqual([7, 'timeout', 30]);
+    expect(db.calls[2].sql).toMatch(/estado = 'PENDIENTE'/);
+    expect(db.calls[2].params).toEqual([7, 'timeout', 30]);
   });
 
   it('rechazo de la imprenta: queda en ERROR (no se reintenta)', async () => {
     const db = bd(true);
     const r = await emitirDocumento(db as never, prov(async () => { throw new ErrorRechazo('RIF inválido'); }), 7, '2026-10-22');
     expect(r).toEqual({ estado: 'ERROR', error: 'RIF inválido' });
-    expect(db.calls[1].sql).toMatch(/estado = 'ERROR'/);
+    expect(db.calls[2].sql).toMatch(/estado = 'ERROR'/);
   });
 
   it('respuesta inválida de la imprenta cuenta como rechazo', async () => {
@@ -110,7 +110,22 @@ describe('emitirDocumento', () => {
     const p = prov(async () => ({ numeroControl: '00-00000001', fechaAsignacion: '2026-10-22' }));
     expect(await emitirDocumento(db as never, p, 7, '2026-10-22')).toEqual({ estado: 'OMITIDO' });
     expect(p.emitir).not.toHaveBeenCalled();
-    expect(db.calls).toHaveLength(1);
+    expect(db.calls).toHaveLength(2);
+  });
+
+  it('antes de tomarlo, una nota cuya factura fue rechazada pasa a ERROR', async () => {
+    const db = bd(false);
+    await emitirDocumento(db as never, prov(async () => ({ numeroControl: '00-00000001', fechaAsignacion: '2026-10-22' })), 7, '2026-10-22');
+    expect(db.calls[0].sql).toMatch(/estado = 'ERROR'.*factura original fue rechazada/s);
+    expect(db.calls[0].sql).toMatch(/doc_referencia_id/);
+  });
+
+  it('SQL de toma: exige la factura original EMITIDA y actualiza referencia.numeroControl', async () => {
+    const db = bd(true);
+    await emitirDocumento(db as never, prov(async () => ({ numeroControl: '00-00000002', fechaAsignacion: '2026-10-22' })), 7, '2026-10-22');
+    const toma = db.calls[1].sql;
+    expect(toma).toMatch(/r\.estado = 'EMITIDO'/);
+    expect(toma).toMatch(/jsonb_set\(d\.payload, '\{referencia,numeroControl\}'/);
   });
 });
 

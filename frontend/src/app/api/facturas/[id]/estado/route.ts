@@ -1,9 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { ApiError, errorResponse, sesionUsuario, withTransaction } from '@/lib/apiHelpers';
+import { ApiError, errorResponse, fechaHoraLocal, sesionUsuario, withTransaction } from '@/lib/apiHelpers';
 import { esAnulada } from '@/lib/estados';
 import { revertirTesoreriaPorAnulacion } from '@/lib/anulacion';
 import { asegurarDeudasHonorarios } from '@/lib/deudasHonorariosDb';
 import { actorSesion, registrarBitacora } from '@/lib/bitacora';
+import pool from '@/lib/db';
+import { asegurarFiscal } from '@/lib/fiscal/fiscalDb';
+import { anularFiscalmente, emitirNotaTrasAnular } from '@/lib/fiscal/anulacionFiscal';
 
 const ALLOWED_FIELDS = [
   'estado',
@@ -47,6 +50,8 @@ export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: 
 
     // El libro de deudas debe existir antes de la transacción: la anulación puede registrar un CARGO y el DDL no corre con filas bloqueadas.
     await asegurarDeudasHonorarios();
+    await asegurarFiscal();
+    let notaId: number | null = null;
     const out = await withTransaction(async (client) => {
       const actual = await client.query('SELECT estado FROM facturas_caja WHERE id = $1 FOR UPDATE', [id]);
       if (actual.rows.length === 0) throw new ApiError(404, 'Factura no encontrada.');
@@ -71,10 +76,18 @@ export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: 
           descripcion: `Factura de ${f.nombre_paciente ?? '#' + id} (turno ${f.turno_num ?? '-'}, jornada ${fechaFac.slice(0, 10)}) anulada${motivo ? `: ${motivo}` : ''}.`,
           detalle: { factura_id: id, motivo },
         });
+        // Fiscal: si el cobro tenía factura, se emite su nota de crédito (art. 12).
+        const fiscal = await anularFiscalmente(client, id, sesionUsuario(req), motivo, actorSesion(req), fechaFac);
+        notaId = fiscal.notaId;
+        if (fiscal.aviso) advertencias.push(fiscal.aviso);
       }
       return { factura: result.rows[0], advertencias };
     });
 
+    if (notaId) {
+      const aviso = await emitirNotaTrasAnular(pool, notaId, fechaHoraLocal().fecha);
+      if (aviso) out.advertencias.push(aviso);
+    }
     // Se conserva la forma de respuesta previa (la factura) y se añaden advertencias solo si existen.
     return NextResponse.json(out.advertencias.length > 0 ? { ...out.factura, advertencias_anulacion: out.advertencias } : out.factura);
   } catch (err) {

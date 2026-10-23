@@ -96,16 +96,18 @@ Regla: **todo cobro termina con su factura fiscal**. Diferir solo cambia el *mom
   - la conciliación da cero diferencias en datos sanos y detecta un cobro sin documento.
 
 ### Fase 4 · Anulaciones → Notas de crédito/débito — feb 2027
-- [ ] Factura con documento fiscal emitido: "anular" = **emitir una Nota de Crédito total** por el mismo medio. `revertirTesoreriaPorAnulacion` (idempotente) se mantiene; el original queda conservado (art. 21).
-- [ ] Factura sin documento fiscal (borrador o error previo a la emisión): se mantiene la anulación actual.
-- [ ] Devoluciones parciales (`lib/devoluciones.ts`) → **Nota de Crédito parcial**; ajustes al alza → **Nota de Débito**.
-- [ ] UI en Historial / Caja: botón "Emitir nota de crédito", con motivo y PIN de autorización.
+- [x] Factura con documento fiscal emitido: "anular" = **emitir una Nota de Crédito total** por el mismo medio. `revertirTesoreriaPorAnulacion` (idempotente) se mantiene; el original queda conservado (art. 21).
+- [x] Factura sin documento fiscal (borrador o error previo a la emisión): se mantiene la anulación actual.
+- [x] Ajustes parciales y al alza: **notas manuales** de crédito/débito sobre una factura emitida (solo admin, con clave), desde Control Fiscal. *El sistema no tiene devoluciones parciales; el dinero se registra en Tesorería.*
+- [x] UI: botón "Nota" en Control Fiscal (admin); la NC por anulación sale sola al anular (Historial/Caja y auditoría de cierre). Alerta de "anulado sin nota de crédito".
 
 ### Fase 5 · Contingencia (arts. 6, 7, 11) — feb 2027
-- [ ] Registro de talonarios autorizados: imprenta, rango de N° de control y de factura, fecha de elaboración.
-- [ ] **Modo contingencia** en Recepción. Se activa con un motivo de la lista del art. 6 y pide el **N° de control preimpreso** del talonario; el sistema valida el rango y que el número no se repita.
-- [ ] Al cesar la contingencia: lista de documentos físicos pendientes y **envío en PDF a la imprenta digital al día siguiente** (art. 7), con alerta si queda alguno sin enviar.
+- [x] Registro de talonarios autorizados (Catálogos > Datos fiscales): serie (art. 20), imprenta y su providencia, fecha de elaboración, rango de N° de control y de factura del mismo tamaño (art. 27); no se permiten rangos de control cruzados.
+- [x] **Modo contingencia** en Recepción. Se activa con un motivo del art. 6 (1-4) y la clave del usuario, y pide el **N° de control preimpreso**. El sistema valida que esté en un talonario activo y que no se repita. El N° de factura sale del talonario, con su serie; la numeración digital no se toca.
+- [x] Al cesar la contingencia: los documentos físicos (también los registrados con atraso) se **remiten en PDF a la imprenta digital** desde Control Fiscal (relación del art. 7). Alerta "vence hoy" el día siguiente y "vencida" después. Las notas que esperaban a esas facturas salen solas.
   > Nota: la transcripción del art. 7 dice "al día siguiente"; el resumen decía "el mismo día". Se sigue el texto de la Gaceta.
+- [ ] Adaptador real de la imprenta para la remisión (`registrarContingencia`): hoy solo el simulado.
+- [ ] Decidir (Manu): la NC de una factura de talonario sale hoy por la imprenta digital, ya remitida la factura. ¿El art. 12 ("mismo medio") obliga a emitirla en talonario?
 
 ### Fase 6 · Comprobantes de retención (art. 18) — mar 2027
 - [ ] Numeración **AAAAMM + secuencial de 8 dígitos continuo**: contador único con bloqueo (reemplaza `count(*)` en `app/api/tesoreria/compras/facturas/route.ts`). Solo se reinicia al superar 99.999.999. Migración de los comprobantes ya emitidos.

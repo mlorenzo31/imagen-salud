@@ -12,7 +12,7 @@ export async function GET() {
     const [lista, conteo] = await Promise.all([
       pool.query(
         `SELECT id, tipo, numero, factura_caja_id, estado, intentos, ultimo_error, proximo_intento, fecha_emision, receptor_nombre, total_usd, total_bs
-         FROM documentos_fiscales WHERE estado <> 'EMITIDO' ORDER BY id LIMIT 200`
+         FROM documentos_fiscales WHERE estado NOT IN ('EMITIDO', 'CONTINGENCIA') ORDER BY id LIMIT 200`
       ),
       pool.query('SELECT estado, count(*)::int AS n FROM documentos_fiscales GROUP BY estado'),
     ]);

@@ -8,6 +8,7 @@ export const bs = (c: number) => `Bs. ${(c / 100).toLocaleString('es-VE', { mini
 
 export const COLOR_ESTADO: Record<EstadoCobroFiscal, string> = {
   EMITIDA: 'border-emerald-200 bg-emerald-50 text-emerald-800',
+  CONTINGENCIA: 'border-violet-200 bg-violet-50 text-violet-800',
   EN_PROCESO: 'border-sky-200 bg-sky-50 text-sky-800',
   RECHAZADA: 'border-rose-300 bg-rose-50 text-rose-800',
   DIFERIDA: 'border-amber-200 bg-amber-50 text-amber-800',
@@ -17,7 +18,7 @@ export const COLOR_ESTADO: Record<EstadoCobroFiscal, string> = {
 
 /** Cobrado del período y su reparto por estado fiscal. */
 export const TarjetasResumen: React.FC<{ resumen: Resumen }> = ({ resumen }) => (
-  <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4 xl:grid-cols-7">
+  <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4 xl:grid-cols-8">
     <div className="rounded-2xl border border-slate-200 bg-white p-3">
       <p className="text-[11px] font-bold uppercase tracking-wide text-slate-500">Cobrado</p>
       <p className="text-lg font-black text-slate-900">{usd(resumen.cobrado.usd)}</p>

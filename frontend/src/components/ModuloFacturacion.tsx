@@ -19,6 +19,8 @@ import {
 import { avisoFiscal } from '@/lib/fiscal/aviso';
 import { FacturarA, FACTURAR_A_VACIO, type FacturarAForm } from '@/components/facturacion/FacturarA';
 import { DiferirFactura, DIFERIR_VACIO, type DiferirForm } from '@/components/facturacion/DiferirFactura';
+import { ContingenciaCaja } from '@/components/facturacion/ContingenciaCaja';
+import type { MotivoContingencia, RespuestaContingencia } from '@/lib/fiscal/contingencia';
 import { FormasDePago } from '@/components/facturacion/FormasDePago';
 import { SeleccionEstudios } from '@/components/facturacion/SeleccionEstudios';
 import { diferir } from '@/lib/diferir';
@@ -163,6 +165,9 @@ export const ModuloFacturacion: React.FC<ModuloFacturacionProps> = ({ onFacturaE
   const [pagoMovilBs, setPagoMovilBs] = useState<string>('');
   const [facturarA, setFacturarA] = useState<FacturarAForm>(FACTURAR_A_VACIO);
   const [diferirFactura, setDiferirFactura] = useState<DiferirForm>(DIFERIR_VACIO);
+  // Contingencia fiscal (talonario): estado del servidor y N° de control preimpreso del cobro en curso.
+  const [contingencia, setContingencia] = useState<RespuestaContingencia | null>(null);
+  const [controlContingencia, setControlContingencia] = useState<string>('');
 
   // Estados de Proceso
   const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
@@ -204,6 +209,24 @@ export const ModuloFacturacion: React.FC<ModuloFacturacionProps> = ({ onFacturaE
     const id = setInterval(() => { if (!tasaManualRef.current) sincronizarTasaBCV(false); }, 5 * 60 * 1000);
     return () => { cancelar(); clearInterval(id); };
   }, []);
+
+  const cargarContingencia = async () => {
+    try {
+      const r = await fetch('/api/fiscal/contingencia');
+      if (r.ok) setContingencia(await r.json());
+    } catch { /* sin datos: se oculta el bloque de contingencia */ }
+  };
+  useEffect(() => diferir(() => { void cargarContingencia(); }), []);
+
+  const accionContingencia = async (cuerpo: Record<string, unknown>): Promise<boolean> => {
+    const r = await fetch('/api/fiscal/contingencia', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(cuerpo) });
+    const j = await r.json().catch(() => ({}));
+    if (!r.ok) { avisar({ tipo: 'error', titulo: 'Contingencia', mensaje: j.error || 'No se pudo completar la acción.' }); return false; }
+    avisar({ tipo: 'alerta', titulo: 'Contingencia', mensaje: j.accion === 'CERRADA' ? `Contingencia cerrada. Remitir a la imprenta digital el ${j.plazoEnvio}.` : 'Contingencia activa: facture en el talonario e indique su N° de control.' });
+    setControlContingencia('');
+    await cargarContingencia();
+    return true;
+  };
 
   // Promociones vigentes hoy (se aplican solas a los estudios que corresponden).
   useEffect(() => {
@@ -562,7 +585,8 @@ export const ModuloFacturacion: React.FC<ModuloFacturacionProps> = ({ onFacturaE
           total_honorarios: totalHonorarios,
           total_ganancia: totalGanancia,
           facturar_a: facturarA.activo ? { razonSocial: facturarA.razonSocial, rif: facturarA.rif, domicilio: facturarA.domicilio || undefined } : undefined,
-          diferir: diferirFactura.activo ? { motivo: diferirFactura.motivo, pin: diferirFactura.pin } : undefined
+          diferir: diferirFactura.activo ? { motivo: diferirFactura.motivo, pin: diferirFactura.pin } : undefined,
+          contingencia_control: controlContingencia || undefined
         })
       });
 
@@ -602,6 +626,8 @@ export const ModuloFacturacion: React.FC<ModuloFacturacionProps> = ({ onFacturaE
       setPagoMovilBs('');
       setFacturarA(FACTURAR_A_VACIO);
       setDiferirFactura(DIFERIR_VACIO);
+      setControlContingencia('');
+      void cargarContingencia();
 
       setEmitida(true);
       setTimeout(() => setEmitida(false), 1800);
@@ -1144,6 +1170,13 @@ export const ModuloFacturacion: React.FC<ModuloFacturacionProps> = ({ onFacturaE
               {/* Formas de Pago Simultáneas con Doble Moneda */}
               <FacturarA valor={facturarA} onChange={setFacturarA} />
               <DiferirFactura valor={diferirFactura} onChange={setDiferirFactura} />
+              <ContingenciaCaja
+                estado={contingencia}
+                control={controlContingencia}
+                onControl={setControlContingencia}
+                onActivar={(motivo: MotivoContingencia, observacion, pin) => accionContingencia({ accion: 'ACTIVAR', motivo, observacion: observacion || undefined, pin })}
+                onCerrar={(pin) => accionContingencia({ accion: 'CERRAR', pin })}
+              />
 
               <FormasDePago handleAutocompletar={handleAutocompletar} pagoDivisas={pagoDivisas} setPagoDivisas={setPagoDivisas} numDivisas={numDivisas} tasaBcv={tasaBcv} pagoEfectivoBs={pagoEfectivoBs} setPagoEfectivoBs={setPagoEfectivoBs} numEfectivoBs={numEfectivoBs} pagoPuntoBs={pagoPuntoBs} setPagoPuntoBs={setPagoPuntoBs} numPuntoBs={numPuntoBs} pagoMovilBs={pagoMovilBs} setPagoMovilBs={setPagoMovilBs} numPagoMovilBs={numPagoMovilBs} />
 

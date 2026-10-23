@@ -334,7 +334,7 @@ export default function Home() {
         {/* CONTROL FISCAL: cobrado frente a facturado (Providencia SENIAT de facturación) */}
         {activeSection === 'control-fiscal' && (role === 'admin' || role === 'asistente') && (
           <div className="animate-in fade-in-50 duration-300">
-            <ModuloControlFiscal />
+            <ModuloControlFiscal esAdmin={role === 'admin'} />
           </div>
         )}
 

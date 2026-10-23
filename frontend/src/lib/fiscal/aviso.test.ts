@@ -22,4 +22,9 @@ describe('avisoFiscal (mensaje para la caja tras cobrar)', () => {
     expect(avisoFiscal({ estado: 'DESACTIVADA', aviso: 'Proveedor fiscal desconocido: x' })?.tipo).toBe('error');
     expect(avisoFiscal(undefined)).toBeNull();
   });
+  it('contingencia: factura en talonario, con serie y N° de control preimpreso', () => {
+    expect(avisoFiscal({ estado: 'CONTINGENCIA', serie: 'C', numero: '00000020', numeroControl: '00-00000120' })).toEqual({
+      tipo: 'alerta', mensaje: 'Factura de contingencia serie C N° 00000020 · N° de control 00-00000120. Se remitirá a la imprenta digital al cesar la contingencia.',
+    });
+  });
 });

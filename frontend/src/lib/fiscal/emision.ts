@@ -11,6 +11,7 @@ import { fechaFiscal } from './formato';
 import { guardarDocumento, siguienteNumero } from './fiscalDb';
 import { ErrorRechazo, validarRespuesta, type ProveedorFiscal } from './proveedor';
 import type { ReceptorAlterno } from './configEmisor';
+import { documentoContingencia, type Talonario } from './contingencia';
 
 type Db = Pick<PoolClient, 'query'>;
 
@@ -82,18 +83,27 @@ export function entradaParaCobros(p: {
   if (!p.receptor) throw new Error('La factura consolidada necesita el receptor (razón social y RIF).');
   const base = entradaDesdeCobro({ numero: p.numero, fecha: p.fecha, hora: p.hora, tasa: p.tasa, emisor: p.emisor, pagoDivisasUsd,
     paciente: { nombre: '', cedula: '', direccion: '' }, facturarA: p.receptor, servicios: [] });
-  const lineas = p.cobros.flatMap((c) => c.servicios.map((s) => lineaDeServicio(s, `${s.estudio} — ${c.paciente.nombre} (${c.paciente.cedula})`)));
-  return { ...base, lineas };
+  return { ...base, lineas: p.cobros.flatMap((c) => lineasDeCobro(c, true)) };
+}
+
+/** Líneas de un cobro; en la factura consolidada cada línea identifica al paciente. */
+export function lineasDeCobro(c: CobroDiferido, conPaciente: boolean): LineaEntrada[] {
+  return c.servicios.map((s) => lineaDeServicio(s, conPaciente ? `${s.estudio} — ${c.paciente.nombre} (${c.paciente.cedula})` : s.estudio));
 }
 
 /**
  * Arma y guarda la factura PENDIENTE, la enlaza a sus cobros (UNIQUE: un cobro no puede quedar en dos facturas)
  * y cierra los diferimientos que cubre. Dentro de una transacción.
  */
-export async function guardarFactura(client: Db, entrada: EntradaFactura, meta: { cobros: number[]; usuario: string }): Promise<{ id: number; documento: DocumentoFiscal }> {
-  const documento = construirFactura(entrada);
+export async function guardarFactura(
+  client: Db, entrada: EntradaFactura,
+  meta: { cobros: number[]; usuario: string; contingencia?: { talonario: Talonario & { id: number }; contingenciaId: number } },
+): Promise<{ id: number; documento: DocumentoFiscal }> {
+  const c = meta.contingencia;
+  const documento = c ? documentoContingencia(construirFactura(entrada), c.talonario) : construirFactura(entrada);
   const id = await guardarDocumento(client, documento, {
     facturaCajaId: meta.cobros.length === 1 ? meta.cobros[0] : null, usuario: meta.usuario, fecha: entrada.fecha, hora: entrada.hora,
+    ...(c ? { medio: 'CONTINGENCIA' as const, talonarioId: c.talonario.id, contingenciaId: c.contingenciaId } : {}),
   });
   for (const c of meta.cobros) await client.query('INSERT INTO documentos_fiscales_cobros (documento_id, factura_caja_id) VALUES ($1, $2)', [id, c]);
   await client.query('UPDATE facturacion_diferida SET resuelto_en = now(), documento_id = $1 WHERE factura_caja_id = ANY($2) AND resuelto_en IS NULL', [id, meta.cobros]);
@@ -118,7 +128,7 @@ export type ResultadoEmision =
   | { estado: 'PENDIENTE' | 'ERROR'; error: string }
   | { estado: 'OMITIDO' };
 
-function conTiempo<T>(p: Promise<T>, ms: number): Promise<T> {
+export function conTiempo<T>(p: Promise<T>, ms: number): Promise<T> {
   return new Promise((resolve, reject) => {
     const t = setTimeout(() => reject(new Error(`La imprenta no respondió en ${ms / 1000} s.`)), ms);
     p.then((v) => { clearTimeout(t); resolve(v); }, (e) => { clearTimeout(t); reject(e); });
@@ -130,11 +140,21 @@ function conTiempo<T>(p: Promise<T>, ms: number): Promise<T> {
  * Se ejecuta fuera de la transacción del cobro: la llamada externa no debe retener bloqueos.
  */
 export async function emitirDocumento(db: Db, proveedor: ProveedorFiscal, id: number, hoy: string, timeoutMs = 8000): Promise<ResultadoEmision> {
-  // Tomar el documento: solo uno a la vez; si el proceso muere, a los 2 minutos otro puede retomarlo.
+  // Una nota cuya factura fue rechazada no tiene a qué referirse: queda en ERROR.
+  await db.query(
+    `UPDATE documentos_fiscales SET estado = 'ERROR', ultimo_error = 'La factura original fue rechazada por la imprenta.'
+     WHERE id = $1 AND estado = 'PENDIENTE' AND doc_referencia_id IN (SELECT id FROM documentos_fiscales WHERE estado = 'ERROR')`,
+    [id]
+  );
+  // Tomar el documento: solo uno a la vez; si el proceso muere, a los 2 minutos otro puede retomarlo. Una nota
+  // espera a que su factura tenga N° de control (art. 12) y lo copia a su referencia.
   const tomado = await db.query(
-    `UPDATE documentos_fiscales SET estado = 'ENVIANDO', intentos = intentos + 1, proximo_intento = now() + interval '2 minutes'
-     WHERE id = $1 AND estado IN ('PENDIENTE', 'ENVIANDO') AND proximo_intento <= now()
-     RETURNING payload, intentos`,
+    `UPDATE documentos_fiscales d SET estado = 'ENVIANDO', intentos = d.intentos + 1, proximo_intento = now() + interval '2 minutes',
+       payload = CASE WHEN d.doc_referencia_id IS NULL THEN d.payload
+         ELSE jsonb_set(d.payload, '{referencia,numeroControl}', to_jsonb((SELECT r.numero_control FROM documentos_fiscales r WHERE r.id = d.doc_referencia_id))) END
+     WHERE d.id = $1 AND d.estado IN ('PENDIENTE', 'ENVIANDO') AND d.proximo_intento <= now()
+       AND (d.doc_referencia_id IS NULL OR EXISTS (SELECT 1 FROM documentos_fiscales r WHERE r.id = d.doc_referencia_id AND r.estado = 'EMITIDO'))
+     RETURNING d.payload, d.intentos`,
     [id]
   );
   if (tomado.rows.length === 0) return { estado: 'OMITIDO' };

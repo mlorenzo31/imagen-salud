@@ -9,12 +9,13 @@ import { diferir } from '@/lib/diferir';
 import { getErrorMessage } from '@/lib/utils';
 import { hoyLocal } from '@/lib/date';
 import { descargarExcel } from '@/lib/excel';
-import { ETIQUETA_ESTADO, type RespuestaTablero } from '@/lib/fiscal/tablero';
+import { ETIQUETA_ESTADO, type FilaTablero, type RespuestaTablero } from '@/lib/fiscal/tablero';
 import { TarjetasResumen } from '@/components/controlfiscal/TarjetasResumen';
 import { TablaCobrosFiscales } from '@/components/controlfiscal/TablaCobrosFiscales';
+import { PanelContingencia } from '@/components/controlfiscal/PanelContingencia';
 
 /** Control fiscal: qué se cobró, qué se facturó, qué está diferido y qué falta por facturar. */
-export const ModuloControlFiscal: React.FC = () => {
+export const ModuloControlFiscal: React.FC<{ esAdmin: boolean }> = ({ esAdmin }) => {
   const { avisar } = useAvisos();
   const hoy = hoyLocal();
   const [desde, setDesde] = useState(`${hoy.slice(0, 7)}-01`);
@@ -24,6 +25,7 @@ export const ModuloControlFiscal: React.FC = () => {
   const [soloPendientes, setSoloPendientes] = useState(true);
   const [receptor, setReceptor] = useState({ razonSocial: '', rif: '' });
   const [ocupado, setOcupado] = useState(false);
+  const [nota, setNota] = useState<{ fila: FilaTablero; tipo: 'NOTA_CREDITO' | 'NOTA_DEBITO'; monto: string; motivo: string; pin: string } | null>(null);
 
   const cargar = useCallback(async () => {
     try {
@@ -63,6 +65,28 @@ export const ModuloControlFiscal: React.FC = () => {
     }
   };
 
+  const emitirNota = async () => {
+    if (!nota || nota.fila.docId === null) return;
+    setOcupado(true);
+    try {
+      const r = await fetch('/api/fiscal/notas', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ documentoId: nota.fila.docId, tipo: nota.tipo, montoUsd: nota.monto.replace(',', '.'), motivo: nota.motivo, pin: nota.pin }),
+      });
+      const j = await r.json();
+      if (!r.ok) throw new Error(j.error ?? 'No se pudo emitir la nota.');
+      avisar(j.estado === 'EMITIDO'
+        ? { tipo: 'exito', mensaje: `${j.denominacion} N° ${j.numero} emitida · N° de control ${j.numeroControl}. Registre el movimiento de dinero en Tesorería.` }
+        : { tipo: 'alerta', mensaje: `${j.denominacion} N° ${j.numero}: ${j.estado}${j.error ? ` — ${j.error}` : ''}.` });
+      setNota(null);
+      await cargar();
+    } catch (e) {
+      avisar({ tipo: 'error', mensaje: getErrorMessage(e) });
+    } finally {
+      setOcupado(false);
+    }
+  };
+
   const reintentar = async () => {
     setOcupado(true);
     try {
@@ -71,6 +95,22 @@ export const ModuloControlFiscal: React.FC = () => {
       if (!r.ok) throw new Error(j.error ?? 'No se pudo reintentar.');
       const p = j.procesados as Record<string, number>;
       avisar({ tipo: 'exito', mensaje: `Reintento: ${p.EMITIDO} emitidas, ${p.PENDIENTE} siguen pendientes, ${p.ERROR} rechazadas.` });
+      await cargar();
+    } catch (e) {
+      avisar({ tipo: 'error', mensaje: getErrorMessage(e) });
+    } finally {
+      setOcupado(false);
+    }
+  };
+
+  const remitirContingencia = async () => {
+    setOcupado(true);
+    try {
+      const r = await fetch('/api/fiscal/contingencia-envio', { method: 'POST' });
+      const j = await r.json();
+      if (!r.ok) throw new Error(j.error ?? 'No se pudo remitir la contingencia.');
+      if (j.estado === 'ERROR') avisar({ tipo: 'error', mensaje: `La imprenta no recibió la contingencia: ${j.error}` });
+      else avisar({ tipo: j.pendientes ? 'alerta' : 'exito', mensaje: `Contingencia remitida: ${j.documentos} documento(s).${j.pendientes ? ` Quedan ${j.pendientes} registrados durante el envío; remita de nuevo.` : ''}` });
       await cargar();
     } catch (e) {
       avisar({ tipo: 'error', mensaje: getErrorMessage(e) });
@@ -127,7 +167,37 @@ export const ModuloControlFiscal: React.FC = () => {
         </div>
       ))}
 
+      {datos?.contingencia && <PanelContingencia contingencia={datos.contingencia} ocupado={ocupado} onRemitir={remitirContingencia} />}
+
+      {datos && datos.anuladosSinNota.length > 0 && (
+        <div className="flex items-start gap-2 rounded-2xl border border-rose-300 bg-rose-50 p-3 text-sm text-rose-900">
+          <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" />
+          <p><span className="font-bold">Cobros anulados con factura y sin nota de crédito:</span>{' '}
+            {datos.anuladosSinNota.map((a) => `#${a.id} ${a.paciente} (factura ${a.numero})`).join(' · ')}. Emita la nota de crédito desde la factura.</p>
+        </div>
+      )}
+
       {r && <TarjetasResumen resumen={r} />}
+      {datos && (datos.notas.credito.n > 0 || datos.notas.debito.n > 0) && (
+        <p className="text-xs text-slate-600">
+          Notas de crédito: {datos.notas.credito.n} por ${(datos.notas.credito.usd / 100).toFixed(2)} · Notas de débito: {datos.notas.debito.n} por ${(datos.notas.debito.usd / 100).toFixed(2)}
+        </p>
+      )}
+
+      {nota && (
+        <div className="flex flex-wrap items-end gap-2 rounded-2xl border border-violet-200 bg-violet-50 p-3">
+          <p className="w-full text-xs font-bold text-violet-900">Nota sobre la factura {nota.fila.docNumero} ({nota.fila.paciente}). El movimiento de dinero se registra aparte en Tesorería.</p>
+          <select value={nota.tipo} onChange={(e) => setNota({ ...nota, tipo: e.target.value as 'NOTA_CREDITO' | 'NOTA_DEBITO' })} className="h-8 rounded-lg border border-slate-300 bg-white px-2 text-xs">
+            <option value="NOTA_CREDITO">Nota de crédito (rebaja)</option>
+            <option value="NOTA_DEBITO">Nota de débito (cargo adicional)</option>
+          </select>
+          <Input value={nota.monto} onChange={(e) => setNota({ ...nota, monto: e.target.value })} placeholder="Monto USD" className="h-8 w-28 text-xs" />
+          <Input value={nota.motivo} onChange={(e) => setNota({ ...nota, motivo: e.target.value })} placeholder="Motivo" className="h-8 w-64 text-xs" />
+          <Input type="password" value={nota.pin} onChange={(e) => setNota({ ...nota, pin: e.target.value })} placeholder="Su clave" className="h-8 w-32 text-xs" />
+          <Button size="sm" onClick={emitirNota} disabled={ocupado}>Emitir nota</Button>
+          <Button size="sm" variant="outline" onClick={() => setNota(null)}>Cancelar</Button>
+        </div>
+      )}
 
       {seleccion.size > 0 && (
         <div className="flex flex-wrap items-end gap-2 rounded-2xl border border-sky-200 bg-sky-50 p-3">
@@ -140,7 +210,8 @@ export const ModuloControlFiscal: React.FC = () => {
         </div>
       )}
 
-      {datos && <TablaCobrosFiscales filas={datos.filas} seleccion={seleccion} onToggle={toggle} soloPendientes={soloPendientes} />}
+      {datos && <TablaCobrosFiscales filas={datos.filas} seleccion={seleccion} onToggle={toggle} soloPendientes={soloPendientes}
+        onNota={esAdmin ? (fila) => setNota({ fila, tipo: 'NOTA_CREDITO', monto: '', motivo: '', pin: '' }) : undefined} />}
     </div>
   );
 };

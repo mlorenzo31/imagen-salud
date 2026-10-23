@@ -23,6 +23,8 @@ import { asegurarFiscal, leerConfigEmisor } from '@/lib/fiscal/fiscalDb';
 import { emitirDocumento, registrarFacturaFiscal } from '@/lib/fiscal/emision';
 import { MOTIVOS_DIFERIDO, diferirSchema, fechaLimite, type MotivoDiferido } from '@/lib/fiscal/diferido';
 import { obtenerProveedor, type ProveedorFiscal } from '@/lib/fiscal/proveedor';
+import { contingenciaVigente, registrarFacturaContingencia } from '@/lib/fiscal/contingenciaDb';
+import { esNumeroControl } from '@/lib/fiscal/formato';
 import type { ConfigEmisor } from '@/lib/fiscal/factura';
 
 export async function GET(req: NextRequest) {
@@ -347,8 +349,23 @@ export async function POST(req: NextRequest) {
       avisoFiscal = getErrorMessage(err);
       proveedor = null;
     }
+    // Contingencia (arts. 6, 7 y 11): mientras está activa, la factura sale del talonario y el cajero indica su
+    // N° de control preimpreso. Un N° inválido o repetido impide el cobro (el papel ya está emitido: hay que corregirlo).
+    const controlContingencia = str(data.contingencia_control).trim() || null;
+    if (proveedor && emisor) {
+      const vigente = await contingenciaVigente(pool, fecha);
+      if (controlContingencia) {
+        if (diferir) throw new ApiError(400, 'Un cobro diferido no lleva factura de talonario.');
+        if (!vigente) throw new ApiError(400, 'No hay una contingencia abierta: la factura se emite por la imprenta digital.');
+        if (!esNumeroControl(controlContingencia)) throw new ApiError(400, 'N° de control inválido (formato 00-00000001).');
+      } else if (vigente?.estado === 'ACTIVA' && !diferir) {
+        throw new ApiError(400, 'Contingencia activa: indique el N° de control preimpreso del talonario.');
+      }
+    } else if (controlContingencia) {
+      throw new ApiError(400, 'La emisión fiscal está desactivada: no se registran facturas de talonario.');
+    }
     // Se asigna dentro de la transacción (closure): el cast evita que TS lo estreche a null.
-    let docFiscal = null as { id: number; numero: string } | null;
+    let docFiscal = null as { id: number; numero: string; serie?: string; numeroControl?: string } | null;
     const factura = await withTransaction(async (client) => {
       let turnoNum = parseInt(str(data.turnoNum ?? data.turno_num), 10);
       if (!Number.isFinite(turnoNum) || turnoNum <= 0) {
@@ -477,6 +494,24 @@ export async function POST(req: NextRequest) {
           descripcion: `Facturación diferida del cobro ${f.id} (${f.nombre_paciente}): ${MOTIVOS_DIFERIDO[diferir.motivo].etiqueta}. Facturar antes del ${limite}.`,
           detalle: { factura_id: f.id, motivo: diferir.motivo, facturar_antes_de: limite },
         });
+      } else if (proveedor && emisor && controlContingencia) {
+        const datosCobro = {
+          fecha, hora, tasa: String(tasaNum), pagoDivisasUsd: divisas, emisor, facturarA,
+          paciente: { nombre: f.nombre_paciente, cedula: f.cedula_paciente, direccion: str(data.direccion || data.direccion_paciente).trim().toUpperCase() },
+          servicios: servicios.map((s) => ({ codigo: s.codigo, estudio: s.estudio, area: s.area, precioLista: s.precioLista, descuento: s.descuento })),
+        };
+        let r;
+        try {
+          r = await registrarFacturaContingencia(client, datosCobro, { facturaCajaId: f.id, usuario, numeroControl: controlContingencia });
+        } catch (err) {
+          throw new ApiError(400, `Factura de contingencia: ${getErrorMessage(err)}`);
+        }
+        docFiscal = { id: r.id, numero: r.documento.numero, serie: r.documento.serie, numeroControl: controlContingencia };
+        await registrarBitacora(client, {
+          tipo: 'FISCAL', fechaAfectada: fecha, ...actorSesion(req),
+          descripcion: `Factura de contingencia serie ${r.documento.serie} N° ${r.documento.numero} (control ${controlContingencia}) del cobro ${f.id} (${f.nombre_paciente}).`,
+          detalle: { factura_id: f.id, documento_id: r.id, numero_control: controlContingencia },
+        });
       } else if (proveedor && emisor) {
         // SAVEPOINT: si el documento fiscal no se puede armar, el cobro igual se registra y queda el aviso.
         await client.query('SAVEPOINT fiscal');
@@ -507,7 +542,9 @@ export async function POST(req: NextRequest) {
     let fiscal: Record<string, unknown> = diferir
       ? { estado: 'DIFERIDA', motivo: diferir.motivo, facturarAntesDe: fechaLimite(diferir.motivo, fecha) }
       : proveedor ? { estado: 'NO_EMITIDA', error: avisoFiscal } : { estado: 'DESACTIVADA', aviso: avisoFiscal };
-    if (proveedor && docFiscal) {
+    if (docFiscal?.serie) {
+      fiscal = { estado: 'CONTINGENCIA', numero: docFiscal.numero, serie: docFiscal.serie, numeroControl: docFiscal.numeroControl, documentoId: docFiscal.id };
+    } else if (proveedor && docFiscal) {
       const r = await emitirDocumento(pool, proveedor, docFiscal.id, fechaHoraLocal().fecha);
       fiscal = { ...r, numero: docFiscal.numero, documentoId: docFiscal.id };
       if (r.estado === 'ERROR') {

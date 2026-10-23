@@ -5,6 +5,8 @@ import { esAnulada } from '@/lib/estados';
 import { revertirTesoreriaPorAnulacion } from '@/lib/anulacion';
 import { asegurarDeudasHonorarios } from '@/lib/deudasHonorariosDb';
 import { actorSesion, registrarBitacora } from '@/lib/bitacora';
+import { asegurarFiscal } from '@/lib/fiscal/fiscalDb';
+import { anularFiscalmente, emitirNotaTrasAnular } from '@/lib/fiscal/anulacionFiscal';
 
 export async function POST(req: NextRequest) {
   try {
@@ -13,6 +15,8 @@ export async function POST(req: NextRequest) {
 
     // El libro de deudas debe existir antes de la transacción (ver revertirTesoreriaPorAnulacion).
     await asegurarDeudasHonorarios();
+    await asegurarFiscal();
+    let notaId: number | null = null;
     const client = await pool.connect();
     try {
       await client.query('BEGIN');
@@ -34,6 +38,8 @@ export async function POST(req: NextRequest) {
         await client.query("UPDATE facturas_caja SET estado = 'ANULADA' WHERE id = $1", [registro_id]);
         if (previo.rows.length > 0 && !esAnulada(previo.rows[0].estado)) {
           await revertirTesoreriaPorAnulacion(client, registro_id, usuario, 'Anulada en auditoría de cierre');
+          const fecha = (await client.query("SELECT to_char(fecha, 'YYYY-MM-DD') AS f FROM facturas_caja WHERE id = $1", [registro_id])).rows[0]?.f ?? fechaHoraLocal().fecha;
+          ({ notaId } = await anularFiscalmente(client, registro_id, usuario, 'Anulada en auditoría de cierre', actorSesion(req), fecha));
         }
       } else if (accion === 'CARTERA_DEUDOR') {
         await client.query("UPDATE facturas_caja SET estado = 'FINALIZADO', etapa_actual = 2 WHERE id = $1", [registro_id]);
@@ -47,7 +53,8 @@ export async function POST(req: NextRequest) {
       }
 
       await client.query('COMMIT');
-      return NextResponse.json({ mensaje: 'Paciente resuelto exitosamente.', accion, registro_id });
+      const avisoFiscal = notaId ? await emitirNotaTrasAnular(pool, notaId, fechaHoraLocal().fecha) : null;
+      return NextResponse.json({ mensaje: 'Paciente resuelto exitosamente.', accion, registro_id, ...(avisoFiscal ? { aviso_fiscal: avisoFiscal } : {}) });
     } catch (err) {
       await client.query('ROLLBACK').catch(() => {});
       return errorResponse(err);

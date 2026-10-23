@@ -14,6 +14,9 @@ describe('clasificar: estado fiscal de un cobro', () => {
     expect(clasificar(fila({ docId: 9, docEstado: 'ENVIANDO' }), HOY)).toBe('EN_PROCESO');
   });
   it('con factura rechazada por la imprenta', () => expect(clasificar(fila({ docId: 9, docEstado: 'ERROR' }), HOY)).toBe('RECHAZADA'));
+  it('factura de talonario aún sin remitir a la imprenta', () => {
+    expect(clasificar(fila({ docId: 9, docEstado: 'CONTINGENCIA' }), HOY)).toBe('CONTINGENCIA');
+  });
   it('diferido dentro del plazo (el día límite aún vale)', () => {
     expect(clasificar(fila({ motivoDiferido: 'ANTICIPO', facturarAntesDe: '2026-10-22' }), HOY)).toBe('DIFERIDA');
   });
