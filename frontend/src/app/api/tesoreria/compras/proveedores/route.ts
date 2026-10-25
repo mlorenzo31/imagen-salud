@@ -25,9 +25,9 @@ export async function POST(req: NextRequest) {
     const rif = rifONulo(b.rif);
     await asegurarCompras();
     const r = await pool.query(
-      `INSERT INTO proveedores (rif, razon_social, direccion, telefono, tipo_persona, contribuyente_especial)
-       VALUES ($1, $2, $3, $4, $5, $6) RETURNING *`,
-      [rif, b.razon_social.toUpperCase(), b.direccion || null, b.telefono || null, b.tipo_persona, b.contribuyente_especial ?? false]
+      `INSERT INTO proveedores (rif, razon_social, direccion, telefono, tipo_persona, contribuyente_especial, correo)
+       VALUES ($1, $2, $3, $4, $5, $6, $7) RETURNING *`,
+      [rif, b.razon_social.toUpperCase(), b.direccion || null, b.telefono || null, b.tipo_persona, b.contribuyente_especial ?? false, b.correo || null]
     ).catch((e) => { throw duplicadoA409(e, `Ya existe un proveedor con el RIF ${rif}.`); });
     return NextResponse.json(r.rows[0]);
   } catch (err) {

@@ -13,7 +13,7 @@ import { pedir, type ProductoCompra, type Proveedor } from './comprasApi';
 
 const etq = 'block text-xs font-bold text-slate-700 mb-1';
 const sel = 'w-full h-9 rounded-xl border border-slate-300 bg-white px-2 text-xs';
-const provVacio = { id: 0, rif: '', razon_social: '', direccion: '', telefono: '', tipo_persona: 'JURIDICA' as TipoPersona, contribuyente_especial: false, activo: true };
+const provVacio = { id: 0, rif: '', razon_social: '', direccion: '', telefono: '', correo: '', tipo_persona: 'JURIDICA' as TipoPersona, contribuyente_especial: false, activo: true };
 const prodVacio = { id: 0, nombre: '', categoria: 'Insumos médicos', alicuota_defecto: 16, proveedor_id: 0, activo: true };
 
 /** Altas y ediciones de proveedores y del catálogo de productos/servicios, y la configuración fiscal (retenciones). */
@@ -78,6 +78,7 @@ export function ProveedoresCatalogo({ onCambio }: { onCambio: () => void }) {
             <div><label className={etq}>Razón social *</label><Input value={prov.razon_social} onChange={(e) => setProv({ ...prov, razon_social: e.target.value })} required className="h-9" /></div>
             <div className="md:col-span-2"><label className={etq}>Dirección fiscal</label><Input value={prov.direccion ?? ''} onChange={(e) => setProv({ ...prov, direccion: e.target.value })} className="h-9" /></div>
             <div><label className={etq}>Teléfono</label><Input value={prov.telefono ?? ''} onChange={(e) => setProv({ ...prov, telefono: e.target.value })} className="h-9" /></div>
+            <div><label className={etq}>Correo (va en el comprobante de retención)</label><Input type="email" value={prov.correo ?? ''} onChange={(e) => setProv({ ...prov, correo: e.target.value })} className="h-9" /></div>
             <div>
               <label className={etq}>Tipo de persona</label>
               <select value={prov.tipo_persona} onChange={(e) => setProv({ ...prov, tipo_persona: e.target.value as TipoPersona })} className={sel}>
@@ -95,7 +96,7 @@ export function ProveedoresCatalogo({ onCambio }: { onCambio: () => void }) {
             {proveedores.map((p) => (
               <li key={p.id} className={`flex items-center justify-between px-3 py-1.5 ${p.activo ? '' : 'text-slate-400'}`}>
                 <span><b>{p.razon_social}</b> · {p.rif}{p.contribuyente_especial ? ' · Esp.' : ''}</span>
-                <Button size="sm" variant="ghost" onClick={() => setProv({ ...p, direccion: p.direccion ?? '', telefono: p.telefono ?? '' })} className="h-7 text-xs">Editar</Button>
+                <Button size="sm" variant="ghost" onClick={() => setProv({ ...p, direccion: p.direccion ?? '', telefono: p.telefono ?? '', correo: p.correo ?? '' })} className="h-7 text-xs">Editar</Button>
               </li>
             ))}
           </ul>

@@ -125,6 +125,10 @@ CREATE TABLE IF NOT EXISTS facturas_caja (
   descuento_motivo TEXT,
   descuento_promo_id INTEGER,
   descuento_autorizado_por VARCHAR(100),
+  -- "Facturar a": empresa o aseguradora receptora de la factura fiscal (art. 8.6, Providencia G.O. 21/10/2026)
+  receptor_razon_social VARCHAR(200),
+  receptor_rif VARCHAR(15),
+  receptor_domicilio TEXT,
   PRIMARY KEY (id)
 );
 
@@ -460,6 +464,7 @@ CREATE TABLE IF NOT EXISTS proveedores (
   telefono VARCHAR(30),
   tipo_persona VARCHAR(10) NOT NULL DEFAULT 'JURIDICA' CHECK (tipo_persona IN ('NATURAL', 'JURIDICA')),
   contribuyente_especial BOOLEAN NOT NULL DEFAULT false,
+  correo VARCHAR(150),
   activo BOOLEAN NOT NULL DEFAULT true,
   creado_en TIMESTAMPTZ NOT NULL DEFAULT now()
 );
@@ -531,11 +536,135 @@ CREATE TABLE IF NOT EXISTS retenciones_compra (
   factura_id INTEGER NOT NULL REFERENCES facturas_compra(id),
   numero VARCHAR(20) NOT NULL UNIQUE,
   periodo VARCHAR(6) NOT NULL,
+  periodo_imposicion VARCHAR(7),
   iva_retenido NUMERIC(14,2) NOT NULL DEFAULT 0,
   islr_retenido NUMERIC(14,2) NOT NULL DEFAULT 0,
   fecha DATE NOT NULL,
+  fecha_entrega DATE,
   creado_en TIMESTAMPTZ NOT NULL DEFAULT now()
 );
+-- Art. 18: secuencial continuo de los comprobantes de retención (AAAAMM + 8 dígitos; se reinicia al superar 99.999.999)
+CREATE TABLE IF NOT EXISTS secuencia_retencion (
+  id BOOLEAN PRIMARY KEY DEFAULT true CHECK (id),
+  ultimo BIGINT NOT NULL CHECK (ultimo BETWEEN 0 AND 99999999)
+);
+INSERT INTO secuencia_retencion (id, ultimo) VALUES (true, 0) ON CONFLICT (id) DO NOTHING;
 CREATE INDEX IF NOT EXISTS facturas_compra_fecha ON facturas_compra (fecha);
 CREATE INDEX IF NOT EXISTS pagos_compra_factura ON pagos_compra (factura_id);
       
+
+-- ===== Documentos fiscales (Providencia SENIAT de facturación, G.O. 21/10/2026) — lib/fiscal/fiscalDb.ts =====
+CREATE TABLE IF NOT EXISTS secuencias_fiscales (
+  tipo VARCHAR(14) PRIMARY KEY,
+  ultimo BIGINT NOT NULL CHECK (ultimo BETWEEN 1 AND 99999999)
+);
+-- Fase 5: contingencia (arts. 6, 7, 11, 20 y 27): talonarios autorizados y períodos de contingencia
+CREATE TABLE IF NOT EXISTS talonarios_contingencia (
+  id SERIAL PRIMARY KEY,
+  serie VARCHAR(6) NOT NULL UNIQUE,
+  imprenta_razon_social VARCHAR(200) NOT NULL,
+  imprenta_rif VARCHAR(15) NOT NULL,
+  imprenta_providencia VARCHAR(60) NOT NULL,
+  imprenta_fecha_providencia DATE NOT NULL,
+  fecha_elaboracion DATE NOT NULL,
+  control_desde VARCHAR(11) NOT NULL,
+  control_hasta VARCHAR(11) NOT NULL,
+  factura_desde INTEGER NOT NULL,
+  factura_hasta INTEGER NOT NULL,
+  activo BOOLEAN NOT NULL DEFAULT true,
+  usuario VARCHAR(100),
+  creado_en TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+CREATE TABLE IF NOT EXISTS contingencias (
+  id SERIAL PRIMARY KEY,
+  motivo VARCHAR(15) NOT NULL CHECK (motivo IN ('ENERGIA', 'INTERNET', 'AVERIA', 'MANTENIMIENTO')),
+  observacion TEXT,
+  fecha_inicio DATE NOT NULL,
+  hora_inicio VARCHAR(8) NOT NULL,
+  fecha_fin DATE,
+  hora_fin VARCHAR(8),
+  abierta_por VARCHAR(100) NOT NULL,
+  cerrada_por VARCHAR(100),
+  enviada_en TIMESTAMPTZ,
+  respuesta_proveedor JSONB,
+  ultimo_error TEXT,
+  creado_en TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+CREATE UNIQUE INDEX IF NOT EXISTS contingencias_sin_enviar ON contingencias ((true)) WHERE enviada_en IS NULL;
+CREATE TABLE IF NOT EXISTS documentos_fiscales (
+  id SERIAL PRIMARY KEY,
+  tipo VARCHAR(14) NOT NULL CHECK (tipo IN ('FACTURA', 'NOTA_CREDITO', 'NOTA_DEBITO')),
+  numero VARCHAR(8) NOT NULL,
+  numero_control VARCHAR(11) UNIQUE,
+  fecha_asignacion_control DATE,
+  factura_caja_id INTEGER REFERENCES facturas_caja(id),
+  doc_referencia_id INTEGER REFERENCES documentos_fiscales(id),
+  medio VARCHAR(12) NOT NULL DEFAULT 'DIGITAL' CHECK (medio IN ('DIGITAL', 'CONTINGENCIA')),
+  estado VARCHAR(12) NOT NULL DEFAULT 'PENDIENTE' CONSTRAINT documentos_fiscales_estado_check CHECK (estado IN ('PENDIENTE', 'ENVIANDO', 'EMITIDO', 'ERROR', 'CONTINGENCIA')),
+  serie VARCHAR(6) NOT NULL DEFAULT '',
+  talonario_id INTEGER REFERENCES talonarios_contingencia(id),
+  contingencia_id INTEGER REFERENCES contingencias(id),
+  fecha_emision DATE NOT NULL,
+  hora_emision VARCHAR(8) NOT NULL,
+  receptor_nombre VARCHAR(200) NOT NULL,
+  receptor_documento VARCHAR(20) NOT NULL,
+  total_exento_usd NUMERIC(14,2) NOT NULL,
+  total_iva_usd NUMERIC(14,2) NOT NULL,
+  total_igtf_usd NUMERIC(14,2) NOT NULL,
+  total_usd NUMERIC(14,2) NOT NULL,
+  total_exento_bs NUMERIC(16,2) NOT NULL,
+  total_iva_bs NUMERIC(16,2) NOT NULL,
+  total_igtf_bs NUMERIC(16,2) NOT NULL,
+  total_bs NUMERIC(16,2) NOT NULL,
+  tipo_cambio NUMERIC(14,4) NOT NULL CHECK (tipo_cambio > 0),
+  motivo TEXT,
+  payload JSONB NOT NULL,
+  pdf_url TEXT,
+  qr TEXT,
+  respuesta_proveedor JSONB,
+  intentos INTEGER NOT NULL DEFAULT 0,
+  ultimo_error TEXT,
+  proximo_intento TIMESTAMPTZ NOT NULL DEFAULT now(),
+  emitido_en TIMESTAMPTZ,
+  usuario VARCHAR(100),
+  creado_en TIMESTAMPTZ NOT NULL DEFAULT now(),
+  CHECK ((tipo = 'FACTURA') = (doc_referencia_id IS NULL))
+);
+CREATE UNIQUE INDEX IF NOT EXISTS documentos_fiscales_tipo_serie_numero ON documentos_fiscales (tipo, serie, numero);
+-- Fase 6: retenciones que los clientes agentes de retención le practican a la clínica, contra su factura
+CREATE TABLE IF NOT EXISTS retenciones_recibidas (
+  id SERIAL PRIMARY KEY,
+  documento_id INTEGER NOT NULL REFERENCES documentos_fiscales(id),
+  agente_rif VARCHAR(15) NOT NULL,
+  agente_razon_social VARCHAR(200) NOT NULL,
+  numero_comprobante VARCHAR(14) NOT NULL,
+  fecha_comprobante DATE NOT NULL,
+  periodo VARCHAR(7) NOT NULL,
+  iva_retenido NUMERIC(16,2) NOT NULL DEFAULT 0,
+  islr_retenido NUMERIC(16,2) NOT NULL DEFAULT 0,
+  observacion TEXT,
+  usuario VARCHAR(100),
+  creado_en TIMESTAMPTZ NOT NULL DEFAULT now(),
+  anulada_en TIMESTAMPTZ,
+  motivo_anulacion TEXT,
+  UNIQUE (agente_rif, numero_comprobante)
+);
+CREATE INDEX IF NOT EXISTS retenciones_recibidas_documento ON retenciones_recibidas (documento_id);
+CREATE INDEX IF NOT EXISTS documentos_fiscales_factura ON documentos_fiscales (factura_caja_id);
+CREATE INDEX IF NOT EXISTS documentos_fiscales_fecha ON documentos_fiscales (fecha_emision);
+CREATE INDEX IF NOT EXISTS documentos_fiscales_cola ON documentos_fiscales (proximo_intento) WHERE estado IN ('PENDIENTE', 'ENVIANDO');
+-- Fase 3B: cobros que cubre cada factura (una por cobro; la consolidada cubre varios) y facturación diferida
+CREATE TABLE IF NOT EXISTS documentos_fiscales_cobros (
+  documento_id INTEGER NOT NULL REFERENCES documentos_fiscales(id),
+  factura_caja_id INTEGER NOT NULL UNIQUE REFERENCES facturas_caja(id),
+  PRIMARY KEY (documento_id, factura_caja_id)
+);
+CREATE TABLE IF NOT EXISTS facturacion_diferida (
+  factura_caja_id INTEGER PRIMARY KEY REFERENCES facturas_caja(id),
+  motivo VARCHAR(20) NOT NULL CHECK (motivo IN ('ANTICIPO', 'ASEGURADORA', 'DATOS_EMPRESA')),
+  facturar_antes_de DATE NOT NULL,
+  autorizado_por VARCHAR(100) NOT NULL,
+  creado_en TIMESTAMPTZ NOT NULL DEFAULT now(),
+  resuelto_en TIMESTAMPTZ,
+  documento_id INTEGER REFERENCES documentos_fiscales(id)
+);

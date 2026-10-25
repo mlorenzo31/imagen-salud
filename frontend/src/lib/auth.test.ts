@@ -46,6 +46,22 @@ describe('RBAC por ruta', () => {
     expect(isAllowed('cajero', '/api/admin/promociones', 'POST')).toBe(false);
     expect(isAllowed('asistente', '/api/admin/promociones', 'POST')).toBe(false);
     expect(isAllowed('admin', '/api/admin/promociones', 'POST')).toBe(true);
+    // Datos fiscales del emisor: solo el administrador los ve y los cambia.
+    expect(isAllowed('asistente', '/api/admin/fiscal', 'GET')).toBe(false);
+    expect(isAllowed('cajero', '/api/admin/fiscal', 'PUT')).toBe(false);
+    expect(isAllowed('admin', '/api/admin/fiscal', 'PUT')).toBe(true);
+    // Documentos fiscales pendientes: admin y asistente; el cajero no.
+    expect(isAllowed('cajero', '/api/fiscal/pendientes', 'GET')).toBe(false);
+    expect(isAllowed('asistente', '/api/fiscal/pendientes', 'POST')).toBe(true);
+    // Notas manuales de crédito/débito: solo admin.
+    expect(isAllowed('asistente', '/api/fiscal/notas', 'POST')).toBe(false);
+    expect(isAllowed('admin', '/api/fiscal/notas', 'POST')).toBe(true);
+    // Contingencia: la caja la consulta y la activa/cierra; remitirla y los talonarios no son del cajero.
+    expect(isAllowed('cajero', '/api/fiscal/contingencia', 'GET')).toBe(true);
+    expect(isAllowed('cajero', '/api/fiscal/contingencia', 'POST')).toBe(true);
+    expect(isAllowed('cajero', '/api/fiscal/contingencia-envio', 'POST')).toBe(false);
+    expect(isAllowed('asistente', '/api/fiscal/contingencia-envio', 'POST')).toBe(true);
+    expect(isAllowed('asistente', '/api/admin/fiscal/talonarios', 'POST')).toBe(false);
     expect(isAllowed('cajero', '/api/cierres/resumen-servicios', 'GET')).toBe(false);
     expect(isAllowed('asistente', '/api/cierres/resumen-servicios', 'GET')).toBe(true);
     expect(isAllowed('admin', '/api/cierres/resumen-servicios', 'GET')).toBe(true);

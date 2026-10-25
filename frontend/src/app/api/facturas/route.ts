@@ -3,6 +3,7 @@ import type { PoolClient } from 'pg';
 import { clasificarServicio } from '@/lib/sala';
 import pool from '@/lib/db';
 import { ApiError, errorResponse, fechaHoraLocal, sesionUsuario, withTransaction } from '@/lib/apiHelpers';
+import { getErrorMessage } from '@/lib/utils';
 import { centsToStr, toCents } from '@/lib/money';
 import { obtenerTasaBcv } from '@/lib/tasaBcv';
 import { exigirJornadaAlDia, ultimaFechaCerrada } from '@/lib/cierre';
@@ -17,6 +18,14 @@ import { exigirAutorizacionDescuento } from '@/lib/autorizacionDescuento';
 import { exigirPinSesion } from '@/lib/pin';
 import { decidirTasa } from '@/lib/tasaFactura';
 import { actorSesion, registrarBitacora } from '@/lib/bitacora';
+import { receptorAlternoSchema, type ReceptorAlterno } from '@/lib/fiscal/configEmisor';
+import { asegurarFiscal, leerConfigEmisor } from '@/lib/fiscal/fiscalDb';
+import { emitirDocumento, registrarFacturaFiscal } from '@/lib/fiscal/emision';
+import { MOTIVOS_DIFERIDO, diferirSchema, fechaLimite, type MotivoDiferido } from '@/lib/fiscal/diferido';
+import { obtenerProveedor, type ProveedorFiscal } from '@/lib/fiscal/proveedor';
+import { contingenciaVigente, registrarFacturaContingencia } from '@/lib/fiscal/contingenciaDb';
+import { esNumeroControl } from '@/lib/fiscal/formato';
+import type { ConfigEmisor } from '@/lib/fiscal/factura';
 
 export async function GET(req: NextRequest) {
   try {
@@ -97,6 +106,8 @@ interface Servicio {
   promoId: number | null;
   modoDescuento: ModoReparto | null;
   orden: number;
+  /** Código de operación del catálogo (art. 9.2 de la providencia de facturación). */
+  codigo: string | null;
   raw: Raw; // campos adicionales del cliente (se conservan en el JSON de la factura)
 }
 
@@ -168,6 +179,7 @@ function normalizarServicios(data: Raw, catalogo: EstudioFila[]): Servicio[] {
       promoId: null,
       modoDescuento: null,
       orden: idx + 1,
+      codigo: cat?.codigo ?? null,
       raw: s,
     };
   });
@@ -302,7 +314,58 @@ export async function POST(req: NextRequest) {
     const fechaNac = str(data.fecha_nacimiento || data.fecha_nacimiento_paciente) || null;
     const sexo = esSexo(data.sexo) ? data.sexo : null;
 
+    // "Facturar a": empresa o aseguradora que recibe la factura en lugar del paciente (opcional).
+    let facturarA: ReceptorAlterno | null = null;
+    if (data.facturar_a) {
+      const r = receptorAlternoSchema.safeParse(data.facturar_a);
+      if (!r.success) throw new ApiError(400, r.error.issues[0]?.message ?? 'Datos de "Facturar a" inválidos.');
+      facturarA = r.data;
+    }
+
+    // Facturación diferida (motivo de una lista cerrada + clave del usuario): el cobro se registra y la factura
+    // fiscal se emite después, con fecha límite (Control Fiscal la vigila).
+    let diferir: { motivo: MotivoDiferido } | null = null;
+    if (data.diferir) {
+      const d = diferirSchema.safeParse(data.diferir);
+      if (!d.success) throw new ApiError(400, d.error.issues[0]?.message ?? 'Datos de facturación diferida inválidos.');
+      await exigirPinSesion(req, d.data.pin);
+      diferir = { motivo: d.data.motivo };
+    }
+
     await asegurarMedioTransito(pool);
+    await asegurarFiscal();
+    // Emisión fiscal: activa si hay proveedor (FISCAL_PROVEEDOR) y el emisor está configurado. Un error de
+    // configuración no impide cobrar: se informa en la respuesta y en la bitácora.
+    let proveedor: ProveedorFiscal | null = null;
+    let emisor: ConfigEmisor | null = null;
+    let avisoFiscal: string | null = null;
+    try {
+      proveedor = obtenerProveedor();
+      if (proveedor) {
+        emisor = await leerConfigEmisor();
+        if (!emisor.razonSocial || !emisor.rif || !emisor.domicilioFiscal) { avisoFiscal = 'Falta configurar los datos fiscales del emisor (Catálogos > Datos fiscales).'; proveedor = null; }
+      }
+    } catch (err) {
+      avisoFiscal = getErrorMessage(err);
+      proveedor = null;
+    }
+    // Contingencia (arts. 6, 7 y 11): mientras está activa, la factura sale del talonario y el cajero indica su
+    // N° de control preimpreso. Un N° inválido o repetido impide el cobro (el papel ya está emitido: hay que corregirlo).
+    const controlContingencia = str(data.contingencia_control).trim() || null;
+    if (proveedor && emisor) {
+      const vigente = await contingenciaVigente(pool, fecha);
+      if (controlContingencia) {
+        if (diferir) throw new ApiError(400, 'Un cobro diferido no lleva factura de talonario.');
+        if (!vigente) throw new ApiError(400, 'No hay una contingencia abierta: la factura se emite por la imprenta digital.');
+        if (!esNumeroControl(controlContingencia)) throw new ApiError(400, 'N° de control inválido (formato 00-00000001).');
+      } else if (vigente?.estado === 'ACTIVA' && !diferir) {
+        throw new ApiError(400, 'Contingencia activa: indique el N° de control preimpreso del talonario.');
+      }
+    } else if (controlContingencia) {
+      throw new ApiError(400, 'La emisión fiscal está desactivada: no se registran facturas de talonario.');
+    }
+    // Se asigna dentro de la transacción (closure): el cast evita que TS lo estreche a null.
+    let docFiscal = null as { id: number; numero: string; serie?: string; numeroControl?: string } | null;
     const factura = await withTransaction(async (client) => {
       let turnoNum = parseInt(str(data.turnoNum ?? data.turno_num), 10);
       if (!Number.isFinite(turnoNum) || turnoNum <= 0) {
@@ -313,7 +376,7 @@ export async function POST(req: NextRequest) {
       }
 
       const serviciosJson = servicios.map((s) => ({
-        ...s.raw, estudio: s.estudio, medico: s.medico, area: s.area, sala: s.sala, estado: s.estado, orden: s.orden,
+        ...s.raw, estudio: s.estudio, medico: s.medico, area: s.area, sala: s.sala, estado: s.estado, orden: s.orden, codigo: s.codigo,
         precioUSD: Number(centsToStr(s.precio)), precioLista: Number(centsToStr(s.precioLista)), descuento: Number(centsToStr(s.descuento)), honorariosMedico: Number(centsToStr(s.honorarios)), gananciaClinica: Number(centsToStr(s.ganancia)),
       }));
 
@@ -323,8 +386,9 @@ export async function POST(req: NextRequest) {
           pago_punto, pago_movil, pago_efectivo_bs, pago_divisas, estado,
           servicios, total_honorarios, total_ganancia, turno_num, etapa_actual,
           telefono_paciente, estudio_principal_id, prioridad, grupo_clinico, fecha_nacimiento_paciente,
-          precio_lista_usd, descuento_usd, descuento_modo, descuento_origen, descuento_motivo, descuento_promo_id, descuento_autorizado_por)
-         VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18,$19,$20,$21,$22,$23,$24,$25,$26,$27,$28,$29,$30)
+          precio_lista_usd, descuento_usd, descuento_modo, descuento_origen, descuento_motivo, descuento_promo_id, descuento_autorizado_por,
+          receptor_razon_social, receptor_rif, receptor_domicilio)
+         VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18,$19,$20,$21,$22,$23,$24,$25,$26,$27,$28,$29,$30,$31,$32,$33)
          RETURNING *`,
         [
           fecha, hora, cedula, nombre, estudioResumen, medicoResumen, centsToStr(totalPrecio), tasaNum,
@@ -334,6 +398,7 @@ export async function POST(req: NextRequest) {
           str(data.telefono_paciente || data.telefono) || null, data.estudio_principal_id || null,
           str(data.prioridad) || 'NORMAL', str(data.grupo_clinico) || clasificarServicio(servicios[0]?.estudio ?? '', servicios[0]?.area).grupo, fechaNac,
           centsToStr(totalLista), centsToStr(totalDescuento), descuentoModo, descuentoOrigen, descuentoMotivo, promosUsadas[0] ?? null, autorizadoPor,
+          facturarA?.razonSocial ?? null, facturarA?.rif ?? null, facturarA?.domicilio || null,
         ]
       );
       const f = resFactura.rows[0];
@@ -418,12 +483,83 @@ export async function POST(req: NextRequest) {
           detalle: { factura_id: f.id, lista: centsToStr(totalLista), descuento: centsToStr(totalDescuento), neto: centsToStr(totalPrecio), modo: descuentoModo, origen: descuentoOrigen, motivo: descuentoMotivo, autorizado_por: autorizadoPor },
         });
       }
+      if (diferir) {
+        const limite = fechaLimite(diferir.motivo, fecha);
+        await client.query(
+          'INSERT INTO facturacion_diferida (factura_caja_id, motivo, facturar_antes_de, autorizado_por) VALUES ($1, $2, $3, $4)',
+          [f.id, diferir.motivo, limite, usuario]
+        );
+        await registrarBitacora(client, {
+          tipo: 'FISCAL', fechaAfectada: fecha, ...actorSesion(req),
+          descripcion: `Facturación diferida del cobro ${f.id} (${f.nombre_paciente}): ${MOTIVOS_DIFERIDO[diferir.motivo].etiqueta}. Facturar antes del ${limite}.`,
+          detalle: { factura_id: f.id, motivo: diferir.motivo, facturar_antes_de: limite },
+        });
+      } else if (proveedor && emisor && controlContingencia) {
+        const datosCobro = {
+          fecha, hora, tasa: String(tasaNum), pagoDivisasUsd: divisas, emisor, facturarA,
+          paciente: { nombre: f.nombre_paciente, cedula: f.cedula_paciente, direccion: str(data.direccion || data.direccion_paciente).trim().toUpperCase() },
+          servicios: servicios.map((s) => ({ codigo: s.codigo, estudio: s.estudio, area: s.area, precioLista: s.precioLista, descuento: s.descuento })),
+        };
+        let r;
+        try {
+          r = await registrarFacturaContingencia(client, datosCobro, { facturaCajaId: f.id, usuario, numeroControl: controlContingencia });
+        } catch (err) {
+          throw new ApiError(400, `Factura de contingencia: ${getErrorMessage(err)}`);
+        }
+        docFiscal = { id: r.id, numero: r.documento.numero, serie: r.documento.serie, numeroControl: controlContingencia };
+        await registrarBitacora(client, {
+          tipo: 'FISCAL', fechaAfectada: fecha, ...actorSesion(req),
+          descripcion: `Factura de contingencia serie ${r.documento.serie} N° ${r.documento.numero} (control ${controlContingencia}) del cobro ${f.id} (${f.nombre_paciente}).`,
+          detalle: { factura_id: f.id, documento_id: r.id, numero_control: controlContingencia },
+        });
+      } else if (proveedor && emisor) {
+        // SAVEPOINT: si el documento fiscal no se puede armar, el cobro igual se registra y queda el aviso.
+        await client.query('SAVEPOINT fiscal');
+        try {
+          const r = await registrarFacturaFiscal(client, {
+            fecha, hora, tasa: String(tasaNum), pagoDivisasUsd: divisas, emisor, facturarA,
+            paciente: { nombre: f.nombre_paciente, cedula: f.cedula_paciente, direccion: str(data.direccion || data.direccion_paciente).trim().toUpperCase() },
+            servicios: servicios.map((s) => ({ codigo: s.codigo, estudio: s.estudio, area: s.area, precioLista: s.precioLista, descuento: s.descuento })),
+          }, { facturaCajaId: f.id, usuario });
+          await client.query('RELEASE SAVEPOINT fiscal');
+          docFiscal = { id: r.id, numero: r.documento.numero };
+        } catch (err) {
+          await client.query('ROLLBACK TO SAVEPOINT fiscal');
+          avisoFiscal = `No se pudo generar la factura fiscal: ${getErrorMessage(err)}`;
+        }
+      }
+      if (avisoFiscal) {
+        await registrarBitacora(client, {
+          tipo: 'FISCAL', fechaAfectada: fecha, ...actorSesion(req),
+          descripcion: `Cobro ${f.id} (${f.nombre_paciente}) sin factura fiscal: ${avisoFiscal}`,
+          detalle: { factura_id: f.id },
+        });
+      }
       return f;
     });
+
+    // Fuera de la transacción: la llamada a la imprenta no retiene bloqueos. Si falla, queda PENDIENTE para reintento.
+    let fiscal: Record<string, unknown> = diferir
+      ? { estado: 'DIFERIDA', motivo: diferir.motivo, facturarAntesDe: fechaLimite(diferir.motivo, fecha) }
+      : proveedor ? { estado: 'NO_EMITIDA', error: avisoFiscal } : { estado: 'DESACTIVADA', aviso: avisoFiscal };
+    if (docFiscal?.serie) {
+      fiscal = { estado: 'CONTINGENCIA', numero: docFiscal.numero, serie: docFiscal.serie, numeroControl: docFiscal.numeroControl, documentoId: docFiscal.id };
+    } else if (proveedor && docFiscal) {
+      const r = await emitirDocumento(pool, proveedor, docFiscal.id, fechaHoraLocal().fecha);
+      fiscal = { ...r, numero: docFiscal.numero, documentoId: docFiscal.id };
+      if (r.estado === 'ERROR') {
+        await registrarBitacora(pool, {
+          tipo: 'FISCAL', fechaAfectada: fecha, ...actorSesion(req),
+          descripcion: `La imprenta rechazó la factura fiscal ${docFiscal.numero} del cobro ${factura.id}: ${r.error}`,
+          detalle: { factura_id: factura.id, documento_id: docFiscal.id },
+        });
+      }
+    }
 
     return NextResponse.json({
       mensaje: 'Factura registrada y fondos acreditados en tesorería exitosamente.',
       factura: factura,
+      fiscal,
     });
   } catch (err) {
     return errorResponse(err);

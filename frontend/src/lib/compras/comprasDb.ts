@@ -4,7 +4,7 @@ import { CONFIG_FISCAL_DEFECTO, type ConfigFiscal } from './calculos';
 
 let listo: Promise<void> | null = null;
 
-const TABLAS = ['proveedores', 'productos_compra', 'facturas_compra', 'facturas_compra_lineas', 'pagos_compra', 'config_fiscal', 'retenciones_compra'];
+const TABLAS = ['proveedores', 'productos_compra', 'facturas_compra', 'facturas_compra_lineas', 'pagos_compra', 'config_fiscal', 'retenciones_compra', 'secuencia_retencion'];
 
 /**
  * Crea (idempotente) las tablas de compras. Se llama ANTES de abrir la transacción (el DDL no debe correr con filas
@@ -115,6 +115,19 @@ export function asegurarCompras(): Promise<void> {
         );
         CREATE INDEX IF NOT EXISTS facturas_compra_fecha ON facturas_compra (fecha);
         CREATE INDEX IF NOT EXISTS pagos_compra_factura ON pagos_compra (factura_id);
+        -- Art. 18 (Providencia G.O. 21/10/2026): correo del proveedor, período de imposición, entrega y un secuencial
+        -- continuo (no por mes). Arranca después del mayor ya emitido: los comprobantes entregados no se renumeran.
+        ALTER TABLE proveedores ADD COLUMN IF NOT EXISTS correo VARCHAR(150);
+        ALTER TABLE retenciones_compra ADD COLUMN IF NOT EXISTS periodo_imposicion VARCHAR(7);
+        ALTER TABLE retenciones_compra ADD COLUMN IF NOT EXISTS fecha_entrega DATE;
+        UPDATE retenciones_compra SET periodo_imposicion = substr(periodo, 1, 4) || '-' || substr(periodo, 5, 2) WHERE periodo_imposicion IS NULL;
+        CREATE TABLE IF NOT EXISTS secuencia_retencion (
+          id BOOLEAN PRIMARY KEY DEFAULT true CHECK (id),
+          ultimo BIGINT NOT NULL CHECK (ultimo BETWEEN 0 AND 99999999)
+        );
+        INSERT INTO secuencia_retencion (id, ultimo)
+          SELECT true, COALESCE(MAX(RIGHT(numero, 8)::bigint), 0) FROM retenciones_compra WHERE numero ~ '^[0-9]{14}$'
+          ON CONFLICT (id) DO NOTHING;
       `);
       await c.query("INSERT INTO config_fiscal (clave, valor) VALUES ('fiscal', $1) ON CONFLICT (clave) DO NOTHING", [JSON.stringify(CONFIG_FISCAL_DEFECTO)]);
       for (const t of TABLAS) await c.query(`ALTER TABLE ${t} ENABLE ROW LEVEL SECURITY`); // sin acceso por la API pública de Supabase

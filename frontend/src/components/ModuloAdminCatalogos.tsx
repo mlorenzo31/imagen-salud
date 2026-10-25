@@ -2,7 +2,7 @@
 
 import React, { useState } from 'react';import { UserRole, PacienteCatalogo, DoctorCatalogo, ServicioCatalogo } from '@/types';
 import { useAvisos } from '@/components/ui/avisos';
-import { Users, Stethoscope, Activity, FileSpreadsheet, BadgePercent, Truck } from 'lucide-react';import { normalizarCedulaRif, extraerDigitos, validarEstructuraCedulaRif } from '@/lib/cedulaRif';import { calcularEdadReal } from '@/lib/date';import { getErrorMessage } from '@/lib/utils';
+import { Users, Stethoscope, Activity, FileSpreadsheet, BadgePercent, Truck, Landmark } from 'lucide-react';import { normalizarCedulaRif, extraerDigitos, validarEstructuraCedulaRif } from '@/lib/cedulaRif';import { calcularEdadReal } from '@/lib/date';import { getErrorMessage } from '@/lib/utils';
 import { ModalEstudio } from '@/components/admincatalogos/ModalEstudio';
 import { ModalEspecialista } from '@/components/admincatalogos/ModalEspecialista';
 import { ModalPaciente } from '@/components/admincatalogos/ModalPaciente';
@@ -10,6 +10,9 @@ import { TabCargaMasiva } from '@/components/admincatalogos/TabCargaMasiva';
 import { ModalCargaMasivaExcel } from '@/components/ModalCargaMasivaExcel';
 import { TabEstudios } from '@/components/admincatalogos/TabEstudios';
 import { PanelPromociones } from '@/components/admincatalogos/PanelPromociones';
+import { PanelDatosFiscales } from '@/components/admincatalogos/PanelDatosFiscales';
+import { PanelTalonarios } from '@/components/admincatalogos/PanelTalonarios';
+import { PanelSalidaFiscal } from '@/components/admincatalogos/PanelSalidaFiscal';
 import { TabEspecialistas } from '@/components/admincatalogos/TabEspecialistas';
 import { TabPacientes } from '@/components/admincatalogos/TabPacientes';
 import { ProveedoresCatalogo } from '@/components/egresos/ProveedoresCatalogo';
@@ -31,7 +34,7 @@ interface PacienteApi {
 
 export const ModuloAdminCatalogos: React.FC<ModuloAdminCatalogosProps> = ({ currentRole }) => {
   const { avisar } = useAvisos();
-  const [tabActiva, setTabActiva] = useState<'pacientes' | 'doctores' | 'servicios' | 'promociones' | 'proveedores' | 'carga_masiva'>('pacientes');
+  const [tabActiva, setTabActiva] = useState<'pacientes' | 'doctores' | 'servicios' | 'promociones' | 'proveedores' | 'fiscal' | 'carga_masiva'>('pacientes');
   const [busqueda, setBusqueda] = useState('');
 
   // Estados de Catálogos
@@ -447,6 +450,20 @@ export const ModuloAdminCatalogos: React.FC<ModuloAdminCatalogosProps> = ({ curr
             </button>
           )}
 
+          {!isReadOnly && (
+            <button
+              onClick={() => { setTabActiva('fiscal'); setBusqueda(''); }}
+              className={`px-3.5 py-1.5 rounded-lg transition-all flex items-center gap-1.5 ${
+                tabActiva === 'fiscal'
+                  ? 'bg-white text-[#1D7A70] shadow-sm font-black'
+                  : 'text-slate-500 hover:text-slate-800'
+              }`}
+            >
+              <Landmark className="w-3.5 h-3.5" />
+              <span>Datos fiscales</span>
+            </button>
+          )}
+
           <button
             onClick={() => { setTabActiva('carga_masiva'); setBusqueda(''); }}
             className={`px-3.5 py-1.5 rounded-lg transition-all flex items-center gap-1.5 ${
@@ -467,6 +484,7 @@ export const ModuloAdminCatalogos: React.FC<ModuloAdminCatalogosProps> = ({ curr
       )}
 
       {tabActiva === 'promociones' && !isReadOnly && <PanelPromociones />}
+      {tabActiva === 'fiscal' && !isReadOnly && <div className="space-y-4"><PanelSalidaFiscal /><PanelDatosFiscales /><PanelTalonarios /></div>}
 
       {/* Misma pantalla que Egresos → Proveedores y catálogo (mismos datos). */}
       {tabActiva === 'proveedores' && !isReadOnly && <ProveedoresCatalogo onCambio={() => {}} />}
