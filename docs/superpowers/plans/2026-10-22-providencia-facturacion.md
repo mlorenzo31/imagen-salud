@@ -124,12 +124,15 @@ Regla: **todo cobro termina con su factura fiscal**. Diferir solo cambia el *mom
 - [ ] Formato del libro según el Manual Técnico / la normativa de libros (columnas exactas y archivo TXT para la declaración), cuando se publique.
 
 ### Fase 8 · Pruebas integrales y salida — mar–abr 2027
-- [ ] Pruebas en el sandbox de la imprenta: factura, NC, ND, contingencia y reenvío.
+- [x] **Verificación de salida** (Catálogos → Datos fiscales): emisor, imprenta, proveedor (el simulado bloquea en producción), fecha de inicio, talonarios y formatos disponibles, rechazados/pendientes, contingencias vencidas, códigos de operación y correos de proveedores.
+- [x] Prueba integral repetible `frontend/scripts/prueba-fiscal.mjs`: factura, ND, NC parcial, anulación con NC, reintentos y contingencia completa (12 pasos). Pasa con el simulado; se repite en el sandbox con la imprenta real.
+- [x] Documentos en `docs/fiscal/`: manual de taquilla, borrador de notificación a la Gerencia Regional (Transitoria Segunda) y plan de salida con marcha en paralelo, formatos viejos (Transitoria Primera) y plan de reversa.
+- [ ] Pruebas en el sandbox de la imprenta (depende de elegirla y de su adaptador).
 - [ ] Marcha en paralelo de 1-2 semanas.
-- [ ] Capacitación de taquilla: contingencia y notas de crédito.
-- [ ] **Notificar a la Gerencia Regional** el cambio de medio de emisión (Disposición Transitoria Segunda).
-- [ ] Usar o anular los talonarios viejos antes de la vigencia (Transitoria Primera).
-- [ ] **Salida a producción antes del 05/04/2027** (dos semanas de margen sobre el 19/04/2027).
+- [ ] Capacitación de taquilla.
+- [ ] **Notificar a la Gerencia Regional** el cambio de medio de emisión.
+- [ ] Usar o anular los talonarios viejos antes de la vigencia.
+- [ ] **Salida a producción antes del 05/04/2027**.
 
 ## Riesgos
 - **Manual Técnico del SENIAT sin publicar:** puede cambiar formatos o la API. Mitigación: lógica aislada en `lib/fiscal/` y adaptador intercambiable.
